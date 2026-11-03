@@ -4,6 +4,7 @@ import ForecastKit
 /// One place's week, activities in rank order (contracts/ui.md › Forecast).
 struct ForecastView: View {
     @State private var model: ForecastModel
+    @State private var selection: DaySelection?
 
     init(place: Place, service: any WeatherService) {
         _model = State(initialValue: ForecastModel(place: place, service: service))
@@ -20,13 +21,24 @@ struct ForecastView: View {
                         .listRowInsets(EdgeInsets())
                 }
                 ForEach(ranking.rankings) { activityRanking in
-                    ActivitySection(ranking: activityRanking)
+                    ActivitySection(ranking: activityRanking) { day in
+                        selection = DaySelection(day: day)
+                    }
                 }
             }
         }
         .navigationTitle(model.place.name)
         .task { await model.load() }
+        .sheet(item: $selection) { selection in
+            DayDetailView(day: selection.day)
+        }
     }
+}
+
+/// Identifies the day whose detail sheet is shown.
+private struct DaySelection: Identifiable {
+    let day: DaySuitability
+    var id: DaySuitability { day }
 }
 
 #if DEBUG
