@@ -12,8 +12,7 @@ xcuserdata/
 
 # Local tool state
 .claude/settings.local.json
-
+.claude/worktrees/
 
 # Third-party brief: paraphrased in intent.md, not redistributed
 test_task.pdf
-.claude/worktrees/
