@@ -59,10 +59,10 @@ struct ActivityScorerTests {
     // MARK: - Skiing
 
     @Test("skiing snow factor: min(1, snowfall/10 + depth/100), weight 50", arguments: [
-        (0.0, 0.0, 50), (5.0, 0.0, 75), (0.0, 50.0, 75), (10.0, 0.0, 100), (0.0, 100.0, 100), (30.0, 200.0, 100)
+        (0.0, 0.0, 10), (5.0, 0.0, 75), (0.0, 50.0, 75), (10.0, 0.0, 100), (0.0, 100.0, 100), (30.0, 200.0, 100)
     ])
     func skiingSnow(snowfall: Double, depth: Double, expected: Int) {
-        // tmin stays at −10 °C so the no-snow cap does not apply.
+        // Zero snow hits the no-snow cap (raw 50 → 10); any snow lifts it.
         let weather = with(Self.perfectSkiing) { $0.snowfall = snowfall; $0.snowDepth = depth }
         #expect(score(.skiing, weather) == expected)
     }

@@ -153,7 +153,7 @@ public enum ActivityScorer {
 
     static func skiing(_ w: DailyWeather) -> Breakdown? {
         guard let snowfall = w.snowfall, let depth = w.snowDepth,
-              let tmax = w.temperatureMax, let tmin = w.temperatureMin,
+              let tmax = w.temperatureMax,
               let gusts = w.windGustsMax, let rain = w.rain
         else { return nil }
         let factors = [
@@ -167,8 +167,9 @@ public enum ActivityScorer {
             Factor(name: .noRain, weight: 10, value: dryness(rain),
                    positive: dryText(rain), negative: rainText(rain))
         ]
-        let noSnowAndThawing = snowfall <= 0 && depth <= 0 && tmin > 0
-        let cap = noSnowAndThawing ? Cap(maximum: 10, reason: "No snow and above freezing") : nil
+        // No snow at all means no skiing, however cold it is (live check: Chamonix, 0 cm, tmin −3.9 °C).
+        let noSnow = snowfall <= 0 && depth <= 0
+        let cap = noSnow ? Cap(maximum: 10, reason: "No snow on the ground") : nil
         return Breakdown(factors: factors, cap: cap)
     }
 
