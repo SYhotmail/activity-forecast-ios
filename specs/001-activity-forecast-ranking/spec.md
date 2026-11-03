@@ -77,7 +77,7 @@ A user searching for a common name (e.g. "Paris" or "Springfield") needs to tell
 - Place names with accents or non-Latin characters (e.g. "Zürich", "東京") are searchable and displayed correctly.
 - The forecast returns fewer than 7 days or some weather values are missing: available days are scored; missing days or values are shown as "No data" rather than as a misleading rating.
 - A place far from the sea is selected: Surfing is still scored from weather, and the weather-only caveat stays visible.
-- A warm or low-lying place is selected: Skiing scores Poor for days with no snow and temperatures above freezing.
+- A place with no snow is selected (warm, low-lying, or simply snowless that week): Skiing scores Poor on every day without snowfall or snow cover, even if it freezes.
 - Days are shown in the selected place's local time zone, even if the user's device is in a different time zone.
 - The connection drops after search results appear but before the forecast loads: an error with Retry is shown for the forecast only, and the search results are kept.
 - Two activities have the same weekly score: the one with the higher best-day score ranks higher; if still tied, the fixed order Skiing, Surfing, Outdoor sightseeing, Indoor sightseeing applies.
@@ -96,7 +96,7 @@ A user searching for a common name (e.g. "Paris" or "Springfield") needs to tell
 - **FR-008**: For any activity and day, users MUST be able to see the temperature range, precipitation, snowfall and wind, plus at least one plain-language reason for the score.
 - **FR-009**: Scoring MUST be deterministic: the same weather input always produces the same scores, labels and ranking.
 - **FR-010**: Scoring MUST follow these suitability rules:
-  - **Skiing** rises with fresh snowfall or existing snow cover and cold temperatures (at or below freezing); falls with strong wind, rain, or temperatures above freezing; is Poor when there is no snow and it is above freezing.
+  - **Skiing** rises with fresh snowfall or existing snow cover and cold temperatures (at or below freezing); falls with strong wind, rain, or temperatures above freezing; is Poor whenever there is no snowfall and no snow cover, whatever the temperature.
   - **Surfing** rises with moderate wind, mild-to-warm temperatures and dry conditions; falls with thunderstorms, very strong wind or cold. A note MUST state that wave conditions are not included.
   - **Outdoor sightseeing** rises with dry, comfortable temperatures (about 15–25 °C), light wind and sunshine; falls with rain, snow, strong wind, or extreme heat or cold.
   - **Indoor sightseeing** never drops below Fair and rises as outdoor conditions get worse.
