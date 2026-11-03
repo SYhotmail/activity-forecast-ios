@@ -72,6 +72,8 @@ Facts about the Open-Meteo APIs were checked against the live endpoints on 2026-
   - Sunny 20 °C, dry, wind 10 km/h, 9 h sun: outdoor = **100**, surfing ≈ 31 + 30 + 30 = 91, indoor = 30 → **Outdoor**.
   - Mild breezy coast (22 °C, 25 km/h, dry): surfing = **100**, skiing ≤ 10 → **Surfing** above Skiing.
   - *Note*: the first draft (surfing weights 45/35/20, indoor 25 + 0.5 × …) scored the rainy city as surfing 61 against indoor 55, which broke SC-003. That is why the reference weeks are encoded as tests rather than trusted from reasoning.
+  - *Implementation note (T014)*: the weights above were implemented unchanged and all four seven-day reference weeks in `WeeklyRankerTests` pass with them. Weekly scores: alpine skiing 99 / indoor 71; rainy city indoor 65 / surfing 55; sunny outdoor 99 / surfing 92; coast surfing 100 / skiing 10. The tightest margin is the rainy city (10 points): breezy, mild weather with light rain (well under 10 mm) can still put surfing above indoor, because surfing's wind and warmth factors ignore rain. Accepted for now, since SC-003 holds.
+  - *Missing values*: where R9 is silent, any input an activity's factors **or caps** read makes the day No data when it is `nil` (e.g. `precipitationProbability` for outdoor and indoor, `weatherCode` for the thunderstorm caps, `temperatureMin` for the skiing cap). An unknown sky is not assumed storm-free.
 - **Alternatives considered**: a rule table (if/else bands), simple but jumpy at boundaries and harder to explain. Machine-learned or crowd-sourced weights, which have no data and can't be checked. User-adjustable weights, out of scope (speculative).
 
 ## R10. Testing approach
