@@ -1,0 +1,39 @@
+{
+  "latitude": 45.92,
+  "longitude": 6.87,
+  "timezone": "Europe/Paris",
+  "hourly_units": { "time": "iso8601", "snow_depth": "m" },
+  "hourly": {
+    "time": [
+      "2026-01-10T00:00", "2026-01-10T06:00", "2026-01-10T12:00", "2026-01-10T18:00",
+      "2026-01-11T00:00", "2026-01-11T06:00", "2026-01-11T12:00", "2026-01-11T18:00",
+      "2026-01-12T00:00", "2026-01-12T06:00", "2026-01-12T12:00", "2026-01-12T18:00"
+    ],
+    "snow_depth": [
+      0.50, 0.55, null, 0.52,
+      null, null, null, null,
+      0.60, 1.25, 1.10, null
+    ]
+  },
+  "daily_units": {
+    "time": "iso8601", "weather_code": "wmo code",
+    "temperature_2m_max": "°C", "temperature_2m_min": "°C",
+    "precipitation_sum": "mm", "rain_sum": "mm", "snowfall_sum": "cm",
+    "precipitation_probability_max": "%",
+    "wind_speed_10m_max": "km/h", "wind_gusts_10m_max": "km/h",
+    "sunshine_duration": "s"
+  },
+  "daily": {
+    "time": ["2026-01-10", "2026-01-11", "2026-01-12"],
+    "weather_code": [71, null, 73],
+    "temperature_2m_max": [-2.5, null, -4.0],
+    "temperature_2m_min": [-9.1, -6.0, null],
+    "precipitation_sum": [3.2, null, 12.0],
+    "rain_sum": [0.0, null, 0.0],
+    "snowfall_sum": [4.48, null, 18.2],
+    "precipitation_probability_max": [80, null, 95],
+    "wind_speed_10m_max": [12.4, null, 25.0],
+    "wind_gusts_10m_max": [30.2, 41.0, null],
+    "sunshine_duration": [7200.0, null, 0.0]
+  }
+}
