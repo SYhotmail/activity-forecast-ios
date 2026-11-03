@@ -44,28 +44,28 @@ description: "Task list for Activity Forecast Ranking"
 
 ### 3a. Domain: scoring & ranking (PR 2)
 
-- [ ] T009 [P] [US1] Write `ScoringTests/RampTests.swift` (failing): piecewise-linear ramp at and between breakpoints, clamping
-- [ ] T010 [US1] Implement `Sources/ForecastKit/Scoring/Ramp.swift`
-- [ ] T011 [US1] Write `ActivityScorerTests.swift` (failing), parameterised per activity: factor thresholds, weights, caps (skiing no-snow-above-freezing ≤10; surfing thunderstorm ≤10; outdoor thunderstorm/snow ≤20), indoor 30…90 band, missing factor → `.noData`, determinism (FR-004, FR-009, FR-010, FR-013)
-- [ ] T012 [US1] Implement `Sources/ForecastKit/Scoring/ActivityScorer.swift` per research.md R9, so that T011 passes
-- [ ] T013 [US1] Write `WeeklyRankerTests.swift` (failing): the **SC-003 reference weeks** (snowy alpine → Skiing; rainy city → Indoor; sunny 20 °C → Outdoor; mild breezy coast → Surfing above Skiing), weekly mean excluding No data, tie-breaks, best day earliest-if-tied and only if ≥25 (FR-006, FR-007, FR-013)
-- [ ] T014 [US1] Implement `Sources/ForecastKit/Scoring/WeeklyRanker.swift`. Tune weights only until T013 passes, and record any weight change in research.md R9
+- [X] T009 [P] [US1] Write `ScoringTests/RampTests.swift` (failing): piecewise-linear ramp at and between breakpoints, clamping
+- [X] T010 [US1] Implement `Sources/ForecastKit/Scoring/Ramp.swift`
+- [X] T011 [US1] Write `ActivityScorerTests.swift` (failing), parameterised per activity: factor thresholds, weights, caps (skiing no-snow-above-freezing ≤10; surfing thunderstorm ≤10; outdoor thunderstorm/snow ≤20), indoor 30…90 band, missing factor → `.noData`, determinism (FR-004, FR-009, FR-010, FR-013)
+- [X] T012 [US1] Implement `Sources/ForecastKit/Scoring/ActivityScorer.swift` per research.md R9, so that T011 passes
+- [X] T013 [US1] Write `WeeklyRankerTests.swift` (failing): the **SC-003 reference weeks** (snowy alpine → Skiing; rainy city → Indoor; sunny 20 °C → Outdoor; mild breezy coast → Surfing above Skiing), weekly mean excluding No data, tie-breaks, best day earliest-if-tied and only if ≥25 (FR-006, FR-007, FR-013)
+- [X] T014 [US1] Implement `Sources/ForecastKit/Scoring/WeeklyRanker.swift`. Tune weights only until T013 passes, and record any weight change in research.md R9
 
 ### 3b. Data: Open-Meteo client (PR 3; can run in parallel with 3a)
 
-- [ ] T015 [P] [US1] Record fixtures in `Tests/ForecastKitTests/Fixtures/`: `geocoding-paris.json`, `geocoding-empty.json`, `forecast-chamonix.json`, `forecast-nulls.json` (per contracts/open-meteo.md)
-- [ ] T016 [US1] Write `OpenMeteoClientTests.swift` with `Support/StubURLProtocol.swift` (failing): request URLs and query items, decoding search results, absent `results` → `[]`, forecast to `[DailyWeather]` (unit conversions: snow depth m→cm daily max, sunshine s→h), nulls → nil, HTTP error → `.serviceUnavailable`, offline → `.offline`, cancellation is not an error
-- [ ] T017 [US1] Implement `Sources/ForecastKit/Service/OpenMeteoDTOs.swift` and `OpenMeteoClient.swift`, so that T016 passes
+- [X] T015 [P] [US1] Record fixtures in `Tests/ForecastKitTests/Fixtures/`: `geocoding-paris.json`, `geocoding-empty.json`, `forecast-chamonix.json`, `forecast-nulls.json` (per contracts/open-meteo.md)
+- [X] T016 [US1] Write `OpenMeteoClientTests.swift` with `Support/StubURLProtocol.swift` (failing): request URLs and query items, decoding search results, absent `results` → `[]`, forecast to `[DailyWeather]` (unit conversions: snow depth m→cm daily max, sunshine s→h), nulls → nil, HTTP error → `.serviceUnavailable`, offline → `.offline`, cancellation is not an error
+- [X] T017 [US1] Implement `Sources/ForecastKit/Service/OpenMeteoDTOs.swift` and `OpenMeteoClient.swift`, so that T016 passes
 
 ### 3c. Presentation (PR 4, depends on 3a + 3b)
 
-- [ ] T018 [US1] Write `SearchModelTests.swift` (failing): query < 2 chars → idle, ≥ 2 → loading → loaded, results carry displayName
-- [ ] T019 [US1] Implement `Sources/ForecastKit/Features/SearchModel.swift` (`@MainActor @Observable`)
-- [ ] T020 [US1] Write `ForecastModelTests.swift` (failing): load → `.loaded(WeeklyRanking)` ranked per WeeklyRanker
-- [ ] T021 [US1] Implement `Sources/ForecastKit/Features/ForecastModel.swift`
-- [ ] T022 [P] [US1] Build `App/Shared/LoadStateView.swift`
-- [ ] T023 [US1] Build `App/Search/SearchView.swift` (`.searchable`, `.task(id:)` 300 ms debounce, navigation to Forecast)
-- [ ] T024 [US1] Build `App/Forecast/ForecastView.swift`, `ActivitySection.swift`, `DayCell.swift` (rank order, 7 cells, ★ best day / "No suitable day this week"). Wire the composition root in `ActivityForecastApp.swift`. Add previews with the stub service
+- [X] T018 [US1] Write `SearchModelTests.swift` (failing): query < 2 chars → idle, ≥ 2 → loading → loaded, results carry displayName
+- [X] T019 [US1] Implement `Sources/ForecastKit/Features/SearchModel.swift` (`@MainActor @Observable`)
+- [X] T020 [US1] Write `ForecastModelTests.swift` (failing): load → `.loaded(WeeklyRanking)` ranked per WeeklyRanker
+- [X] T021 [US1] Implement `Sources/ForecastKit/Features/ForecastModel.swift`
+- [X] T022 [P] [US1] Build `App/Shared/LoadStateView.swift`
+- [X] T023 [US1] Build `App/Search/SearchView.swift` (`.searchable`, `.task(id:)` 300 ms debounce, navigation to Forecast)
+- [X] T024 [US1] Build `App/Forecast/ForecastView.swift`, `ActivitySection.swift`, `DayCell.swift` (rank order, 7 cells, ★ best day / "No suitable day this week"). Wire the composition root in `ActivityForecastApp.swift`. Add previews with the stub service
 
 **Checkpoint**: quickstart manual checks 1–3 pass.
 
