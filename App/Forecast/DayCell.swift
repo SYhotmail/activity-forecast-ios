@@ -37,6 +37,8 @@ struct DayCell: View {
                 RoundedRectangle(cornerRadius: 10).strokeBorder(.orange, lineWidth: 2)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Formatting.accessibilityLabel(day, isBestDay: isBestDay))
     }
 
     private var background: Color {

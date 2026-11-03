@@ -7,6 +7,8 @@ struct LoadStateView<Value: Sendable, Content: View>: View {
     let state: LoadState<Value>
     var idleMessage = ""
     var emptyMessage = ""
+    /// Offered as a Retry button on the failed state (FR-011).
+    var retry: (() async -> Void)?
     @ViewBuilder var content: (Value) -> Content
 
     var body: some View {
@@ -26,7 +28,19 @@ struct LoadStateView<Value: Sendable, Content: View>: View {
                 Label("Something went wrong", systemImage: "exclamationmark.triangle")
             } description: {
                 Text(error.message)
+            } actions: {
+                retryButton
             }
+        }
+    }
+
+    @ViewBuilder
+    private var retryButton: some View {
+        if let retry {
+            Button("Retry") {
+                Task { await retry() }
+            }
+            .buttonStyle(.borderedProminent)
         }
     }
 }
@@ -49,6 +63,6 @@ struct LoadStateView<Value: Sendable, Content: View>: View {
 }
 
 #Preview("Failed") {
-    LoadStateView(state: LoadState<String>.failed(.offline)) { Text($0) }
+    LoadStateView(state: LoadState<String>.failed(.offline), retry: {}) { Text($0) }
 }
 #endif

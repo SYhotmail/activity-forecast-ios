@@ -44,6 +44,19 @@ enum Formatting {
         return (value / 100).formatted(.percent.precision(.fractionLength(0)))
     }
 
+    /// "Skiing, Tuesday 4 November, Excellent, 82, best day" (FR-015).
+    static func accessibilityLabel(_ day: DaySuitability, isBestDay: Bool) -> String {
+        var parts = [day.activity.title, longDate(day.date)]
+        switch day.result {
+        case let .scored(score, label, _):
+            parts += [label.title, String(score)]
+        case .noData:
+            parts.append("No data")
+        }
+        if isBestDay { parts.append("best day") }
+        return parts.joined(separator: ", ")
+    }
+
     static let surfingFootnote = "Based on weather only — wave conditions not included."
 }
 

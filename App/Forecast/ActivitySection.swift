@@ -18,6 +18,7 @@ struct ActivitySection: View {
                             DayCell(day: day, isBestDay: day.date == ranking.bestDay)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityHint("Shows the reasons and weather for this day")
                     }
                 }
                 .padding(.vertical, 4)

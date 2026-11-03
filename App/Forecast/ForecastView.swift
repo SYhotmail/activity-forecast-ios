@@ -11,7 +11,7 @@ struct ForecastView: View {
     }
 
     var body: some View {
-        LoadStateView(state: model.state) { ranking in
+        LoadStateView(state: model.state, retry: { await model.retry() }) { ranking in
             List {
                 if let subtitle = model.place.subtitle {
                     Text(subtitle)
