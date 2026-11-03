@@ -59,10 +59,10 @@ struct ActivityScorerTests {
     // MARK: - Skiing
 
     @Test("skiing snow factor: min(1, snowfall/10 + depth/100), weight 50", arguments: [
-        (0.0, 0.0, 50), (5.0, 0.0, 75), (0.0, 50.0, 75), (10.0, 0.0, 100), (0.0, 100.0, 100), (30.0, 200.0, 100)
+        (0.0, 0.0, 10), (5.0, 0.0, 75), (0.0, 50.0, 75), (10.0, 0.0, 100), (0.0, 100.0, 100), (30.0, 200.0, 100)
     ])
     func skiingSnow(snowfall: Double, depth: Double, expected: Int) {
-        // tmin stays at −10 °C so the no-snow cap does not apply.
+        // Zero snow hits the no-snow cap (raw 50 → 10); any snow lifts it.
         let weather = with(Self.perfectSkiing) { $0.snowfall = snowfall; $0.snowDepth = depth }
         #expect(score(.skiing, weather) == expected)
     }
@@ -88,7 +88,7 @@ struct ActivityScorerTests {
         #expect(score(.skiing, with(Self.perfectSkiing) { $0.rain = rain }) == expected)
     }
 
-    @Test("skiing cap: no snowfall, no depth and tmin > 0 °C → at most 10")
+    @Test("skiing cap: no snowfall and no snow depth → at most 10, whatever the temperature")
     func skiingCap() {
         // Raw: snow 0 + cold 0.6×25 + wind 15 + rain 10 = 40.
         let mild = with(Self.perfectSkiing) {
@@ -101,8 +101,14 @@ struct ActivityScorerTests {
             #expect(reasons.first?.kind == .cap)
         }
 
-        // Each condition on its own lifts the cap.
-        #expect(score(.skiing, with(mild) { $0.temperatureMin = 0 }) == 40)
+        // Found in a live check (Chamonix, 0 cm snow, tmin −3.9 °C scored Fair 25 with a ★ best day):
+        // you cannot ski without snow, so a freezing night must not lift the cap.
+        #expect(score(.skiing, with(mild) { $0.temperatureMin = -4 }) == 10)
+        #expect(score(.skiing, with(mild) { $0.temperatureMax = -2; $0.temperatureMin = -8 }) == 10)
+        // The skiing score does not read tmin, so a missing tmin is not "No data".
+        #expect(score(.skiing, with(mild) { $0.temperatureMin = nil }) == 10)
+
+        // Any snow on its own lifts the cap.
         #expect(score(.skiing, with(mild) { $0.snowDepth = 10 }) == 45)
         #expect(score(.skiing, with(mild) { $0.snowfall = 1 }) == 45)
 
@@ -251,7 +257,7 @@ struct ActivityScorerTests {
 
     /// The inputs each activity's factors and caps read. Anything else may be missing.
     static let required: [Activity: Set<Field>] = [
-        .skiing: [.snowfall, .snowDepth, .temperatureMax, .temperatureMin, .windGustsMax, .rain],
+        .skiing: [.snowfall, .snowDepth, .temperatureMax, .windGustsMax, .rain],
         .surfing: [.windSpeedMax, .temperatureMax, .precipitation, .weatherCode],
         .outdoorSightseeing: [.temperatureMax, .precipitation, .precipitationProbability,
                               .windSpeedMax, .sunshine, .snowfall, .weatherCode],
@@ -370,7 +376,7 @@ extension ActivityScorerTests {
         let thaw = with(Self.perfectSkiing) {
             $0.snowfall = 0; $0.snowDepth = 0; $0.temperatureMin = 4; $0.temperatureMax = 9
         }
-        #expect(reasons(.skiing, thaw).first == Reason(kind: .cap, text: "No snow and above freezing"))
+        #expect(reasons(.skiing, thaw).first == Reason(kind: .cap, text: "No snow on the ground"))
         #expect(reasons(.skiing, thaw).count <= 2)
     }
 

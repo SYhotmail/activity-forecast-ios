@@ -58,7 +58,7 @@ Facts about the Open-Meteo APIs were checked against the live endpoints on 2026-
 
 | Activity | Factors (weight) | Caps |
 |---|---|---|
-| Skiing | snow = min(1, snowfall_cm/10 + depth_cm/100) (50); cold: tmax ≤0 °C → 1, ≥5 °C → 0 (25); wind: gusts ≤30 → 1, ≥70 km/h → 0 (15); no rain: 1 − min(rain_mm/10, 1) (10) | no snowfall and no depth and tmin > 0 °C → max 10 |
+| Skiing | snow = min(1, snowfall_cm/10 + depth_cm/100) (50); cold: tmax ≤0 °C → 1, ≥5 °C → 0 (25); wind: gusts ≤30 → 1, ≥70 km/h → 0 (15); no rain: 1 − min(rain_mm/10, 1) (10) | no snowfall and no snow depth → max 10 (any temperature; see the verification note) |
 | Surfing | wind: 0 km/h → 0.3, 15–35 → 1, ≥50 → 0 (40); warmth: tmax ≤5 → 0, 18–30 → 1, ≥38 → 0.5 (30); dry: 1 − min(precip_mm/10, 1) (30) | thunderstorm (WMO 95–99) → max 10 |
 | Outdoor sightseeing | comfort: tmax ≤0 or ≥38 → 0, 15–25 → 1 (35); dry: 1 − max(min(precip_mm/10, 1), precip_prob/100 × 0.5) (35); calm: wind ≤20 → 1, ≥50 → 0 (15); sun: min(sunshine_h/8, 1) (15) | thunderstorm or snowfall ≥ 2 cm → max 20 |
 | Indoor sightseeing | 30 + 0.6 × (100 − outdoor score) | always within 30…90, so never below Fair |
@@ -76,6 +76,8 @@ Facts about the Open-Meteo APIs were checked against the live endpoints on 2026-
   - *Missing values*: where R9 is silent, any input an activity's factors **or caps** read makes the day No data when it is `nil` (e.g. `precipitationProbability` for outdoor and indoor, `weatherCode` for the thunderstorm caps, `temperatureMin` for the skiing cap). An unknown sky is not assumed storm-free.
   - *Implementation note (T026), reasons*: "biggest negative contributor when below 0.4" is read as *the biggest loss among the factors below 0.4*, and the same for positives (the biggest contribution among factors at or above 0.8). Ties go to the earlier factor. Order: cap, negative, positive, then cut to 2. If nothing qualifies (a middling day), the biggest loss is shown anyway, because FR-008 requires at least one reason. Each reason includes its value and unit ("Heavy rain 12 mm", "Fresh snow 12 cm", "Strong gusts 65 km/h", "Comfortable 21 °C"). Indoor sightseeing has no factors of its own, so it gets one reason about the weather outside: outdoor score < 50 → positive "Poor weather outside — good day for museums", otherwise negative "Great weather outside — better spent outdoors".
 - **Alternatives considered**: a rule table (if/else bands), simple but jumpy at boundaries and harder to explain. Machine-learned or crowd-sourced weights, which have no data and can't be checked. User-adjustable weights, out of scope (speculative).
+
+- **Verification note (live check, 2026-11-03)**: running the real client and ranker against live Open-Meteo data showed Chamonix (0 cm snow, tmin −3.9 °C) scoring Skiing **25 (Fair)** with a ★ best day. The original cap (`tmin > 0 °C`) let a cold but snowless day through. The cap now applies whenever there is no snowfall and no snow depth, at any temperature. It was fixed test-first (T034), and the cap no longer reads `tmin`, so a missing `tmin` no longer makes skiing "No data".
 
 ## R10. Testing approach
 

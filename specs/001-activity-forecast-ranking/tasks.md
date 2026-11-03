@@ -87,9 +87,10 @@ description: "Task list for Activity Forecast Ranking"
 
 ## Phase 6: Polish (PR 6)
 
-- [ ] T031 [P] Write `README.md`: what was built, how to run and test, architecture, scoring model, assumptions and limitations (surfing has no wave data, model elevation), trade-offs, how AI was used and verified
+- [X] T031 [P] Write `README.md`: what was built, how to run and test, architecture, scoring model, assumptions and limitations (surfing has no wave data, model elevation), trade-offs, how AI was used and verified
 - [ ] T032 Run the full test suite and the `xcodebuild` simulator build. Walk through quickstart.md checks 1–10 and record the results in the PR
-- [ ] T033 Final pass: remove dead code and check that no file outside the plan's structure was added
+- [X] T033 Final pass: remove dead code and check that no file outside the plan's structure was added
+- [X] T034 [US1] Fix found in the live check: skiing must be Poor whenever there is no snow, even below freezing. Test first (`ActivityScorerTests.swift`), then `ActivityScorer.swift`; update spec FR-010 and research R9
 
 ---
 
