@@ -5,6 +5,8 @@ import Observation
 ///
 /// The view owns debouncing: it calls `search()` from `.task(id: query)` after a short sleep,
 /// so SwiftUI cancels a superseded search when the query changes (research.md R5).
+/// A result is only applied if its task was not cancelled and the query has not changed
+/// since the request started, so older text never replaces newer results (FR-012).
 @MainActor
 @Observable
 public final class SearchModel {
@@ -22,17 +24,33 @@ public final class SearchModel {
 
     /// Searches for the current query, or returns to `.idle` when it is too short.
     public func search() async {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = Self.trimmed(query)
         guard trimmed.count >= Self.minimumQueryLength else {
             state = .idle
             return
         }
         state = .loading
+        let outcome: LoadState<[Place]>
         do {
             let places = try await service.searchPlaces(matching: trimmed)
-            state = places.isEmpty ? .empty : .loaded(places)
+            outcome = places.isEmpty ? .empty : .loaded(places)
+        } catch is CancellationError {
+            return
+        } catch let error as UserFacingError {
+            outcome = .failed(error)
         } catch {
-            state = .failed(.unexpected)
+            outcome = .failed(.unexpected)
         }
+        guard !Task.isCancelled, Self.trimmed(query) == trimmed else { return }
+        state = outcome
+    }
+
+    /// Runs the current search again after a failure (FR-011).
+    public func retry() async {
+        await search()
+    }
+
+    private static func trimmed(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
