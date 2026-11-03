@@ -64,3 +64,72 @@ struct ForecastModelTests {
         #expect(model.state == .loaded(WeeklyRanker.rank(Self.alpineWeek, for: Self.paris)))
     }
 }
+
+// MARK: - Failures and retry (FR-011)
+
+extension ForecastModelTests {
+    @Test("A UserFacingError from the service is shown as that error",
+          arguments: [UserFacingError.offline, .serviceUnavailable, .unexpected])
+    func userFacingError(error: UserFacingError) async {
+        let model = ForecastModel(place: Self.paris, service: StubWeatherService(forecast: { _ in throw error }))
+        await model.load()
+        #expect(model.state == .failed(error))
+    }
+
+    @Test("Any other error is shown as unexpected")
+    func otherError() async {
+        struct Boom: Error {}
+        let model = ForecastModel(place: Self.paris, service: StubWeatherService(forecast: { _ in throw Boom() }))
+        await model.load()
+        #expect(model.state == .failed(.unexpected))
+    }
+
+    @Test("A forecast with no days is a failure the user can retry, not an empty ranking")
+    func noDaysIsFailure() async {
+        let model = ForecastModel(place: Self.paris, service: StubWeatherService(forecast: { _ in [] }))
+        await model.load()
+        #expect(model.state == .failed(.unexpected))
+    }
+
+    @Test("retry() after a failure loads again and recovers")
+    func retryRecovers() async {
+        let attempts = Recorder<Place>()
+        let model = ForecastModel(place: Self.paris, service: StubWeatherService(forecast: { place in
+            await attempts.append(place)
+            if await attempts.values.count == 1 { throw UserFacingError.offline }
+            return Self.alpineWeek
+        }))
+        await model.load()
+        #expect(model.state == .failed(.offline))
+
+        await model.retry()
+        #expect(model.state == .loaded(WeeklyRanker.rank(Self.alpineWeek, for: Self.paris)))
+        #expect(await attempts.values.count == 2)
+    }
+
+    @Test("A CancellationError from the service never changes the state")
+    func cancellationErrorIgnored() async {
+        let model = ForecastModel(place: Self.paris, service: StubWeatherService(forecast: { _ in
+            throw CancellationError()
+        }))
+        await model.load()
+        #expect(model.state == .loading)
+    }
+
+    @Test("A cancelled load drops its result even when the service still answers")
+    func cancelledResultDropped() async {
+        let started = Gate()
+        let release = Gate()
+        let model = ForecastModel(place: Self.paris, service: StubWeatherService(forecast: { _ in
+            started.open()
+            await release.wait()
+            return Self.alpineWeek
+        }))
+        let load = Task { await model.load() }
+        await started.wait()
+        load.cancel()
+        release.open()
+        await load.value
+        #expect(model.state == .loading)
+    }
+}

@@ -73,15 +73,15 @@ description: "Task list for Activity Forecast Ranking"
 
 ## Phase 4: User Story 2 — Understand why a day scored as it did (P2) (PR 5)
 
-- [ ] T025 [US2] Write tests in `ActivityScorerTests.swift` (failing): reasons. A cap reason comes first; the biggest negative contributor appears when its factor is < 0.4, the biggest positive when ≥ 0.8; at most 2 reasons; heavy rain mentions rain (US2 scenario 2)
-- [ ] T026 [US2] Implement reason generation in `ActivityScorer.swift`, so that T025 passes
-- [ ] T027 [US2] Build `App/Forecast/DayDetailView.swift` (sheet: label, score, reasons, all weather factors in metric with "—" for missing) and the surfing weather-only footnote in `ActivitySection.swift` (FR-008, FR-010, FR-016)
+- [X] T025 [US2] Write tests in `ActivityScorerTests.swift` (failing): reasons. A cap reason comes first; the biggest negative contributor appears when its factor is < 0.4, the biggest positive when ≥ 0.8; at most 2 reasons; heavy rain mentions rain (US2 scenario 2)
+- [X] T026 [US2] Implement reason generation in `ActivityScorer.swift`, so that T025 passes
+- [X] T027 [US2] Build `App/Forecast/DayDetailView.swift` (sheet: label, score, reasons, all weather factors in metric with "—" for missing) and the surfing weather-only footnote in `ActivitySection.swift` (FR-008, FR-010, FR-016)
 
 ## Phase 5: User Story 3 — Find the right place and recover (P3) (PR 5)
 
-- [ ] T028 [US3] Write tests in `SearchModelTests.swift` / `ForecastModelTests.swift` (failing): empty results → `.empty`; offline → `.failed(.offline)`; `retry()` recovers; a stale (superseded) search result is never applied (FR-011, FR-012)
-- [ ] T029 [US3] Implement the empty, error, retry and cancellation handling in `SearchModel.swift` / `ForecastModel.swift`
-- [ ] T030 [US3] Wire the empty, error and Retry UI in `SearchView.swift` / `ForecastView.swift` via `LoadStateView`. Add accessibility labels to the day cells (FR-015)
+- [X] T028 [US3] Write tests in `SearchModelTests.swift` / `ForecastModelTests.swift` (failing): empty results → `.empty`; offline → `.failed(.offline)`; `retry()` recovers; a stale (superseded) search result is never applied (FR-011, FR-012)
+- [X] T029 [US3] Implement the empty, error, retry and cancellation handling in `SearchModel.swift` / `ForecastModel.swift`
+- [X] T030 [US3] Wire the empty, error and Retry UI in `SearchView.swift` / `ForecastView.swift` via `LoadStateView`. Add accessibility labels to the day cells (FR-015)
 
 ---
 

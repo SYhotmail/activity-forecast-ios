@@ -11,7 +11,8 @@ struct SearchView: View {
         LoadStateView(
             state: model.state,
             idleMessage: "Type at least 2 letters to search",
-            emptyMessage: "No places found for '\(model.query)'"
+            emptyMessage: "No places found for '\(model.query)'",
+            retry: { await model.retry() }
         ) { places in
             List(places) { place in
                 NavigationLink(value: place) {

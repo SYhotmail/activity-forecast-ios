@@ -99,3 +99,99 @@ struct SearchModelTests {
         #expect(model.state == .idle)
     }
 }
+
+// MARK: - Failures, retry and stale results (FR-011, FR-012)
+
+extension SearchModelTests {
+    @Test("A UserFacingError from the service is shown as that error",
+          arguments: [UserFacingError.offline, .serviceUnavailable, .unexpected])
+    func userFacingError(error: UserFacingError) async {
+        let model = SearchModel(service: StubWeatherService(search: { _ in throw error }))
+        model.query = "Paris"
+        await model.search()
+        #expect(model.state == .failed(error))
+    }
+
+    @Test("Any other error is shown as unexpected")
+    func otherError() async {
+        struct Boom: Error {}
+        let model = SearchModel(service: StubWeatherService(search: { _ in throw Boom() }))
+        model.query = "Paris"
+        await model.search()
+        #expect(model.state == .failed(.unexpected))
+    }
+
+    @Test("retry() after a failure searches again and recovers")
+    func retryRecovers() async {
+        let attempts = Recorder<String>()
+        let model = SearchModel(service: StubWeatherService(search: { query in
+            await attempts.append(query)
+            if await attempts.values.count == 1 { throw UserFacingError.offline }
+            return [Self.parisFrance]
+        }))
+        model.query = "Paris"
+        await model.search()
+        #expect(model.state == .failed(.offline))
+
+        await model.retry()
+        #expect(model.state == .loaded([Self.parisFrance]))
+        #expect(await attempts.values == ["Paris", "Paris"])
+    }
+
+    @Test("A CancellationError from the service never changes the state")
+    func cancellationErrorIgnored() async {
+        let model = SearchModel(service: StubWeatherService(search: { _ in throw CancellationError() }))
+        model.query = "Paris"
+        await model.search()
+        #expect(model.state == .loading)
+    }
+
+    @Test("A cancelled search drops its result even when the service still answers")
+    func cancelledResultDropped() async {
+        let started = Gate()
+        let release = Gate()
+        let model = SearchModel(service: StubWeatherService(search: { _ in
+            started.open()
+            await release.wait()
+            return [Self.parisFrance]
+        }))
+        model.query = "Paris"
+        let search = Task { await model.search() }
+        await started.wait()
+        search.cancel()
+        release.open()
+        await search.value
+        #expect(model.state == .loading)
+    }
+
+    @Test("A stale result for an older query never replaces the newer query's results (FR-012)")
+    func staleResultNeverApplied() async {
+        let london = Place(id: 2643743, name: "London", region: "England", country: "United Kingdom",
+                           latitude: 51.5, longitude: -0.13, timeZone: "Europe/London")
+        let londonderry = Place(id: 2643736, name: "Londonderry", region: "Northern Ireland",
+                                country: "United Kingdom", latitude: 55, longitude: -7.3,
+                                timeZone: "Europe/London")
+        let lonStarted = Gate()
+        let releaseLon = Gate()
+        let model = SearchModel(service: StubWeatherService(search: { query in
+            if query == "Lon" {
+                lonStarted.open()
+                await releaseLon.wait()   // the older request answers last
+                return [londonderry, london]
+            }
+            return [london]
+        }))
+
+        model.query = "Lon"
+        let older = Task { await model.search() }
+        await lonStarted.wait()
+
+        model.query = "London"
+        await model.search()
+        #expect(model.state == .loaded([london]))
+
+        releaseLon.open()
+        await older.value
+        #expect(model.state == .loaded([london]))
+    }
+}
