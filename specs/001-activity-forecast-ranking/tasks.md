@@ -22,19 +22,19 @@ description: "Task list for Activity Forecast Ranking"
 
 ## Phase 1: Setup (PR 1)
 
-- [ ] T001 Create `.gitignore` (Xcode/Swift: `DerivedData/`, `.build/`, `.swiftpm/`, `xcuserdata/`, `*.xcuserstate`, `.DS_Store`)
-- [ ] T002 Create the Swift package `Packages/ForecastKit/Package.swift` (swift-tools 6.0, Swift 6 language mode, platforms iOS 18 / macOS 15, library `ForecastKit`, test target `ForecastKitTests`)
-- [ ] T003 Create the native Xcode project `ActivityForecast.xcodeproj`: iOS 18 app target `ActivityForecast` with the `App/` synchronised group, a local package reference to `Packages/ForecastKit`, and a shared scheme
-- [ ] T004 Add `App/ActivityForecastApp.swift` (placeholder root view) and `App/Resources/Assets.xcassets`. Verify `xcodebuild … build` succeeds for the simulator
+- [X] T001 Create `.gitignore` (Xcode/Swift: `DerivedData/`, `.build/`, `.swiftpm/`, `xcuserdata/`, `*.xcuserstate`, `.DS_Store`)
+- [X] T002 Create the Swift package `Packages/ForecastKit/Package.swift` (swift-tools 6.0, Swift 6 language mode, platforms iOS 18 / macOS 15, library `ForecastKit`, test target `ForecastKitTests`)
+- [X] T003 Create the native Xcode project `ActivityForecast.xcodeproj`: iOS 18 app target `ActivityForecast` with the `App/` synchronised group, a local package reference to `Packages/ForecastKit`, and a shared scheme
+- [X] T004 Add `App/ActivityForecastApp.swift` (placeholder root view) and `App/Resources/Assets.xcassets`. Verify `xcodebuild … build` succeeds for the simulator
 
 ## Phase 2: Foundational (PR 1)
 
 **⚠️ Blocks all user stories**
 
-- [ ] T005 [P] Write `Tests/ForecastKitTests/ModelsTests.swift` (failing): `Place.displayName` combinations (FR-002), `SuitabilityLabel(score:)` band edges 0/24/25/49/50/74/75/100 (FR-005)
-- [ ] T006 Implement the domain models in `Sources/ForecastKit/Models/` (Place, DailyWeather, Activity, SuitabilityLabel, Reason, DaySuitability, ActivityRanking, WeeklyRanking) per data-model.md, so that T005 passes
-- [ ] T007 [P] Add `Sources/ForecastKit/Features/LoadState.swift`, `UserFacingError`, and the `Sources/ForecastKit/Service/WeatherService.swift` protocol
-- [ ] T008 [P] Add `Tests/ForecastKitTests/Support/StubWeatherService.swift` (scripted results and errors, call recording, optional delay)
+- [X] T005 [P] Write `Tests/ForecastKitTests/ModelsTests.swift` (failing): `Place.displayName` combinations (FR-002), `SuitabilityLabel(score:)` band edges 0/24/25/49/50/74/75/100 (FR-005)
+- [X] T006 Implement the domain models in `Sources/ForecastKit/Models/` (Place, DailyWeather, Activity, SuitabilityLabel, Reason, DaySuitability, ActivityRanking, WeeklyRanking) per data-model.md, so that T005 passes
+- [X] T007 [P] Add `Sources/ForecastKit/Features/LoadState.swift`, `UserFacingError`, and the `Sources/ForecastKit/Service/WeatherService.swift` protocol
+- [X] T008 [P] Add `Sources/ForecastKit/Service/StubWeatherService.swift` (closure-scripted results and errors; shared by tests and SwiftUI previews)
 
 **Checkpoint**: the package builds, T005 is green, and the app builds.
 
