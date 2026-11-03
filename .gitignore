@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Xcode / Swift
+DerivedData/
+build/
+.build/
+.swiftpm/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+# Local tool state
+.claude/settings.local.json
+
+# Third-party brief: paraphrased in intent.md, not redistributed
+test_task.pdf
