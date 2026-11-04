@@ -160,6 +160,7 @@ description: "Task list for Universal App with Adaptive Layouts"
 - [ ] T020 [US3] On the iPhone Duo simulator: open a forecast and a day sheet, then fold and unfold 10× and confirm the same place, forecast (no spinner) and sheet each time. On iPad: rotate, and use Split View ⅓/½/⅔ and Stage Manager resizes with the sheet open. In the narrow → wide direction, confirm the pushed forecast becomes the selected place; in wide → narrow, confirm the forecast stays pushed and Back returns to the same results (quickstart #4, #7, #8)
 
 **Checkpoint**: all three stories done.
+- [ ] T025 [US2] Zoom transition for the day sheet on wide windows: in `App/Forecast/ActivitySection.swift` add a `transitionNamespace: Namespace.ID` and `.matchedTransitionSource(id: day, in:)` on each day button. In `App/Forecast/ForecastView.swift` add `@Namespace` and read `horizontalSizeClass`; in regular width apply `.navigationTransition(.zoom(sourceID: day, in:))` to the sheet's `DayDetailView`, otherwise leave the default sheet (research R5, FR-012). Verify with quickstart #14
 
 ---
 

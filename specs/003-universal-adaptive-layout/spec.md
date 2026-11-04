@@ -94,7 +94,7 @@ A user is looking at a forecast and folds or unfolds an iPhone Duo, or resizes t
 - **FR-009**: Dynamic Type, VoiceOver and Light/Dark appearance MUST keep working on every window size. The VoiceOver wording defined in earlier features MUST NOT change.
 - **FR-010**: Loading, empty, error-with-Retry and "No suitable day" states MUST appear correctly in both narrow and wide layouts.
 - **FR-011**: Search, scoring, ranking and every displayed value MUST be identical on all devices and window sizes. Only the arrangement changes.
-- **FR-012**: The day detail MUST open as a sheet over the forecast on every window size, as it does today. On wide windows it MAY appear as a centred card rather than full height, and closing it MUST return the user to the same forecast.
+- **FR-012**: The day detail MUST open as a sheet over the forecast on every window size, as it does today. On wide windows it MAY appear as a centred card rather than full height, and closing it MUST return the user to the same forecast. On wide windows the sheet zooms out of the tapped day cell and back into it when closed; narrow windows keep the standard sheet presentation.
 
 ### Key Entities
 

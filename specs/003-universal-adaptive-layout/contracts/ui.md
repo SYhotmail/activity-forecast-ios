@@ -21,7 +21,7 @@ Search screen → tap a place → forecast pushed with Back → tap a day → de
 Selecting another place replaces the right column in place. There is no Back button between columns.
 
 ## Day detail
-A sheet over the forecast on every width (FR-012). On wide windows it appears as a centred card. Done closes it and returns to the same forecast.
+A sheet over the forecast on every width (FR-012). On wide windows it appears as a centred card that zooms out of the tapped day cell and shrinks back into it on close; narrow windows keep the standard slide-up. Done (or Escape) closes it and returns to the same forecast.
 
 ## Size changes
 Going narrow ↔ wide keeps the query, results, selected place, loaded forecast and open sheet, with no refetch:

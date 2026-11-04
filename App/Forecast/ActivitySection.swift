@@ -4,6 +4,8 @@ import ForecastKit
 /// One activity: ranked header and a scrollable row of up to 7 day cells (FR-006, FR-007).
 struct ActivitySection: View {
     let ranking: ActivityRanking
+    /// Namespace the day sheet zooms out of on wide windows (specs/003 FR-012, research.md R5).
+    let transitionNamespace: Namespace.ID
     /// Called when a day cell is tapped, to show its detail.
     let onSelect: (DaySuitability) -> Void
 
@@ -18,6 +20,7 @@ struct ActivitySection: View {
                             DayCell(day: day, isBestDay: day.date == ranking.bestDay)
                         }
                         .buttonStyle(.plain)
+                        .matchedTransitionSource(id: day, in: transitionNamespace)
                         .accessibilityHint("Shows the reasons and weather for this day")
                     }
                 }
@@ -43,8 +46,11 @@ struct ActivitySection: View {
 
 #if DEBUG
 #Preview {
+    @Previewable @Namespace var namespace
     List {
-        ForEach(PreviewData.ranking.rankings) { ActivitySection(ranking: $0, onSelect: { _ in }) }
+        ForEach(PreviewData.ranking.rankings) {
+            ActivitySection(ranking: $0, transitionNamespace: namespace, onSelect: { _ in })
+        }
     }
 }
 #endif

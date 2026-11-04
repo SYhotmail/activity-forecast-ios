@@ -6,6 +6,8 @@ import ForecastKit
 /// open day sheet (specs/003 FR-007, US3).
 struct ForecastView: View {
     let model: ForecastModel
+    @Namespace private var dayTransition
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
         LoadStateView(state: model.state, retry: { await model.retry() }, content: { ranking in
@@ -18,7 +20,7 @@ struct ForecastView: View {
                         .listRowInsets(EdgeInsets())
                 }
                 ForEach(ranking.rankings) { activityRanking in
-                    ActivitySection(ranking: activityRanking) { day in
+                    ActivitySection(ranking: activityRanking, transitionNamespace: dayTransition) { day in
                         model.selectedDay = day
                     }
                 }
@@ -27,7 +29,19 @@ struct ForecastView: View {
         .navigationTitle(model.place.name)
         .task { await model.loadIfNeeded() }
         .sheet(item: daySelection) { selection in
-            DayDetailView(day: selection.day)
+            dayDetail(selection.day)
+        }
+    }
+
+    /// On wide windows the sheet zooms out of the tapped cell and back into it; narrow windows
+    /// keep the standard sheet (specs/003 FR-012, research.md R5). Chosen by size class, not device.
+    @ViewBuilder
+    private func dayDetail(_ day: DaySuitability) -> some View {
+        if sizeClass == .regular {
+            DayDetailView(day: day)
+                .navigationTransition(.zoom(sourceID: day, in: dayTransition))
+        } else {
+            DayDetailView(day: day)
         }
     }
 

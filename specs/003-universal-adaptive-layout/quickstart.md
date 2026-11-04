@@ -30,3 +30,4 @@ Behaviour per [contracts/ui.md](./contracts/ui.md); state rules per [data-model.
 | 11 | Any, VoiceOver | Focus a result, a section header, a day cell | Wording identical to feature 001/002 | FR-009, SC-005 |
 | 12 | Wide window | Load a place offline → Retry online; search `zzqxw` | Error + Retry and "No places found" render in the columns | FR-010 |
 | 13 | iPhone vs iPad vs Duo | Compare Paris scores | Identical numbers and best days | FR-011, SC-006 |
+| 14 | iPad full screen and unfolded Duo; then iPhone and folded Duo; then Settings › Accessibility › Motion › Reduce Motion on | Tap a day, then Done or Esc | Wide: the sheet zooms out of the cell and shrinks back into it. Narrow: standard slide-up. Reduce Motion: no zoom (cross-fade). Resizing with the sheet open keeps it open | FR-012 |

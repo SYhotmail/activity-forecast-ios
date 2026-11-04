@@ -28,6 +28,9 @@ Decisions for [plan.md](./plan.md). Format: Decision / Rationale / Alternatives 
 ## R5. Day detail presentation
 - **Decision**: keep `.sheet(item:)`, now bound to `forecast.selectedDay` through a small `Identifiable` wrapper as today.
 - **Rationale**: FR-012 (clarified). On regular width the system shows it as a centred form sheet automatically. Because the selection lives in the model, the same day stays open across resize (US3-3).
+- **Animation (2026-11-04)**: on regular width the sheet uses iOS 18's zoom transition (`.navigationTransition(.zoom(sourceID:in:))` on the sheet, `.matchedTransitionSource(id:in:)` on each day cell, keyed by the `DaySuitability`). Compact width keeps the default sheet. The choice comes from `horizontalSizeClass`, not the device (FR-004).
+  - Rationale: built in, no custom animation code, and the system falls back to a cross-fade with Reduce Motion on. It ties the sheet visually to the day it describes.
+  - Alternatives: a spring scale/fade inside the sheet (the sheet itself still slides up, so there's less connection to the cell); a popover anchored to the cell (rejected: reverses the FR-012 clarification that the detail is a sheet on every width).
 
 ## R6. Project settings for iPad
 - **Decision**: `TARGETED_DEVICE_FAMILY = "1,2"`; add `INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad` = portrait, portrait upside-down, landscape left and right; do not set `UIRequiresFullScreen`.
