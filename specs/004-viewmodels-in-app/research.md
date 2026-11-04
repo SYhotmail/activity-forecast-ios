@@ -9,15 +9,22 @@ Format: Decision / Rationale / Alternatives considered.
 - **Rationale**: `WeatherService`, `OpenMeteoClient` and `OpenMeteoDTOs` throw `UserFacingError`, so it belongs to the data layer (constitution V). `LoadState` is screen state, used only by view models and `LoadStateView`.
 - **Alternatives**: move `UserFacingError` too (the data layer would then depend on the app, which is impossible); keep `LoadState` in the package as "shared" (violates V: screen state in `ForecastKit`).
 
-## R2. Test-support library
-- **Decision**: add product `.library(name: "ForecastKitTestSupport", targets: ["ForecastKitTestSupport"])` with target `ForecastKitTestSupport` depending on `ForecastKit`. It contains `StubWeatherService`, `Gate` and `Recorder`, made `public` with public initialisers.
-- **Rationale**: spec Q1 and constitution V. One shared fake for app tests and app previews, so there's no duplicate. `Gate` and `Recorder` are only used by the view-model tests, which move to the app, so they move with them into the shared library instead of being copied.
-- **Alternatives**: duplicate the stub in the app and in package tests (rejected in Q1); keep `Gate`/`Recorder` in `Tests/Support` (unreachable from the app test target).
+## R2. Where test doubles live (revised during implementation)
+- **Decision**:
+  - `StubWeatherService` lives in the app under `#if DEBUG` (`App/Shared/StubWeatherService.swift`, `internal`). SwiftUI previews and `ActivityForecastTests` share it, the tests through `@testable import ActivityForecast`.
+  - `Gate` and `Recorder` live in the test target (`AppTests/Support/`).
+  - Previews and `PreviewData` keep `#if DEBUG`.
+  - There is no test-support package library (constitution 2.1.0).
+- **Rationale**: the first design, a `ForecastKitTestSupport` library linked by both the app (for previews) and the test target, failed two checks:
+  1. The Release binary contained 78 `StubWeatherService`, 52 `Gate` and 54 `Recorder` symbols. Swift keeps protocol-conformance records, so linking the library ships it even when release code never calls it.
+  2. Linking one package product from two targets made Xcode package it as a dynamic framework that embeds its own copy of `ForecastKit`. The test run logged "Class … is implemented in both …", a risk for dynamic casts such as `as? UserFacingError`.
 
-## R3. "Release app must not link it" (FR-004)
-- **Decision**: the `ActivityForecast` target lists `ForecastKitTestSupport` as a package product dependency. The only app source that imports it is `PreviewData.swift`. There are no `#if DEBUG` wrappers (removed 2026-11-04 at the owner's request): `#Preview` macros are compiled out of Release builds, and `PreviewData` is then unreferenced and dead-stripped. A Release build after the wrappers were removed has 0 `PreviewData` and 0 preview symbols. SwiftPM libraries are static by default, and the linker drops unreferenced code. Today's Release binary still has `StubWeatherService` symbols, the same count as before the wrappers were removed, because the stub lives in the `ForecastKit` module; moving it out (T006) is what removes them. Verified by `nm` on the Release build: no `StubWeatherService`, `Gate` or `Recorder` symbols (quickstart Gate 5).
-- **Rationale**: Xcode can't attach a package product to one build configuration only. The binary check is the real proof of "not in the shipped app".
-- **Alternatives**: a separate preview-only target (Xcode doesn't support configuration-specific product links cleanly); `DEVELOPMENT_ASSET_PATHS` (it's for assets, not code); a dynamic library (would ship as a framework in Release, which is worse).
+  `#Preview` bodies are type-checked in Release, so preview data can't avoid the release build without `#if DEBUG`. One Debug-only copy in the app fixes all three problems: Release has 0 such symbols, `ForecastKit` is linked once, and the test target links no package products.
+- **Alternatives**: make `ForecastKit` a dynamic framework and link the support library into the app for Debug only (fragile: Xcode has no per-configuration package links; adds embedded frameworks); accept the doubles in Release (breaks constitution V).
+
+## R3. Proving the release app has no test doubles (FR-004)
+- **Decision**: build Release and run `nm` on the app binary. There must be 0 `StubWeatherService`, `Gate`, `Recorder` and `PreviewData` symbols, and no embedded frameworks (quickstart #5). Verified on 2026-11-04: all 0.
+- **Rationale**: the binary is the real proof. Assumptions about dead-stripping turned out to be wrong (R2).
 
 ## R4. App unit-test target
 - **Decision**: a new hosted unit-test bundle `ActivityForecastTests`:
@@ -27,22 +34,21 @@ Format: Decision / Rationale / Alternatives considered.
   - a file-system-synchronized group `AppTests/`;
   - depends on the app target, and links `ForecastKit` and `ForecastKitTestSupport`.
 
-  Tests use `import Testing`, `@testable import ActivityForecast`, `import ForecastKit`, `import ForecastKitTestSupport`. Add it to the scheme's Test action next to `ForecastKitTests`.
+  Tests use `import Testing`, `import ForecastKit` and `@testable import ActivityForecast`. The test target links no package products: `ForecastKit` symbols resolve from the host app through `BUNDLE_LOADER`, which keeps one copy at runtime. Add it to the scheme's Test action next to `ForecastKitTests`.
 - **Rationale**: spec Q2 and constitution IV. A hosted bundle makes `@testable import` of the app module possible. A synchronized group matches the existing `App/` group, so new test files need no project edits.
 - **Alternatives**: a non-hosted logic-test bundle compiling app sources directly (duplicate membership, fragile); UI tests (wrong level).
 
 ## R5. Moving the tests without changing behaviour
-- **Decision**: move the three suites with `git mv`, then change only their imports (`@testable import ForecastKit` becomes `@testable import ActivityForecast` + `import ForecastKit` + `import ForecastKitTestSupport`). Assertions are untouched. Proof: compare the test-function names before and after; the set of 39 names must be identical (quickstart Gate 6).
+- **Decision**: move the three suites with `git mv`, then change only their imports (`@testable import ForecastKit` becomes `import ForecastKit` + `@testable import ActivityForecast`). Assertions are untouched. Proof: compare the test-function names before and after; the set of 39 names must be identical (quickstart Gate 6).
 - **Rationale**: spec FR-006, SC-002, and the edge case "a test that needs editing signals an unintended change".
 
 ## R6. Order of work, keeping everything green
 - **Decision**:
-  1. Create `ForecastKitTestSupport` and move the stub, `Gate` and `Recorder` there. Package VM tests import it, and everything is green.
-  2. Add the empty `ActivityForecastTests` target and scheme entry. Green.
-  3. Move the view models and `LoadState` to the app, `UserFacingError` to `Service/`, and the VM tests to `AppTests/`, in one commit (they can't compile apart). Green on both test commands.
-  4. Docs.
+  1. Add the empty `ActivityForecastTests` target and scheme entry. Green.
+  2. In one commit, move the stub (Debug-only, into the app), `Gate`/`Recorder` (into `AppTests/Support`), the view models and `LoadState` (into the app), `UserFacingError` (to `Service/`) and the VM tests (to `AppTests/`). They can't compile apart. Green on both test commands.
+  3. Docs.
 - **Rationale**: each commit builds and passes. Step 3 has to be atomic because the tests must move with the types they reference.
 
 ## R7. Previews
-- **Decision**: `PreviewData.swift` and all `#Preview` blocks have no `#if DEBUG` wrapper. `PreviewData.swift` adds `import ForecastKitTestSupport`. Views construct the app-internal view models as today.
-- **Rationale**: FR-005. Xcode strips `#Preview` code from Release, and preview-only data is dead-stripped, so the wrappers added noise without protecting anything (verified by building Release before and after).
+- **Decision**: `PreviewData.swift` and every `#Preview` block are wrapped in `#if DEBUG`. Preview helpers take `any WeatherService`, not the concrete stub.
+- **Rationale**: FR-005 and constitution 2.1.0. Wrapping only `PreviewData` in `#if DEBUG` made the Release build fail with "cannot find 'PreviewData' in scope" in `#Preview` bodies, which proves the bodies are compiled in Release. The owner's earlier request to drop the wrappers was reverted after this finding, with their agreement.

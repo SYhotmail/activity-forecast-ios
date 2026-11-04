@@ -39,7 +39,7 @@ description: "Task list for View Models Live in the App"
   - `IPHONEOS_DEPLOYMENT_TARGET = 18.0`, `SWIFT_VERSION = 6.0`, `GENERATE_INFOPLIST_FILE = YES`, `TARGETED_DEVICE_FAMILY = "1,2"`, bundle id `com.example.ActivityForecastTests`;
   - a file-system-synchronized root group for `AppTests/`;
   - a target dependency on `ActivityForecast`;
-  - package product dependencies `ForecastKit` (and `ForecastKitTestSupport`, added in T006).
+  - no package product dependencies: `ForecastKit` resolves from the host app through `BUNDLE_LOADER` (research R4).
 
   Create `AppTests/SmokeTests.swift` with one `@Test func appModuleLinks()` that does `@testable import ActivityForecast` and passes. It proves the wiring and is deleted in T011.
 - [X] T004 Add `ActivityForecastTests` as a `TestableReference` (`skipped = "NO"`) in the Test action of `ActivityForecast.xcodeproj/xcshareddata/xcschemes/ActivityForecast.xcscheme`, next to the existing `ForecastKitTests` entry. Run gate 3 and expect `ForecastKitTests` and the smoke test to pass. Commit `chore: app unit-test target ActivityForecastTests (004 T003-T004)`.
@@ -48,78 +48,47 @@ description: "Task list for View Models Live in the App"
 
 ---
 
-## Phase 3: User Story 2: the fake weather service leaves production (P1)
+## Phase 3: User Story 2 + User Story 1 + User Story 3: one atomic move (revised during implementation)
 
-**Goal**: `StubWeatherService` is no longer in the `ForecastKit` product. A developer-only `ForecastKitTestSupport` library provides it and the test helpers (FR-004, constitution V).
-
-**Independent test**: `grep -rn StubWeatherService Packages/ForecastKit/Sources/ForecastKit` returns nothing. Package tests, app previews and gate 3 still pass. A Release build's binary has no `StubWeatherService`, `Gate` or `Recorder` symbols (quickstart #5).
-
-- [ ] T005 [US2] In `Packages/ForecastKit/Package.swift`:
-  - add the product `.library(name: "ForecastKitTestSupport", targets: ["ForecastKitTestSupport"])`;
-  - add the target `.target(name: "ForecastKitTestSupport", dependencies: ["ForecastKit"])`;
-  - add `"ForecastKitTestSupport"` to `ForecastKitTests`' dependencies.
-- [ ] T006 [US2] Move the test doubles with `git mv`:
-  - `Packages/ForecastKit/Sources/ForecastKit/Service/StubWeatherService.swift` → `Packages/ForecastKit/Sources/ForecastKitTestSupport/StubWeatherService.swift`. Add `import ForecastKit`; the type stays `public`.
-  - `Packages/ForecastKit/Tests/ForecastKitTests/Support/Gate.swift` and `Recorder.swift` → `Packages/ForecastKit/Sources/ForecastKitTestSupport/`. Make `Gate`, its `init`, `open()` and `wait()` `public`. Make `Recorder`, `values` (keep `private(set)`) and `append(_:)` `public`, and add `public init() {}`.
-
-  Add `import ForecastKitTestSupport` to the package suites that use them: `SearchModelTests.swift`, `ForecastModelTests.swift`, `BrowseModelTests.swift`. Link the `ForecastKitTestSupport` product to the `ActivityForecast` and `ActivityForecastTests` targets in `project.pbxproj`.
-- [ ] T007 [US2] In `App/Shared/PreviewData.swift` (no `#if DEBUG` wrapper; previews are stripped from Release, research R3/R7), add `import ForecastKitTestSupport` under the existing imports. No other app file may import it (`grep -rn ForecastKitTestSupport App` → only PreviewData.swift).
-- [ ] T008 [US2] Verify:
-  - lint, gate 2 (108 pass), gate 3, previews build;
-  - Release build: `xcodebuild -project ActivityForecast.xcodeproj -scheme ActivityForecast -configuration Release -destination 'generic/platform=iOS Simulator' -derivedDataPath <tmp> build`, then `nm -gU <tmp>/Build/Products/Release-iphonesimulator/ActivityForecast.app/ActivityForecast | grep -E 'StubWeatherService|4Gate|8Recorder'` must print nothing (quickstart #5).
-
-  Commit `refactor: move StubWeatherService, Gate and Recorder to ForecastKitTestSupport (004 T005-T008)`.
-
-**Checkpoint**: the test double is out of the production product.
-
----
-
-## Phase 4: User Story 1 + User Story 3: view models in the app, still fully tested (P1 / P2)
-
-These two stories ship in one atomic commit: the view models and their tests can't compile apart (research R6).
-
-**Goal**:
-- US1: the `ForecastKit` product contains only domain, scoring and data. The view models and `LoadState` live in the app (FR-001, FR-002, FR-003).
-- US3: all 39 view-model tests run unchanged in `ActivityForecastTests` (FR-006, SC-002).
+The original Phases 3–4 planned a `ForecastKitTestSupport` package library (T005–T008), then the view-model move (T009–T013). Implementing T005–T008 showed the library shipped the stub, `Gate` and `Recorder` in Release (78/52/54 symbols) and duplicated `ForecastKit` at runtime ("implemented in both"). The owner chose Debug-only test doubles in the app (research R2, constitution 2.1.0). The stub can only leave the package together with the view-model tests that use it, so everything below shipped as one commit.
 
 **Independent test**:
-- quickstart #7: no view model or `LoadState` in `Packages/ForecastKit/Sources/ForecastKit`, and no `public` in `App/Features`;
+- quickstart #5: the Release binary has 0 stub, `Gate`, `Recorder` and `PreviewData` symbols, and no frameworks;
 - quickstart #6: the moved test names equal `baseline-vm-tests.txt`;
-- gates 2 and 3 pass.
+- quickstart #7: no view model, `LoadState` or stub in the package, and no `public` in the app's moved files;
+- gates 1–4 pass.
 
-- [ ] T009 [US1] Split `Packages/ForecastKit/Sources/ForecastKit/Features/LoadState.swift`:
-  - move `UserFacingError` (enum, cases and `message`, still `public`, doc comment kept) into the new `Packages/ForecastKit/Sources/ForecastKit/Service/UserFacingError.swift`;
-  - `git mv` the remaining `LoadState` file to `App/Features/LoadState.swift`, drop `public` from `LoadState`, and add `import ForecastKit` (for `UserFacingError`).
-- [ ] T010 [US1] `git mv` `Packages/ForecastKit/Sources/ForecastKit/Features/{SearchModel,ForecastModel,BrowseModel}.swift` → `App/Features/`. In each file:
-  - add `import ForecastKit`;
-  - remove every `public` modifier (types, inits, properties, methods), leaving them `internal`;
-  - keep doc comments and spec references (e.g. `specs/003 FR-007`) unchanged.
+- [X] T005 [US2] `Packages/ForecastKit/Package.swift` keeps a single product, `ForecastKit` (comment added). The `ForecastKitTestSupport` library briefly added in this task was removed (research R2).
+- [X] T006 [US2] `git mv` `Packages/ForecastKit/Sources/ForecastKit/Service/StubWeatherService.swift` → `App/Shared/StubWeatherService.swift`: internal, wrapped in `#if DEBUG`, `import ForecastKit`. `git mv` `Packages/ForecastKit/Tests/ForecastKitTests/Support/{Gate,Recorder}.swift` → `AppTests/Support/` (internal). `StubURLProtocol.swift` stays in package tests.
+- [X] T007 [US2] `App/Shared/PreviewData.swift` and every `#Preview` block (ActivitySection, DayCell, DayDetailView, ForecastView, RootView, SearchView, LoadStateView) are wrapped in `#if DEBUG` again. `#Preview` bodies are compiled in Release (research R7). The SearchView preview helper takes `any WeatherService`.
+- [X] T008 [US1] Split `Features/LoadState.swift`: `UserFacingError` moves to `Packages/ForecastKit/Sources/ForecastKit/Service/UserFacingError.swift` (public); `LoadState` moves to `App/Features/LoadState.swift` (internal, `import ForecastKit`).
+- [X] T009 [US1] `git mv` `Packages/ForecastKit/Sources/ForecastKit/Features/{SearchModel,ForecastModel,BrowseModel}.swift` → `App/Features/`, with every `public` removed and `import ForecastKit` added. The empty `Features/` directory is removed.
+- [X] T010 [US3] `git mv` the three view-model suites → `AppTests/`. Imports only: `import ForecastKit` + `@testable import ActivityForecast`. `AppTests/SmokeTests.swift` deleted.
+- [X] T011 [US1] Removed the support-library product references from `ActivityForecast.xcodeproj/project.pbxproj`. The test target links no package products.
+- [X] T012 [US3] Verified:
+  - lint 0;
+  - `swift test` 69 pass;
+  - `xcodebuild test` 69 (`ForecastKitTests`) + 39 (`ActivityForecastTests`) = 108 pass, with no "implemented in both" warning;
+  - clean Debug build with no warnings;
+  - Release: Stub=0, Gate=0, Recorder=0, PreviewData=0, no Frameworks;
+  - moved test names identical to the baseline (39);
+  - each moved test file differs by imports only (3 lines);
+  - the package's public surface matches `contracts/forecastkit-api.md`.
+- [X] T013 Constitution amended to 2.1.0 (Principle V: Debug-only test doubles; previews in `#if DEBUG`). Spec, plan, research, data model, contract and quickstart updated to match.
 
-  Delete the now-empty `Packages/ForecastKit/Sources/ForecastKit/Features/` directory.
-- [ ] T011 [US3] `git mv` `Packages/ForecastKit/Tests/ForecastKitTests/{SearchModelTests,ForecastModelTests,BrowseModelTests}.swift` → `AppTests/`. In each, replace `@testable import ForecastKit` with `@testable import ActivityForecast`, `import ForecastKit` and `import ForecastKitTestSupport`. Change nothing else. Delete `AppTests/SmokeTests.swift`.
-- [ ] T012 [US1] Fix the app compile, imports only:
-  - `App/ActivityForecastApp.swift`, `App/RootView.swift`, `App/Search/SearchView.swift`, `App/Forecast/ForecastView.swift`, `App/Shared/LoadStateView.swift` keep `import ForecastKit` (domain types); the view models and `LoadState` now resolve from the app module.
-  - If any `ForecastKit` source still references a moved type, the design is wrong. Stop and report rather than re-exporting it.
-- [ ] T013 [US3] Verify:
-  - quickstart #6: `xcodebuild test … -only-testing:ActivityForecastTests` lists the suites; the sorted function names equal `specs/004-viewmodels-in-app/baseline-vm-tests.txt`; `git diff -M --stat` shows the three test files as renames with only import lines changed (`git diff -M -- AppTests`);
-  - quickstart #7 greps return nothing;
-  - gates 1–4 pass; total tests (package + app) ≥ 108 (SC-003).
-
-  Commit `refactor: view models and LoadState move to the app; tests to ActivityForecastTests (004 T009-T013)`.
-
-**Checkpoint**: constitution v2.0.0 Principle V satisfied. `contracts/forecastkit-api.md` holds (check `grep -rhoE "^public (struct|enum|final class|protocol) [A-Za-z]+" Packages/ForecastKit/Sources/ForecastKit` against the contract list).
+**Checkpoint**: constitution 2.1.0 Principle V satisfied.
 
 ---
 
 ## Phase 5: Polish
 
 - [ ] T014 [P] Update `README.md`:
-  - Architecture diagram: `App/ (views + Features: BrowseModel, SearchModel, ForecastModel, LoadState)` → `ForecastKit (Models, Scoring, Service)`, plus `ForecastKitTestSupport (developer-only)`;
+  - Architecture diagram: `App/ (views + Features: BrowseModel, SearchModel, ForecastModel, LoadState)` → `ForecastKit (Models, Scoring, Service)`; test doubles are Debug-only in the app;
   - add the `xcodebuild test` command to the test commands;
   - replace "All logic lives in a local Swift package" with "Domain, scoring and data live in the package; view models live in the app and are tested in `ActivityForecastTests`".
 - [ ] T015 [P] Update `CLAUDE.md`:
   - Commands: add `xcodebuild test … -destination 'platform=iOS Simulator,name=iPhone 16'` and `-only-testing:ActivityForecastTests/<Suite>` for one suite;
-  - Architecture: `App/Features/` holds the view models; `ForecastKit` holds domain, scoring and data; `ForecastKitTestSupport` holds `StubWeatherService`, `Gate`, `Recorder`;
+  - Architecture: `App/Features/` holds the view models; `ForecastKit` holds domain, scoring and data; `StubWeatherService` is Debug-only in `App/Shared`, `Gate`/`Recorder` are in `AppTests/Support`; previews stay in `#if DEBUG`;
   - drop the "`App/` contains SwiftUI views only" wording;
   - Test support: `StubURLProtocol` stays in package tests.
 - [ ] T016 Smoke run (quickstart #10): 001 quickstart #1–#6 and 003 quickstart #1–#4 on iPhone 16, iPhone Duo (folded and unfolded) and iPad. Steps needing taps are done by the author; record the results in the PR.
@@ -129,18 +98,15 @@ These two stories ship in one atomic commit: the view models and their tests can
 
 ## Dependencies & Execution Order
 
-- T001 → T002 → Phase 2 (T003 → T004) → Phase 3 (T005 → T006 → T007 → T008) → Phase 4 (T009 → T010 → T011 → T012 → T013) → Phase 5
-- Phase 3 needs Phase 2: T006 links the support product to the test target created in T003.
-- Phase 4 needs Phase 3: the moved tests import `ForecastKitTestSupport`.
-- T009–T012 are one atomic change; commit only after T013 passes.
+- T001 → T002 → Phase 2 (T003 → T004) → Phase 3 (T005–T013, one atomic change) → Phase 5
+- Phase 3 needs Phase 2: the moved tests go into the target created in T003.
 
 ## Parallel opportunities
 
 - T014 ∥ T015 (different files).
-- Within Phase 4, T009/T010 (sources) and T011 (tests) touch different files and can be edited in parallel, but are committed together.
 
 ## Implementation strategy
 
-1. **MVP**: Phases 1–3. The test double is out of the production product, and the app test target exists and runs.
-2. **Core**: Phase 4. The layering matches constitution v2.0.0, with all view-model tests moved and green.
-3. **Finish**: Phase 5. Docs, the smoke run, and one PR with the gates and quickstart #5–#10 recorded.
+1. Phases 1–2: baseline, constitution, app test target.
+2. Phase 3: one atomic move. View models and `LoadState` into the app, test doubles Debug-only, tests into `ActivityForecastTests`.
+3. Phase 5: docs, the smoke run, and one PR with the gates and quickstart #5–#10 recorded.

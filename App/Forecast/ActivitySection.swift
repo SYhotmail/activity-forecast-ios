@@ -44,6 +44,7 @@ struct ActivitySection: View {
     }
 }
 
+#if DEBUG
 #Preview {
     @Previewable @Namespace var namespace
     List {
@@ -52,3 +53,4 @@ struct ActivitySection: View {
         }
     }
 }
+#endif

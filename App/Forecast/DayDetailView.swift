@@ -95,6 +95,7 @@ struct DayDetailView: View {
     }
 }
 
+#if DEBUG
 #Preview("Rainy outdoor day") {
     let outdoor = PreviewData.ranking.rankings.first { $0.activity == .outdoorSightseeing }!
     return DayDetailView(day: outdoor.days[1])
@@ -109,3 +110,4 @@ struct DayDetailView: View {
     let outdoor = PreviewData.ranking.rankings.first { $0.activity == .outdoorSightseeing }!
     return DayDetailView(day: outdoor.days[5])
 }
+#endif

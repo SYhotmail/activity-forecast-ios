@@ -1,3 +1,4 @@
+import ForecastKit
 import Observation
 
 /// Navigation state shared by the narrow (stack) and wide (side-by-side) layouts
@@ -8,24 +9,24 @@ import Observation
 /// over (FR-006, FR-007, research.md R2).
 @MainActor
 @Observable
-public final class BrowseModel {
+final class BrowseModel {
     /// The sidebar's search. One instance for the model's lifetime.
-    public let search: SearchModel
+    let search: SearchModel
     /// The place whose forecast is shown; `nil` when nothing is selected.
-    public private(set) var selectedPlace: Place?
+    private(set) var selectedPlace: Place?
     /// The forecast for `selectedPlace`. Invariant: `forecast?.place == selectedPlace`.
-    public private(set) var forecast: ForecastModel?
+    private(set) var forecast: ForecastModel?
 
     private let service: any WeatherService
 
-    public init(service: any WeatherService) {
+    init(service: any WeatherService) {
         self.service = service
         search = SearchModel(service: service)
     }
 
     /// Selects `place`. Re-selecting the current place keeps its forecast as it is, so a
     /// loaded week is never fetched again; any other place gets a fresh forecast.
-    public func select(_ place: Place?) {
+    func select(_ place: Place?) {
         guard place != selectedPlace else { return }
         selectedPlace = place
         forecast = place.map { ForecastModel(place: $0, service: service) }

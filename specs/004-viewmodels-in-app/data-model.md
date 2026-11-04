@@ -9,8 +9,8 @@ No data shapes change; only ownership and visibility.
 | `BrowseModel` | `ForecastKit/Features` | `App/Features` | internal |
 | `LoadState<Value>` | `ForecastKit/Features/LoadState.swift` | `App/Features/LoadState.swift` | internal |
 | `UserFacingError` | `ForecastKit/Features/LoadState.swift` | `ForecastKit/Service/UserFacingError.swift` | public (unchanged) |
-| `StubWeatherService` | `ForecastKit/Service` (public) | `ForecastKitTestSupport` | public, test-support only |
-| `Gate`, `Recorder` | `Tests/ForecastKitTests/Support` (internal) | `ForecastKitTestSupport` | public, test-support only |
+| `StubWeatherService` | `ForecastKit/Service` (public) | `App/Shared/StubWeatherService.swift` | internal, `#if DEBUG` only |
+| `Gate`, `Recorder` | `Tests/ForecastKitTests/Support` (internal) | `AppTests/Support` | internal to the app test target |
 | `StubURLProtocol` | `Tests/ForecastKitTests/Support` | unchanged | internal to package tests |
 
 Invariants (all unchanged, now proven in `ActivityForecastTests`):

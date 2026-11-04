@@ -35,6 +35,7 @@ The spec therefore depends on a constitution amendment (see Clarifications / FR-
 
 - Q: Where should the fake weather service live? → A: A separate test-support library inside the package, shared by package tests, app tests and app previews. The release app does not link it.
 - Q: Where should view-model tests run once the view models are in the app? → A: A new app unit-test target, run on a simulator as part of the pre-PR gates.
+- Q (revisited during implementation): The test-support library shipped the stub, `Gate` and `Recorder` in the Release binary (78/52/54 symbols) and duplicated `ForecastKit` at runtime once linked by both the app and the test target. How should test doubles be organised? → A: Debug-only in the app (the stub, shared by previews and tests via `@testable import`); `Gate`/`Recorder` in the test target; previews back in `#if DEBUG`; no test-support library. This supersedes the first answer (constitution 2.1.0).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -105,7 +106,7 @@ Every rule the view models enforce today is still covered by automated tests aft
 - **FR-001**: The package's production library MUST NOT contain the search, forecast or browse view models, or the screen load-state type.
 - **FR-002**: The app MUST contain those view models and the screen load-state type, with unchanged behaviour.
 - **FR-003**: The user-facing error categories MUST remain available to the data layer and to the app.
-- **FR-004**: The fake weather service MUST NOT be part of the package's production library. It MUST live in a separate test-support library inside the package, used by package tests, app tests and app previews. The release app MUST NOT link it.
+- **FR-004**: The fake weather service MUST NOT be part of the package's production library and MUST NOT reach the release app. It lives in the app, compiled only in Debug, and is shared by SwiftUI previews and app tests.
 - **FR-005**: App previews MUST keep working in debug builds with canned data and a fake service.
 - **FR-006**: Every existing view-model behaviour test MUST be kept, with unchanged expectations, and MUST run as part of the pre-PR gates, in a new app unit-test target run on a simulator.
 - **FR-007**: Domain, scoring and data-layer tests MUST keep running without a simulator, as today.
@@ -119,7 +120,7 @@ Every rule the view models enforce today is still covered by automated tests aft
 - **User-facing error**: offline, service unavailable, unexpected. It stays in the package, shared by the data layer and the app.
 - **Fake weather service**: the test and preview double. It leaves the package's production library.
 - **Test support utilities**: the timing gate and argument recorder. They are available wherever the view-model tests run.
-- **Test-support library**: a developer-only library in the package holding the fake weather service, linked by tests and debug previews, never by the release app.
+- **Debug-only test double**: the fake weather service, compiled into the app in Debug only and reached by tests through `@testable import`.
 
 ## Success Criteria *(mandatory)*
 
@@ -133,8 +134,8 @@ Every rule the view models enforce today is still covered by automated tests aft
 
 ## Assumptions
 
-- No new runtime dependencies (constitution Principle V). The new app test target and the test-support library are developer-only.
+- No new runtime dependencies (constitution Principle V). The new app test target is developer-only.
 - Pre-PR gates gain a simulator test run for the app test target, alongside `swift test` for the package.
-- The constitution amendment (FR-009) was made on 2026-11-04 as v2.0.0 (MAJOR: Principle V's layer boundary is redefined), before `/speckit-plan`.
+- The constitution amendment (FR-009) was made on 2026-11-04 as v2.0.0 (MAJOR: Principle V's layer boundary is redefined), before `/speckit-plan`, and refined to v2.1.0 during implementation (where test doubles live).
 - iOS 18 minimum and the Swift 6.4 toolchain are unchanged.
 - Spec IDs in code comments (e.g. `specs/003 FR-007`) stay valid. Comments move with their code.

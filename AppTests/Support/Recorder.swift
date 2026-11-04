@@ -2,7 +2,7 @@
 actor Recorder<Value: Sendable> {
     private(set) var values: [Value] = []
 
-    func append(_ value: Value) {
+        func append(_ value: Value) {
         values.append(value)
     }
 }

@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 import ForecastKit
 
@@ -58,3 +59,4 @@ enum PreviewData {
     }
     // swiftlint:enable function_parameter_count
 }
+#endif

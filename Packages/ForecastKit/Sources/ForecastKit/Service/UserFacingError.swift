@@ -1,14 +1,3 @@
-/// Every state a screen can be in (contracts/ui.md). Exhaustive by design.
-public enum LoadState<Value: Sendable>: Sendable {
-    case idle
-    case loading
-    case loaded(Value)
-    case empty
-    case failed(UserFacingError)
-}
-
-extension LoadState: Equatable where Value: Equatable {}
-
 /// Failures the user can understand and retry (FR-011, contracts/open-meteo.md › Error mapping).
 public enum UserFacingError: Error, Sendable, Hashable {
     case offline

@@ -1,6 +1,6 @@
 # Contract: Public API of the package after feature 004
 
-## Product `ForecastKit` (production; linked by the app in all configurations)
+## Product `ForecastKit` (the only product; linked by the app)
 Domain and data only (constitution V):
 - Models: `Activity`, `Place`, `DailyWeather`, `LocalDate`, `SuitabilityLabel`, `Reason`, `DaySuitability`, `ActivityRanking`, `WeeklyRanking`
 - Scoring: `Ramp`, `ActivityScorer`, `WeeklyRanker`
@@ -8,8 +8,8 @@ Domain and data only (constitution V):
 
 MUST NOT be public here: `LoadState`, `SearchModel`, `ForecastModel`, `BrowseModel`, `StubWeatherService`.
 
-## Product `ForecastKitTestSupport` (developer-only)
-- `StubWeatherService` (closure-scripted `WeatherService`)
-- `Gate` (one-shot async latch), `Recorder<Value>` (actor collecting stub arguments)
+## Test doubles (not package API)
+- `StubWeatherService`: in the app, `#if DEBUG`, internal. Used by previews and, through `@testable import`, by `ActivityForecastTests`.
+- `Gate`, `Recorder<Value>`: internal to the `ActivityForecastTests` target.
 
-Linked by `ActivityForecastTests`, and by the app for SwiftUI previews only (`#Preview` and preview data are stripped from Release). The release binary MUST contain none of its symbols (checked in quickstart.md).
+The release binary MUST contain none of their symbols (checked in quickstart.md #5).

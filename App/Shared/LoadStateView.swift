@@ -45,6 +45,7 @@ struct LoadStateView<Value: Sendable, Content: View>: View {
     }
 }
 
+#if DEBUG
 #Preview("Idle") {
     LoadStateView(state: LoadState<String>.idle, idleMessage: "Type at least 2 letters to search") { Text($0) }
 }
@@ -64,3 +65,4 @@ struct LoadStateView<Value: Sendable, Content: View>: View {
 #Preview("Failed") {
     LoadStateView(state: LoadState<String>.failed(.offline), retry: {}, content: { Text($0) })
 }
+#endif

@@ -50,6 +50,7 @@ struct DayCell: View {
     }
 }
 
+#if DEBUG
 #Preview {
     let skiing = PreviewData.ranking.rankings[0]
     return HStack {
@@ -58,3 +59,4 @@ struct DayCell: View {
         }
     }
 }
+#endif

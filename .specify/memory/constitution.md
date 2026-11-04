@@ -74,9 +74,13 @@ they change.
 - `ForecastKit` holds only domain models, scoring and the data layer (service protocol,
   Open-Meteo client, user-facing error categories). It MUST NOT contain view models or screen
   state. Domain types MUST NOT import UI frameworks or know about networking.
-- Test doubles (e.g. a fake weather service) MUST live in a developer-only test-support library
-  inside the package, linked by test targets and debug previews only. They MUST NOT be part of a
-  production library, and the release app MUST NOT link them.
+- Test doubles (e.g. a fake weather service) MUST NOT be part of the `ForecastKit` product and
+  MUST NOT reach the release app. Doubles shared by SwiftUI previews and app tests live in the app
+  under `#if DEBUG` (tests reach them through `@testable import`); test-only helpers live in the
+  test target. A package library linked by both the app and its hosted tests is not allowed: it
+  ships the doubles in Release and duplicates `ForecastKit` at runtime.
+- SwiftUI previews and their preview data MUST be wrapped in `#if DEBUG`: `#Preview` bodies are
+  type-checked in Release, so unwrapped previews pull their data into the release build.
 - No third-party runtime dependencies. Developer tools that are not linked into the app
   (e.g. SwiftLint) are allowed.
 - Build only what a spec's requirements need. No speculative abstractions, configuration for
@@ -134,7 +138,9 @@ production surface carries nothing a shipping app shouldn't call.
   → A: `swift-tools-version: 6.4` pins the toolchain (Xcode 27+); targets use Swift 6 language
   mode (1.1.1).
 - Q: Where do view models and test doubles live? → A: View models and screen state in `App`,
-  tested in the app unit-test target on a simulator; `ForecastKit` keeps domain, scoring and data;
-  test doubles in a developer-only test-support library in the package (2.0.0).
+  tested in the app unit-test target on a simulator; `ForecastKit` keeps domain, scoring and data
+  (2.0.0). Test doubles: compiled only in Debug inside the app, shared by previews and tests
+  (2.1.0). The earlier package test-support library shipped the doubles in Release and duplicated
+  `ForecastKit` at runtime.
 
-**Version**: 2.0.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-04
+**Version**: 2.1.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-04

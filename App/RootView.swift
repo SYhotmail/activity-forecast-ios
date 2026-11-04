@@ -35,6 +35,7 @@ struct RootView: View {
     }
 }
 
+#if DEBUG
 #Preview("Nothing selected") {
     RootView(browse: BrowseModel(service: PreviewData.service))
 }
@@ -45,3 +46,4 @@ struct RootView: View {
     browse.select(PreviewData.paris)
     return RootView(browse: browse)
 }
+#endif
