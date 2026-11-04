@@ -181,7 +181,7 @@ Found by T022 on iPhone 18 Pro, and reproduced twice with trace logging. The for
   - `AppTests/BrowseViewModelTests.swift`: `selectOtherCancelsPreviousLoad`.
 
   Commit `test: … (005 T023, red)`.
-- [ ] T024 Green:
+- [X] T024 Green:
   - `ForecastViewModel` runs each fetch in a view-model-owned `Task`, which `load()` awaits. Cancelling the caller only stops the waiting. `loadIfNeeded()` joins a fetch already in flight, `load()` (and so `retry()`) supersedes it, and `cancel()` stops it.
   - `BrowseViewModel.select` cancels the replaced forecast.
   - Record the constitution I exception (one unstructured task) in plan.md › Complexity Tracking.

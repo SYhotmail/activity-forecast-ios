@@ -32,9 +32,11 @@ final class BrowseViewModel {
     }
 
     /// Selects `place`. Re-selecting the current place keeps its forecast as it is, so a
-    /// loaded week is never fetched again; any other place gets a fresh forecast.
+    /// loaded week is never fetched again; any other place gets a fresh forecast, and the old
+    /// forecast's request is cancelled (specs/005 FR-012).
     func select(_ place: Place?) {
         guard place != selectedPlace else { return }
+        forecast?.cancel()
         selectedPlace = place
         forecast = place.map { ForecastViewModel(place: $0, service: service) }
     }

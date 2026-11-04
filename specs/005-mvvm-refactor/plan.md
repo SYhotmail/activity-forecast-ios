@@ -97,4 +97,6 @@ Packages/ForecastKit/                  # unchanged
 
 ## Complexity Tracking
 
-No violations.
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| Constitution I prefers structured concurrency; `ForecastViewModel` holds one unstructured `Task` for its fetch (FR-012, bug found in T022) | SwiftUI cancelled the forecast screen's `.task` with a stray disappear mid-push while the screen stayed visible, and nothing restarted the load: an endless spinner | Keeping the fetch in the view's `.task` is the bug itself. Retrying on `onAppear` depends on another SwiftUI event that did not arrive. The task is still cancelled on deselect, and cancellation still never surfaces as an error |

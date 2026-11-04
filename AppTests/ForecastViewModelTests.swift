@@ -190,8 +190,8 @@ extension ForecastViewModelTests {
         let first = Task { await model.loadIfNeeded() }
         await started.wait()
         first.cancel()
-        await first.value
         release.open()
+        await first.value
 
         await model.loadIfNeeded()
         #expect(await calls.values.count == 1)
