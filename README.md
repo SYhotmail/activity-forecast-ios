@@ -14,11 +14,13 @@ Requirements: Xcode 27+ (Swift 6.4 toolchain), iOS 18+ simulator. The app is uni
 open ActivityForecast.xcodeproj      # scheme "ActivityForecast", any iPhone, iPhone Duo or iPad simulator, ⌘R
 ```
 
-Tests (≈ 0.02 s, no simulator needed):
+Tests:
 
 ```bash
-swift test --package-path Packages/ForecastKit
-swiftlint lint --strict              # PR gate: zero violations (.swiftlint.yml)
+swift test --package-path Packages/ForecastKit          # domain, scoring, data (≈ 0.02 s, no simulator)
+xcodebuild test -project ActivityForecast.xcodeproj -scheme ActivityForecast \
+  -destination 'platform=iOS Simulator,name=iPhone 16'  # also the app's view-model tests (ActivityForecastTests)
+swiftlint lint --strict                                 # PR gate: zero violations (.swiftlint.yml)
 ```
 
 The app icon is original artwork committed as PNGs (Default, Dark and Tinted) in `App/Resources/Assets.xcassets/AppIcon.appiconset/`.
@@ -49,14 +51,16 @@ AI wrote most of the code. These checks were the guard against unverified output
 Layered **MVVM** with one-way dependencies (`App → ForecastKit → Foundation`):
 
 ```
-App/ (SwiftUI views only)            RootView (NavigationSplitView): Search | Forecast → Day detail sheet
+App/ (views)                         RootView (NavigationSplitView): Search | Forecast → Day detail sheet
   ↓ observes / calls
-ForecastKit/Features                 BrowseModel → SearchModel, ForecastModel  (@MainActor @Observable, LoadState)
-  ├→ ForecastKit/Scoring + Models    ActivityScorer, WeeklyRanker: pure, deterministic
-  └→ ForecastKit/Service             WeatherService ← OpenMeteoClient (URLSession + Codable)
+App/Features (view models)           BrowseModel → SearchModel, ForecastModel  (@Observable, MainActor by default, LoadState)
+  ↓ uses
+ForecastKit/Scoring + Models         ActivityScorer, WeeklyRanker: pure, deterministic
+ForecastKit/Service                  WeatherService ← OpenMeteoClient (URLSession + Codable), UserFacingError
 ```
 
-- All logic lives in a local Swift package, so it is testable with `swift test` and needs no simulator.
+- Domain, scoring and data live in a local Swift package, tested with `swift test` (no simulator). View models live in the app and are tested in the hosted `ActivityForecastTests` target.
+- Test doubles never ship: `StubWeatherService` and the preview data are `internal` app fixtures (shared by previews and tests). Release whole-module optimisation removes them, verified with `nm` (0 symbols).
 - Search is debounced (300 ms) with `.task(id:)`. Superseded requests are cancelled, and a stale result can never overwrite a newer one (tested).
 - Each screen has one explicit `LoadState` (idle / loading / loaded / empty / failed + Retry).
 - The layout follows the window's width class, never the device: wide windows (iPad, iPhone Duo inner display) show search and forecast side by side, narrow ones collapse to search → forecast → Back. `BrowseModel` owns the search, selection, forecast and open day, so a fold, rotation or resize keeps them without fetching again (tested).

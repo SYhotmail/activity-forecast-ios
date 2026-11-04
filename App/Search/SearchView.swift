@@ -66,9 +66,7 @@ private struct PlaceRow: View {
     }
 }
 
-#if DEBUG
-@MainActor
-private func searchPreview(_ service: StubWeatherService, query: String) -> some View {
+private func searchPreview(_ service: any WeatherService, query: String) -> some View {
     let browse = BrowseModel(service: service)
     browse.search.query = query
     return NavigationStack { SearchView(browse: browse) }
@@ -79,4 +77,3 @@ private func searchPreview(_ service: StubWeatherService, query: String) -> some
 #Preview("Loaded") { searchPreview(PreviewData.service, query: "Paris") }
 #Preview("Empty") { searchPreview(PreviewData.emptyService, query: "zzqxw") }
 #Preview("Failed") { searchPreview(PreviewData.offlineService, query: "Paris") }
-#endif

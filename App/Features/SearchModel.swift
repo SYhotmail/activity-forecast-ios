@@ -1,3 +1,4 @@
+import ForecastKit
 import Foundation
 import Observation
 
@@ -7,20 +8,19 @@ import Observation
 /// so SwiftUI cancels a superseded search when the query changes (research.md R5).
 /// A result is only applied if its task was not cancelled and the query has not changed
 /// since the request started, so older text never replaces newer results (FR-012).
-@MainActor
 @Observable
-public final class SearchModel {
+final class SearchModel {
     /// Minimum trimmed query length that triggers a search (FR-001).
-    public static let minimumQueryLength = 2
+    static let minimumQueryLength = 2
 
-    public var query = ""
-    public private(set) var state: LoadState<[Place]> = .idle
+    var query = ""
+    private(set) var state: LoadState<[Place]> = .idle
     /// Trimmed query that produced the current `.loaded`/`.empty` state, if any.
     private var lastQuery: String?
 
     private let service: any WeatherService
 
-    public init(service: any WeatherService) {
+    init(service: any WeatherService) {
         self.service = service
     }
 
@@ -29,7 +29,7 @@ public final class SearchModel {
     /// Asking again for the query whose results are already shown makes no request: the
     /// sidebar's `.task(id: query)` reruns when a fold or resize rebuilds it (specs/003 FR-007,
     /// research.md R3).
-    public func search() async {
+    func search() async {
         let trimmed = Self.trimmed(query)
         guard trimmed.count >= Self.minimumQueryLength else {
             state = .idle
@@ -55,7 +55,7 @@ public final class SearchModel {
     }
 
     /// Runs the current search again (FR-011). Always makes a request.
-    public func retry() async {
+    func retry() async {
         lastQuery = nil
         await search()
     }

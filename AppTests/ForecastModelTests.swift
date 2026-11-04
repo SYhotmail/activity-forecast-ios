@@ -1,5 +1,6 @@
 import Testing
-@testable import ForecastKit
+import ForecastKit
+@testable import ActivityForecast
 
 @MainActor
 @Suite("ForecastModel: load → ranked week (FR-003, FR-006)")

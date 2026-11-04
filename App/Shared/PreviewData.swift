@@ -1,9 +1,8 @@
-#if DEBUG
 import Foundation
 import ForecastKit
 
 /// Canned places and weather for SwiftUI previews. Never used by the running app.
-enum PreviewData {
+nonisolated enum PreviewData {
     static let paris = Place(id: 2988507, name: "Paris", region: "Île-de-France Region",
                              country: "France", latitude: 48.85, longitude: 2.35,
                              timeZone: "Europe/Paris")
@@ -59,4 +58,3 @@ enum PreviewData {
     }
     // swiftlint:enable function_parameter_count
 }
-#endif

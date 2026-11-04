@@ -1,5 +1,6 @@
 import Testing
-@testable import ForecastKit
+import ForecastKit
+@testable import ActivityForecast
 
 @MainActor
 @Suite("SearchModel: query → idle / loading / loaded (FR-001, FR-002)")

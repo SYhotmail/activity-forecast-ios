@@ -1,5 +1,6 @@
 import Testing
-@testable import ForecastKit
+import ForecastKit
+@testable import ActivityForecast
 
 /// Selection and forecast ownership for the adaptive layout (specs/003 data-model.md › BrowseModel).
 @MainActor
