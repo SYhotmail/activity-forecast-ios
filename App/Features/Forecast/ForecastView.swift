@@ -10,6 +10,7 @@ struct ForecastView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
+        @Bindable var model = model
         LoadStateView(state: model.state, retry: { await model.retry() }, content: { ranking in
             List {
                 if let subtitle = model.place.subtitle {
@@ -21,15 +22,15 @@ struct ForecastView: View {
                 }
                 ForEach(ranking.rankings) { activityRanking in
                     ActivitySection(ranking: activityRanking, transitionNamespace: dayTransition) { day in
-                        model.selectedDay = day
+                        model.showDetail(for: day)
                     }
                 }
             }
         })
         .navigationTitle(model.place.name)
         .task { await model.loadIfNeeded() }
-        .sheet(item: daySelection) { selection in
-            dayDetail(selection.day)
+        .sheet(item: $model.presentedDay) { presented in
+            dayDetail(presented.day)
         }
     }
 
@@ -44,17 +45,6 @@ struct ForecastView: View {
             DayDetailView(day: day)
         }
     }
-
-    private var daySelection: Binding<DaySelection?> {
-        Binding(get: { model.selectedDay.map { DaySelection(day: $0) } },
-                set: { model.selectedDay = $0?.day })
-    }
-}
-
-/// Identifies the day whose detail sheet is shown.
-private struct DaySelection: Identifiable {
-    let day: DaySuitability
-    var id: DaySuitability { day }
 }
 
 #Preview("Loaded") {

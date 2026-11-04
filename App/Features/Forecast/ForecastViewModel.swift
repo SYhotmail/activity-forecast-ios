@@ -12,13 +12,19 @@ final class ForecastViewModel {
     private(set) var state: LoadState<WeeklyRanking> = .loading
     /// The day whose detail sheet is open; `nil` when closed. Kept here rather than in the view
     /// so a fold or window resize that rebuilds the column keeps the sheet open (specs/003 US3).
-    var selectedDay: DaySuitability?
+    /// The sheet binds to it directly and clears it on dismiss (specs/005 FR-006).
+    var presentedDay: PresentedDay?
 
     private let service: any WeatherService
 
     init(place: Place, service: any WeatherService) {
         self.place = place
         self.service = service
+    }
+
+    /// Opens the detail sheet for `day`, replacing any day already shown.
+    func showDetail(for day: DaySuitability) {
+        presentedDay = PresentedDay(day: day)
     }
 
     /// Fetches the forecast and ranks the activities for the week.
@@ -52,4 +58,12 @@ final class ForecastViewModel {
     func retry() async {
         await load()
     }
+}
+
+/// The day whose detail sheet is open, identified by the day itself so `.sheet(item:)` can
+/// present it. Wraps the `ForecastKit` value instead of adding a retroactive `Identifiable`
+/// conformance to it (specs/005 research R2).
+nonisolated struct PresentedDay: Identifiable, Hashable, Sendable {
+    let day: DaySuitability
+    var id: DaySuitability { day }
 }

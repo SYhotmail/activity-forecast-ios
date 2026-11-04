@@ -132,19 +132,20 @@ All of Phase 3 is **one atomic commit**: `refactor: View/ViewModel names and fea
 
 ### Implementation (green)
 
-- [ ] T017 [US3] In `App/Features/Forecast/ForecastViewModel.swift`:
+- [X] T017 [US3] In `App/Features/Forecast/ForecastViewModel.swift`:
   - replace `var selectedDay: DaySuitability?` with `var presentedDay: PresentedDay?`, keeping the "survives a fold/resize (specs/003 US3)" comment and adding "the sheet binding clears it on dismiss";
   - add `func showDetail(for day: DaySuitability) { presentedDay = PresentedDay(day: day) }`;
   - add, at file scope, `nonisolated struct PresentedDay: Identifiable, Hashable, Sendable { let day: DaySuitability; var id: DaySuitability { day } }` with a doc comment.
 
   Run G-app, which must pass. Commit `feat: forecast day presentation intent (005 T017, green)`.
-- [ ] T018 [US3] In `App/Features/Forecast/ForecastView.swift`:
+- [X] T018 [US3] In `App/Features/Forecast/ForecastView.swift`:
   - in `body`, add `@Bindable var model = model`;
   - make `ActivitySection`'s trailing closure `model.showDetail(for: $0)`, or `{ day in model.showDetail(for: day) }`;
   - change the sheet to `.sheet(item: $model.presentedDay) { presented in dayDetail(presented.day) }`;
   - delete `daySelection` and the private `struct DaySelection`.
 
   Run G-app and G-lint, then commit `refactor: forecast sheet binds the view-model presented day (005 T018)`.
+  *(Done together with T017 in one green commit: replacing `selectedDay` breaks `ForecastView`'s build, so the view change has to land with it.)*
 
 **Checkpoint**: all user stories are complete.
 
