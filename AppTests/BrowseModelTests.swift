@@ -175,4 +175,17 @@ struct BrowseModelTests {
         #expect(model.map.pin == pin)
         #expect(model.map.camera.region?.center.latitude == Self.paris.latitude)
     }
+
+    @Test("Offline naming still selects the point by its coordinates and requests its forecast (US3)")
+    func offlineNamingStillSelects() async throws {
+        let model = BrowseModel(service: StubWeatherService(),
+                                locator: StubPlaceLocator(nearest: { _ in throw UserFacingError.offline }),
+                                regionCode: nil)
+        model.map.tap(at: MapPickerModelTests.atlantic)
+        await model.locateMapPin(selectingWhenNamed: true)
+        let place = try #require(model.selectedPlace)
+        #expect(place.name == "40.00° N, 35.00° W")
+        #expect(model.forecast?.place == place)
+        #expect(model.forecast?.state == .loading)
+    }
 }

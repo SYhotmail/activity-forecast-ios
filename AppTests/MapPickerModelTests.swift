@@ -225,4 +225,20 @@ struct MapPickerModelTests {
         await model.loadInitialRegionIfNeeded()
         #expect(model.camera.region?.center.latitude == Self.paris.latitude)
     }
+
+    // MARK: - Naming failures (US3)
+
+    nonisolated struct OtherError: Error {}
+
+    @Test("A failed lookup names the pin by its coordinates, with no error state (US3)",
+          arguments: [UserFacingError.offline, .serviceUnavailable, .unexpected] as [any Error & Sendable]
+              + [OtherError()])
+    func failureFallsBackToCoordinates(error: any Error & Sendable) async {
+        let model = MapPickerModel(locator: StubPlaceLocator(nearest: { _ in throw error }), regionCode: nil)
+        model.tap(at: Self.atlantic)
+        let place = await model.locatePin()
+        #expect(place?.name == "40.00° N, 35.00° W")
+        #expect(place?.latitude == Self.atlantic.latitude)
+        #expect(model.pin == MapPin(coordinate: Self.atlantic, place: place))
+    }
 }
