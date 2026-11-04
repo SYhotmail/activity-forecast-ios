@@ -29,14 +29,17 @@ struct DayDetailView: View {
 
                 Section("Weather") {
                     let weather = day.weather
-                    LabeledContent("Min / max temperature",
-                                   value: "\(Formatting.metric(weather.temperatureMin, UnitTemperature.celsius)) / \(Formatting.metric(weather.temperatureMax, UnitTemperature.celsius))")
-                    LabeledContent("Precipitation",
-                                   value: "\(Formatting.metric(weather.precipitation, UnitLength.millimeters)) (\(Formatting.percent(weather.precipitationProbability)))")
+                    let minTemperature = Formatting.metric(weather.temperatureMin, UnitTemperature.celsius)
+                    let maxTemperature = Formatting.metric(weather.temperatureMax, UnitTemperature.celsius)
+                    LabeledContent("Min / max temperature", value: "\(minTemperature) / \(maxTemperature)")
+                    let precipitation = Formatting.metric(weather.precipitation, UnitLength.millimeters)
+                    let probability = Formatting.percent(weather.precipitationProbability)
+                    LabeledContent("Precipitation", value: "\(precipitation) (\(probability))")
                     LabeledContent("Snowfall", value: Formatting.metric(weather.snowfall, UnitLength.centimeters))
                     LabeledContent("Snow depth", value: Formatting.metric(weather.snowDepth, UnitLength.centimeters))
-                    LabeledContent("Wind / gusts",
-                                   value: "\(Formatting.metric(weather.windSpeedMax, UnitSpeed.kilometersPerHour)) / \(Formatting.metric(weather.windGustsMax, UnitSpeed.kilometersPerHour))")
+                    let wind = Formatting.metric(weather.windSpeedMax, UnitSpeed.kilometersPerHour)
+                    let gusts = Formatting.metric(weather.windGustsMax, UnitSpeed.kilometersPerHour)
+                    LabeledContent("Wind / gusts", value: "\(wind) / \(gusts)")
                     LabeledContent("Sunshine", value: Formatting.metric(weather.sunshine, UnitDuration.hours))
                 }
 
@@ -58,6 +61,8 @@ struct DayDetailView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        // Escape closes the sheet with an iPad hardware keyboard (specs/003 FR-008).
+                        .keyboardShortcut(.cancelAction)
                 }
             }
         }

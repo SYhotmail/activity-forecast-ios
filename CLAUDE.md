@@ -16,18 +16,22 @@ swift test --package-path Packages/ForecastKit
 swift test --package-path Packages/ForecastKit --filter WeeklyRankerTests
 swift test --package-path Packages/ForecastKit --filter "ActivityScorerTests/<testName>"
 
+# Lint (PR gate: zero violations; config in .swiftlint.yml)
+swiftlint lint --strict
+
 # Build the app
 xcodebuild -project ActivityForecast.xcodeproj -scheme ActivityForecast \
   -destination 'generic/platform=iOS Simulator' build
 ```
 
-No linter is configured. There is no UI test target; screens are covered by SwiftUI previews (`App/Shared/PreviewData.swift`) and the manual checklist in `specs/001-activity-forecast-ranking/quickstart.md`.
+Before any PR, `swiftlint lint --strict`, the tests and a clean simulator build must all pass (`.specify/memory/constitution.md` › Quality Gates). There is no UI test target; screens are covered by SwiftUI previews (`App/Shared/PreviewData.swift`) and the manual checklists in `specs/001-activity-forecast-ranking/quickstart.md` and `specs/003-universal-adaptive-layout/quickstart.md` (iPhone, iPhone Duo, iPad window sizes).
 
 ## Architecture
 
 Layered MVVM, one-way dependencies `App → ForecastKit → Foundation`. All logic lives in the local package `Packages/ForecastKit` (referenced by the `.xcodeproj` as a local package) so it is testable with `swift test`; `App/` contains SwiftUI views only.
 
-- **`Features/`**: `SearchModel`, `ForecastModel` are `@MainActor @Observable` and expose a single `LoadState<Value>` (idle / loading / loaded / empty / failed). Failures are surfaced only as `UserFacingError` (offline / serviceUnavailable / unexpected) with retry. Search is debounced (300 ms, driven from the view via `.task(id:)`); superseded requests are cancelled and stale results must never overwrite newer ones — this is tested.
+- **Layout**: `App/RootView.swift` is a `NavigationSplitView` (search sidebar, forecast detail) pinned to `.balanced`/all columns. Compact width collapses it into the push flow, so the layout depends on width class only. `BrowseModel` holds the search, selected place, forecast and open day (`ForecastModel.selectedDay`); views call `loadIfNeeded()` / idempotent `search()` because a fold or resize can rebuild them.
+- **`Features/`**: `SearchModel`, `ForecastModel`, `BrowseModel` are `@MainActor @Observable` and expose a single `LoadState<Value>` (idle / loading / loaded / empty / failed). Failures are surfaced only as `UserFacingError` (offline / serviceUnavailable / unexpected) with retry. Search is debounced (300 ms, driven from the view via `.task(id:)`); superseded requests are cancelled and stale results must never overwrite newer ones — this is tested.
 - **`Scoring/`**: `ActivityScorer` (per-day score + plain-language reason) and `WeeklyRanker` (weekly mean over days with data, ranking, best-day star) are pure and deterministic. Factors are normalised with piecewise-linear ramps (`Ramp`) plus hard caps. The authoritative weight table is `research.md` R9; `WeeklyRankerTests` pins four reference weeks (snowy alpine, rainy city, sunny coast, hot/dry) — changing weights must keep those passing. Indoor = `30 + 0.6 × (100 − outdoor)`; best day is starred only at ≥ 25 (Fair); "No data" days are excluded, never counted as 0.
 - **`Service/`**: `WeatherService` protocol is the data boundary; `OpenMeteoClient` (URLSession + Codable DTOs in `OpenMeteoDTOs.swift`) is the live impl, `StubWeatherService` the fake for previews/model tests. `ActivityForecastApp` is the composition root and the only place that chooses the live service.
 - **`Models/`**: `LocalDate` keeps forecast days as calendar components in the *place's* time zone, so the device time zone never shifts a day. "7 days" = today + 6 in that zone.
@@ -38,7 +42,7 @@ Test support: `StubURLProtocol` holds a process-wide handler, so any suite using
 
 ## Workflow conventions
 
-- Spec-driven ([Spec Kit](https://github.com/github/spec-kit), `.specify/`, `speckit-*` skills). Feature docs live in `specs/001-activity-forecast-ranking/`: `spec.md` (FR-xxx requirements, clarifications), `plan.md`, `research.md` (decisions R1–R13), `data-model.md`, `contracts/` (`open-meteo.md`, `ui.md`), `tasks.md` (Txxx). Code comments reference these IDs; keep them in sync when behaviour changes.
+- Spec-driven ([Spec Kit](https://github.com/github/spec-kit), `.specify/`, `speckit-*` skills). Each feature has `specs/<NNN-feature>/` (001 activity ranking, 002 app icons, 003 universal adaptive layout): `spec.md` (FR-xxx requirements, clarifications), `plan.md`, `research.md` (decisions), `data-model.md`, `contracts/`, `tasks.md` (Txxx). IDs restart per feature; code comments cite them (e.g. `specs/003 FR-007`), so keep them in sync when behaviour changes.
 - Strict TDD in history: a `test: … (Txxx, red)` commit followed by `feat:`/`fix: … (Txxx, green)`. Each phase is a stacked PR.
-- Deliberate constraints (see README "Trade-offs"): no third-party packages, one package (not multiple modules), iOS 18 minimum so reviewers on Xcode 16 can build — avoid newer-only APIs.
+- Deliberate constraints (see README "Trade-offs"): no third-party packages, one package (not multiple modules), iOS 18 minimum, Xcode 27 / Swift 6.4 toolchain (`swift-tools-version: 6.4`, Swift 6 language mode); APIs newer than iOS 18 need `if #available`. Project rules live in `.specify/memory/constitution.md`.
 - `intent.md` captures the brief and non-goals (no persistence, no accounts, no marine/swell API — surfing is weather-only and the UI says so).

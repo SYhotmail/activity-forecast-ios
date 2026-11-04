@@ -133,3 +133,78 @@ extension ForecastModelTests {
         #expect(model.state == .loading)
     }
 }
+
+// MARK: - Surviving view rebuilds (specs/003 FR-007, data-model.md › ForecastModel)
+
+/// A fold or window resize can rebuild the forecast column, which reruns its `.task`.
+extension ForecastModelTests {
+    private static func countingService(_ calls: Recorder<Place>) -> StubWeatherService {
+        StubWeatherService(forecast: { place in
+            await calls.append(place)
+            return Self.alpineWeek
+        })
+    }
+
+    @Test("loadIfNeeded() on a fresh model loads once")
+    func loadIfNeededLoads() async {
+        let calls = Recorder<Place>()
+        let model = ForecastModel(place: Self.paris, service: Self.countingService(calls))
+        await model.loadIfNeeded()
+        #expect(await calls.values == [Self.paris])
+        #expect(model.state == .loaded(WeeklyRanker.rank(Self.alpineWeek, for: Self.paris)))
+    }
+
+    @Test("loadIfNeeded() after the week is loaded makes no request")
+    func loadIfNeededSkipsWhenLoaded() async {
+        let calls = Recorder<Place>()
+        let model = ForecastModel(place: Self.paris, service: Self.countingService(calls))
+        await model.loadIfNeeded()
+        await model.loadIfNeeded()
+        #expect(await calls.values.count == 1)
+    }
+
+    @Test("retry() always loads again, even when loaded")
+    func retryReloadsWhenLoaded() async {
+        let calls = Recorder<Place>()
+        let model = ForecastModel(place: Self.paris, service: Self.countingService(calls))
+        await model.loadIfNeeded()
+        await model.retry()
+        #expect(await calls.values.count == 2)
+    }
+
+    @Test("A loadIfNeeded() cancelled mid-flight leaves loading, and the next one fetches once")
+    func cancelledLoadIfNeededRestarts() async {
+        let started = Gate()
+        let release = Gate()
+        let calls = Recorder<Place>()
+        let model = ForecastModel(place: Self.paris, service: StubWeatherService(forecast: { place in
+            await calls.append(place)
+            started.open()
+            await release.wait()
+            return Self.alpineWeek
+        }))
+
+        let first = Task { await model.loadIfNeeded() }
+        await started.wait()
+        first.cancel()
+        release.open()
+        await first.value
+        #expect(model.state == .loading)
+
+        await model.loadIfNeeded()
+        #expect(await calls.values.count == 2)
+        #expect(model.state == .loaded(WeeklyRanker.rank(Self.alpineWeek, for: Self.paris)))
+    }
+
+    @Test("selectedDay starts empty and can be set and cleared")
+    func selectedDayRoundTrip() throws {
+        let model = ForecastModel(place: Self.paris, service: StubWeatherService())
+        #expect(model.selectedDay == nil)
+        let ranking = WeeklyRanker.rank(Self.alpineWeek, for: Self.paris)
+        let day = try #require(ranking.rankings.first?.days.first)
+        model.selectedDay = day
+        #expect(model.selectedDay == day)
+        model.selectedDay = nil
+        #expect(model.selectedDay == nil)
+    }
+}

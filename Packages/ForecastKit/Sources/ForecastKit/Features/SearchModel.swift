@@ -15,6 +15,8 @@ public final class SearchModel {
 
     public var query = ""
     public private(set) var state: LoadState<[Place]> = .idle
+    /// Trimmed query that produced the current `.loaded`/`.empty` state, if any.
+    private var lastQuery: String?
 
     private let service: any WeatherService
 
@@ -23,12 +25,18 @@ public final class SearchModel {
     }
 
     /// Searches for the current query, or returns to `.idle` when it is too short.
+    ///
+    /// Asking again for the query whose results are already shown makes no request: the
+    /// sidebar's `.task(id: query)` reruns when a fold or resize rebuilds it (specs/003 FR-007,
+    /// research.md R3).
     public func search() async {
         let trimmed = Self.trimmed(query)
         guard trimmed.count >= Self.minimumQueryLength else {
             state = .idle
+            lastQuery = nil
             return
         }
+        if trimmed == lastQuery, isShowingResults { return }
         state = .loading
         let outcome: LoadState<[Place]>
         do {
@@ -43,11 +51,20 @@ public final class SearchModel {
         }
         guard !Task.isCancelled, Self.trimmed(query) == trimmed else { return }
         state = outcome
+        lastQuery = trimmed
     }
 
-    /// Runs the current search again after a failure (FR-011).
+    /// Runs the current search again (FR-011). Always makes a request.
     public func retry() async {
+        lastQuery = nil
         await search()
+    }
+
+    private var isShowingResults: Bool {
+        switch state {
+        case .loaded, .empty: true
+        case .idle, .loading, .failed: false
+        }
     }
 
     private static func trimmed(_ text: String) -> String {

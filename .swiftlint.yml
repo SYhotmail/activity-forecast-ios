@@ -1,0 +1,30 @@
+# SwiftLint configuration (constitution: Development Workflow & Quality Gates).
+# PR gate: `swiftlint lint --strict` must report zero violations.
+# Rules may only be relaxed here with a one-line justification.
+
+included:
+  - App
+  - Packages/ForecastKit/Sources
+  - Packages/ForecastKit/Tests
+
+excluded:
+  - .build
+  - Packages/ForecastKit/.build
+  - DerivedData
+  - .claude
+
+# 120 columns fits two editor panes; error tightened from the default 200 to 160.
+line_length:
+  warning: 120
+  error: 160
+  ignores_comments: false
+
+# Short idiomatic names (`id`, `x`, loop indices like `i`) are clearer than padded ones.
+identifier_name:
+  min_length:
+    warning: 1
+
+# Codable `CodingKeys` must be nested inside their DTO (DTO > nested DTO > CodingKeys), and
+# ActivityScorer.Factor.Name is a small enum scoped to its factor; two type levels keep both readable.
+nesting:
+  type_level: 2

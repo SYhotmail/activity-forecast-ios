@@ -63,6 +63,6 @@ struct LoadStateView<Value: Sendable, Content: View>: View {
 }
 
 #Preview("Failed") {
-    LoadStateView(state: LoadState<String>.failed(.offline), retry: {}) { Text($0) }
+    LoadStateView(state: LoadState<String>.failed(.offline), retry: {}, content: { Text($0) })
 }
 #endif

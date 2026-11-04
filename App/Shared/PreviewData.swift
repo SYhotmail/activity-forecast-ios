@@ -46,6 +46,8 @@ enum PreviewData {
         forecast: { _ in throw UserFacingError.offline }
     )
 
+    // Mirrors DailyWeather's fields so each preview day reads as one labelled row.
+    // swiftlint:disable function_parameter_count
     private static func day(_ day: Int, code: Int, tmax: Double, tmin: Double,
                             precipitation: Double, probability: Double,
                             wind: Double, gusts: Double, sunshine: Double?) -> DailyWeather {
@@ -55,5 +57,6 @@ enum PreviewData {
                      snowfall: 0, snowDepth: 0, precipitationProbability: probability,
                      windSpeedMax: wind, windGustsMax: gusts, sunshine: sunshine)
     }
+    // swiftlint:enable function_parameter_count
 }
 #endif
