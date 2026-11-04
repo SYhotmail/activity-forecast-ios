@@ -10,6 +10,8 @@ struct WeeklyRankerTests {
         LocalDate(year: 2026, month: 11, day: 3 + offset)!
     }
 
+    // Mirrors DailyWeather's fields so the reference-week tables read as one labelled row per day.
+    // swiftlint:disable function_parameter_count
     /// Builds one fully populated day. Rain equals precipitation unless given.
     static func day(_ offset: Int, code: Int, tmax: Double, tmin: Double,
                     precipitation: Double, rain: Double? = nil, snowfall: Double, depth: Double,
@@ -19,12 +21,16 @@ struct WeeklyRankerTests {
                      snowfall: snowfall, snowDepth: depth, precipitationProbability: probability,
                      windSpeedMax: wind, windGustsMax: gusts, sunshine: sun)
     }
+    // swiftlint:enable function_parameter_count
 
     private func ranking(_ ranking: WeeklyRanking, of activity: Activity) throws -> ActivityRanking {
         try #require(ranking.rankings.first { $0.activity == activity })
     }
 
     // MARK: - SC-003 reference weeks
+
+    // swiftlint:disable line_length
+    // Reference weeks are tables: one day per row with aligned columns, so rows stay unwrapped.
 
     /// Fresh snow on a deep base, well below freezing, light-to-moderate wind.
     static let snowyAlpine: [DailyWeather] = [
@@ -69,6 +75,8 @@ struct WeeklyRankerTests {
         day(5, code: 2, tmax: 22, tmin: 16, precipitation: 0, snowfall: 0, depth: 0, probability: 10, wind: 26, gusts: 42, sun: 7),
         day(6, code: 1, tmax: 21, tmin: 15, precipitation: 0, snowfall: 0, depth: 0, probability: 0, wind: 24, gusts: 38, sun: 8)
     ]
+
+    // swiftlint:enable line_length
 
     @Test("SC-003: snowy alpine week ranks Skiing first")
     func snowyAlpineWeek() {

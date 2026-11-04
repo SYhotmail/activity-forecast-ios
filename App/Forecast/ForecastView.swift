@@ -11,7 +11,7 @@ struct ForecastView: View {
     }
 
     var body: some View {
-        LoadStateView(state: model.state, retry: { await model.retry() }) { ranking in
+        LoadStateView(state: model.state, retry: { await model.retry() }, content: { ranking in
             List {
                 if let subtitle = model.place.subtitle {
                     Text(subtitle)
@@ -26,7 +26,7 @@ struct ForecastView: View {
                     }
                 }
             }
-        }
+        })
         .navigationTitle(model.place.name)
         .task { await model.load() }
         .sheet(item: $selection) { selection in

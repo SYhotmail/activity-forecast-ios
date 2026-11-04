@@ -12,14 +12,15 @@ struct SearchView: View {
             state: model.state,
             idleMessage: "Type at least 2 letters to search",
             emptyMessage: "No places found for '\(model.query)'",
-            retry: { await model.retry() }
-        ) { places in
-            List(places) { place in
-                NavigationLink(value: place) {
-                    PlaceRow(place: place)
+            retry: { await model.retry() },
+            content: { places in
+                List(places) { place in
+                    NavigationLink(value: place) {
+                        PlaceRow(place: place)
+                    }
                 }
             }
-        }
+        )
         .navigationTitle("Activity Forecast")
         .searchable(text: $model.query,
                     placement: .navigationBarDrawer(displayMode: .always),
