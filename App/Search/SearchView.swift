@@ -17,10 +17,12 @@ struct SearchView: View {
             emptyMessage: "No places found for '\(search.query)'",
             retry: { await search.retry() },
             content: { places in
-                List(selection: selection) {
-                    ForEach(places) { place in
+                // Rows are value links: in a wide window the link sets the list selection
+                // (detail column); in compact width, where a collapsed split view only selects
+                // plain rows in edit mode, the same link pushes the forecast (research.md R4).
+                List(places, selection: selection) { place in
+                    NavigationLink(value: place) {
                         PlaceRow(place: place)
-                            .tag(Optional(place))
                     }
                 }
             }

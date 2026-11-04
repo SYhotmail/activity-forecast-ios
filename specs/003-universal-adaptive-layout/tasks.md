@@ -104,7 +104,7 @@ description: "Task list for Universal App with Adaptive Layouts"
   Add `#Preview`s for no selection and a selected place using `PreviewData.service`
 - [X] T011 [US2] Update `App/Search/SearchView.swift`:
   - take `@Bindable var browse: BrowseModel` instead of `model`/`service`, and use `browse.search` for the query, state and retry;
-  - replace `List(places) { NavigationLink(value:) }` with a `List(selection:)` bound to `Binding(get: { browse.selectedPlace }, set: { browse.select($0) })`, with rows `PlaceRow(place:).tag(place)`;
+  - replace `List(places) { NavigationLink(value:) }` with a `List(selection:)` bound to `Binding(get: { browse.selectedPlace }, set: { browse.select($0) })`, with rows `NavigationLink(value: place) { PlaceRow(place:) }` (plain `.tag` rows are not selectable in compact width; fixed after the author's folded-Duo check);
   - remove `.navigationDestination(for: Place.self)`.
 
   Keep the `.searchable`, debounce `.task(id:)`, idle and empty messages unchanged. Update previews to build a `BrowseModel`

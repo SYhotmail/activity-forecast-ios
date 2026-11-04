@@ -19,7 +19,8 @@ Decisions for [plan.md](./plan.md). Format: Decision / Rationale / Alternatives 
 - **Alternatives**: a stored "has started" flag (would wedge in `.loading` after a cancellation); moving loading into `BrowseModel.select` (couples fetching to selection and loses the view-scoped cancellation the app relies on).
 
 ## R4. Selection UI and input
-- **Decision**: the sidebar uses `List(selection:)` bound to `BrowseModel.selectedPlace`, with each row tagged by its `Place`. Selection changes call `BrowseModel.select(_:)`.
+- **Decision**: the sidebar uses `List(selection:)` bound to `BrowseModel.selectedPlace`, with each row a `NavigationLink(value: place)`. Selection changes call `BrowseModel.select(_:)`.
+- **Correction (2026-11-04)**: the first version used plain rows with `.tag(place)`. On the folded iPhone Duo (compact width) tapping a row did nothing, because a collapsed split view's list only selects plain rows in edit mode. Value links set the selection in regular width and push the detail in compact width.
 - **Rationale**: a selection-bound list in a split view gives highlight, arrow-key and pointer selection on iPad for free (FR-008). In compact width it pushes the detail like a `NavigationLink`. `Place` is already `Hashable`.
 - **Alternatives**: keep `NavigationLink(value:)` plus `navigationDestination`. That doesn't drive the detail column of a split view and has no persistent selection highlight.
 
