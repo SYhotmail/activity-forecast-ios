@@ -50,7 +50,7 @@ public struct MapKitPlaceLocator: PlaceLocating {
     // MARK: - Lookups
 
     /// iOS/macOS 26+: city from the first map item's address representations. `regionName` is the
-    /// country; the region is what `cityWithContext` adds after the city ("Cupertino, CA" → "CA").
+    /// country; the region is parsed from `cityWithContext` (see `region(fromCityContext:city:country:)`).
     @available(iOS 26, macOS 26, *)
     private static func mapKitLocality(at location: CLLocation) async throws -> Place? {
         guard let request = MKReverseGeocodingRequest(location: location) else { return nil }
@@ -58,9 +58,7 @@ public struct MapKitPlaceLocator: PlaceLocating {
               let address = item.addressRepresentations,
               let city = address.cityName, !city.isEmpty
         else { return nil }
-        let region = address.cityWithContext.flatMap { context in
-            context.hasPrefix(city + ", ") ? String(context.dropFirst(city.count + 2)) : nil
-        }
+        let region = region(fromCityContext: address.cityWithContext, city: city, country: address.regionName)
         return Place(id: 0, name: city, region: region, country: address.regionName,
                      latitude: item.location.coordinate.latitude,
                      longitude: item.location.coordinate.longitude,
@@ -76,6 +74,19 @@ public struct MapKitPlaceLocator: PlaceLocating {
         return Place(id: 0, name: city, region: placemark.administrativeArea, country: placemark.country,
                      latitude: point.latitude, longitude: point.longitude,
                      timeZone: placemark.timeZone?.identifier ?? "GMT")
+    }
+
+    /// The region inside MapKit's "city, context" string, or `nil` when it only repeats the country.
+    /// Live shapes: "Cupertino, CA United States" → "CA"; "Chamonix, France" → nil; "Courmayeur" → nil.
+    static func region(fromCityContext context: String?, city: String, country: String?) -> String? {
+        guard let context, context.hasPrefix(city + ", ") else { return nil }
+        var rest = Substring(context.dropFirst(city.count + 2))
+        // Drop the country only as a whole trailing part, never from inside a name ("Île-de-France").
+        if let country, rest == country || rest.hasSuffix(" " + country) {
+            rest = rest.dropLast(country.count)
+        }
+        let region = rest.trimmingCharacters(in: CharacterSet(charactersIn: ", ").union(.whitespaces))
+        return region.isEmpty ? nil : region
     }
 
     // MARK: - Error mapping (contracts/place-locating.md › Behaviour)
