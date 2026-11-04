@@ -91,8 +91,8 @@ The original Phases 3–4 planned a `ForecastKitTestSupport` package library (T0
   - Architecture: `App/Features/` holds the view models; `ForecastKit` holds domain, scoring and data; `StubWeatherService` is Debug-only in `App/Shared`, `Gate`/`Recorder` are in `AppTests/Support`; previews stay in `#if DEBUG`;
   - drop the "`App/` contains SwiftUI views only" wording;
   - Test support: `StubURLProtocol` stays in package tests.
-- [ ] T016 Smoke run (quickstart #10): 001 quickstart #1–#6 and 003 quickstart #1–#4 on iPhone 16, iPhone Duo (folded and unfolded) and iPad. Steps needing taps are done by the author; record the results in the PR.
-  - Result (2026-11-04): the build launches and keeps running on iPhone 16, iPhone Duo and iPad Pro 11". The tap-through checks (001 #2–#6, 003 #2–#4) are for the author.
+- [X] T016 Smoke run (quickstart #10): 001 quickstart #1–#6 and 003 quickstart #1–#4 on iPhone 16, iPhone Duo (folded and unfolded) and iPad. Steps needing taps are done by the author; record the results in the PR.
+  - Result (2026-11-04): the build launches and keeps running on iPhone 16, iPhone Duo and iPad Pro 11". The tap-through checks (001 #2–#6, 003 #2–#4) passed, run by the author.
 - [X] T017 Mark completed tasks `[X]`; `git status` shows only planned files; delete `specs/004-viewmodels-in-app/baseline-vm-tests.txt` or keep it as evidence (keep: it documents SC-002).
 
 ---
