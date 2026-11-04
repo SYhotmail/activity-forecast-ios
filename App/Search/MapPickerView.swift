@@ -25,7 +25,15 @@ struct MapPickerView: View {
         MapReader { proxy in
             Map(position: $map.camera) {
                 if let pin = map.pin {
-                    Marker(pin.place?.name ?? "Locating…", coordinate: pin.coordinate.location)
+                    // An annotation rather than a Marker: map content has no accessibility modifiers,
+                    // but an annotation's view does (specs/005 FR-012).
+                    Annotation(pin.place?.name ?? "Locating…", coordinate: pin.coordinate.location,
+                               anchor: .bottom) {
+                        PinView(isLocating: pin.isLocating)
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel(pin.place.map { "Selected place, \($0.name)" }
+                                                ?? "Selected place, locating")
+                    }
                 }
             }
             .onTapGesture { point in
@@ -61,14 +69,33 @@ struct MapPickerView: View {
     }
 }
 
+/// The marker's pin; pulses while the point is being named (spec US3).
+private struct PinView: View {
+    let isLocating: Bool
+
+    var body: some View {
+        Image(systemName: "mappin.circle.fill")
+            .font(.title)
+            .symbolRenderingMode(.palette)
+            .foregroundStyle(.white, .red)
+            .symbolEffect(.pulse, isActive: isLocating)
+            .shadow(radius: 2)
+    }
+}
+
 /// The narrow layout's callout under the map: the named place and a Show forecast button
 /// (specs/005 contracts/ui.md › Narrow layout).
 private struct ShowForecastCallout: View {
     let place: Place
     let showForecast: () -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        HStack(spacing: 12) {
+        // Side by side normally; stacked at accessibility text sizes so nothing is truncated.
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(spacing: 12))
+        layout {
             VStack(alignment: .leading, spacing: 2) {
                 Text(place.name)
                     .font(.headline)
@@ -81,6 +108,7 @@ private struct ShowForecastCallout: View {
             Spacer(minLength: 0)
             Button("Show forecast", action: showForecast)
                 .buttonStyle(.borderedProminent)
+                .frame(minHeight: 44)
         }
         .padding()
         .background(.regularMaterial, in: .rect(cornerRadius: 16))
