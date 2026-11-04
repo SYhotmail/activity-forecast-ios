@@ -50,28 +50,41 @@ Rationale: a fold or an iPad window resize changes the available size at runtime
 layouts are the only approach that handles both, and future form factors, without per-device
 code.
 
-### IV. Test-First Domain Logic
+### IV. Test-First Logic
 
-- Every behaviour in `ForecastKit` (models, scoring, service, view models) MUST start as a
-  failing Swift Testing test (red), then the minimum code to pass (green), then refactor.
+- Every behaviour in `ForecastKit` (domain models, scoring, data layer) MUST start as a failing
+  Swift Testing test (red), then the minimum code to pass (green), then refactor. These tests
+  run with `swift test`, without a simulator.
+- Every behaviour of an app view model (screen state, debouncing, retry, selection, state kept
+  across resizes) MUST follow the same red → green → refactor cycle, with Swift Testing tests in
+  the app unit-test target, run on an iOS simulator.
 - Commit history MUST show the pair: `test: … (red)` followed by `feat:`/`fix: … (green)`.
 - SwiftUI view bodies, assets and the composition root are exempt. They are verified by
   previews, the build and the feature's manual quickstart checks.
 
-Rationale: the scoring model is a heuristic; tests pinned to reference weeks are what keep it
-honest as it changes.
+Rationale: the scoring model is a heuristic, and the view models carry the app's behavioural
+rules (stale results, no refetch on resize). Tests written first are what keep both honest as
+they change.
 
 ### V. Focused Scope and Layered Simplicity
 
-- Dependencies point one way: `App → ForecastKit → Foundation`. `App` holds views only. Domain
-  types MUST NOT import UI frameworks or know about networking.
+- Dependencies point one way: `App → ForecastKit → Foundation`.
+- `App` holds the SwiftUI views and their view models (screen state, including the screen
+  load state), plus the composition root.
+- `ForecastKit` holds only domain models, scoring and the data layer (service protocol,
+  Open-Meteo client, user-facing error categories). It MUST NOT contain view models or screen
+  state. Domain types MUST NOT import UI frameworks or know about networking.
+- Test doubles (e.g. a fake weather service) MUST live in a developer-only test-support library
+  inside the package, linked by test targets and debug previews only. They MUST NOT be part of a
+  production library, and the release app MUST NOT link them.
 - No third-party runtime dependencies. Developer tools that are not linked into the app
   (e.g. SwiftLint) are allowed.
 - Build only what a spec's requirements need. No speculative abstractions, configuration for
   fixed values, or single-implementation protocols without a test or preview double.
 
 Rationale: a small, legible codebase is the product being reviewed; every added layer must
-earn its place.
+earn its place. Presentation state belongs next to the screens that use it, and the package's
+production surface carries nothing a shipping app shouldn't call.
 
 ## Platform & Tooling Constraints
 
@@ -91,7 +104,9 @@ earn its place.
   description MUST record the results:
   1. `swiftlint lint --strict` with zero violations.
   2. `swift test --package-path Packages/ForecastKit` with all tests passing.
-  3. A clean simulator build of the `ActivityForecast` scheme with zero warnings from project
+  3. `xcodebuild test` of the `ActivityForecast` scheme on an iOS simulator, with every app
+     unit test (view models) passing.
+  4. A clean simulator build of the `ActivityForecast` scheme with zero warnings from project
      code.
 - A PR that fails any gate MUST NOT be merged. Gates MUST NOT be bypassed by disabling rules or
   skipping tests; a disabled lint rule needs a justification in `.swiftlint.yml` or inline.
@@ -118,5 +133,8 @@ earn its place.
 - Q: How is "Swift 6.4" enforced, given `SWIFT_VERSION` only offers language modes 5 and 6?
   → A: `swift-tools-version: 6.4` pins the toolchain (Xcode 27+); targets use Swift 6 language
   mode (1.1.1).
+- Q: Where do view models and test doubles live? → A: View models and screen state in `App`,
+  tested in the app unit-test target on a simulator; `ForecastKit` keeps domain, scoring and data;
+  test doubles in a developer-only test-support library in the package (2.0.0).
 
-**Version**: 1.1.1 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-04
+**Version**: 2.0.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-04
