@@ -61,6 +61,8 @@ struct DayDetailView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        // Escape closes the sheet with an iPad hardware keyboard (specs/003 FR-008).
+                        .keyboardShortcut(.cancelAction)
                 }
             }
         }

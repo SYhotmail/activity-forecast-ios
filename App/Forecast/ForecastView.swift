@@ -2,9 +2,10 @@ import SwiftUI
 import ForecastKit
 
 /// One place's week, activities in rank order (contracts/ui.md › Forecast).
+/// All state lives in `model`, so a rebuild after a fold or resize keeps the loaded week and any
+/// open day sheet (specs/003 FR-007, US3).
 struct ForecastView: View {
     let model: ForecastModel
-    @State private var selection: DaySelection?
 
     var body: some View {
         LoadStateView(state: model.state, retry: { await model.retry() }, content: { ranking in
@@ -18,16 +19,21 @@ struct ForecastView: View {
                 }
                 ForEach(ranking.rankings) { activityRanking in
                     ActivitySection(ranking: activityRanking) { day in
-                        selection = DaySelection(day: day)
+                        model.selectedDay = day
                     }
                 }
             }
         })
         .navigationTitle(model.place.name)
-        .task { await model.load() }
-        .sheet(item: $selection) { selection in
+        .task { await model.loadIfNeeded() }
+        .sheet(item: daySelection) { selection in
             DayDetailView(day: selection.day)
         }
+    }
+
+    private var daySelection: Binding<DaySelection?> {
+        Binding(get: { model.selectedDay.map { DaySelection(day: $0) } },
+                set: { model.selectedDay = $0?.day })
     }
 }
 
