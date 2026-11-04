@@ -76,6 +76,7 @@ Weekly score = mean of the days that have data ("No data" days are excluded, nev
 - **Surfing is weather-only.** The Forecast API has no wave or swell data and the brief limits sources to the two APIs, so the app labels surfing accordingly. Adding the Open-Meteo Marine API would be the next step.
 - **Model elevation.** Forecasts are for the grid cell (e.g. ~1,030 m for Chamonix), not ski-resort altitude, so mountain snow can be understated.
 - The scores are a transparent heuristic, not a validated model. The rainy-city margin (Indoor 65 vs Surfing 55) is the closest call and is pinned by a test.
+- **Search needs Latin script.** Open-Meteo geocoding returns nothing for non-Latin queries (e.g. `東京`, `Москва`), so the app shows "No places found"; `Tokyo` works. Accented names such as `Zürich` are fine.
 - Online only. No accounts, favourites, history or caching. Metric units, English, iPhone portrait-first.
 - 7 days = today + 6, in the selected place's local time zone.
 

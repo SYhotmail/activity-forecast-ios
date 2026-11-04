@@ -10,7 +10,7 @@
 open ActivityForecast.xcodeproj        # pick the ActivityForecast scheme and an iPhone simulator, then ⌘R
 # or from the command line:
 xcodebuild -project ActivityForecast.xcodeproj -scheme ActivityForecast \
-  -destination 'platform=iOS Simulator,name=iPhone 16' build
+  -destination 'generic/platform=iOS Simulator' build
 ```
 
 ## Run the tests (no simulator needed)
@@ -38,4 +38,4 @@ TDD loop during development: `swift test --package-path Packages/ForecastKit --f
 | 7 | Quickly type `Lon` → `London` | Only London results remain | FR-012 |
 | 8 | Turn on Network Link Conditioner "100% Loss" (or airplane mode on a device), then search or load a forecast | Offline message + Retry. Turn the network back on, tap Retry, and it loads | FR-011, SC-004 |
 | 9 | Settings → Accessibility → Larger Text at max, reopen Forecast | No truncated text. VoiceOver reads "Skiing, Tuesday 4 November, Good, 61" | FR-015, SC-006 |
-| 10 | Search `Zürich` and `東京` | Results show correctly | Edge cases |
+| 10 | Search `Zürich` and `東京` | `Zürich` lists Zurich, Switzerland. `東京` shows "No places found": Open-Meteo geocoding returns no results for non-Latin queries (checked live 2026-11-04), so search `Tokyo` instead | Edge cases |
