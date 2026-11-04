@@ -187,7 +187,7 @@ Found by T022 on iPhone 18 Pro, and reproduced twice with trace logging. The for
   - Record the constitution I exception (one unstructured task) in plan.md › Complexity Tracking.
 
   Commit `fix: … (005 T024, green)`.
-- [ ] T025 Docs (CLAUDE.md), all gates, then the user re-checks Minsk on iPhone 18 Pro.
+- [X] T025 Docs (CLAUDE.md), all gates, then the user re-checks Minsk on iPhone 18 Pro.
 
 ---
 
