@@ -9,7 +9,7 @@ Domain and data only (constitution V):
 MUST NOT be public here: `LoadState`, `SearchModel`, `ForecastModel`, `BrowseModel`, `StubWeatherService`.
 
 ## Test doubles (not package API)
-- `StubWeatherService`: in the app, `#if DEBUG`, internal. Used by previews and, through `@testable import`, by `ActivityForecastTests`.
+- `StubWeatherService`: in the app, internal, no `#if DEBUG`. Used by previews and, through `@testable import`, by `ActivityForecastTests`; never by production code (only `ActivityForecastApp` chooses the service).
 - `Gate`, `Recorder<Value>`: internal to the `ActivityForecastTests` target.
 
 The release binary MUST contain none of their symbols (checked in quickstart.md #5).

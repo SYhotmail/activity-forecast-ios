@@ -1,9 +1,10 @@
-#if DEBUG
 import ForecastKit
 
 /// Scripted `WeatherService` for unit tests and SwiftUI previews (no network).
-/// Compiled only in Debug, so it never ships in the release app (constitution Principle V).
-/// Shared by SwiftUI previews and by `ActivityForecastTests` through `@testable import`.
+/// A preview and test fixture, shared by SwiftUI previews and by `ActivityForecastTests` through
+/// `@testable import`. It compiles into Release because `#Preview` bodies do, but production code
+/// MUST never use it: only `ActivityForecastApp` chooses the service, and it uses `OpenMeteoClient`
+/// (constitution Principle V).
 struct StubWeatherService: WeatherService {
     var search: @Sendable (String) async throws -> [Place]
     var forecast: @Sendable (Place) async throws -> [DailyWeather]
@@ -24,4 +25,3 @@ struct StubWeatherService: WeatherService {
         try await forecast(place)
     }
 }
-#endif

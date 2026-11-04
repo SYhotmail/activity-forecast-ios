@@ -60,7 +60,7 @@ ForecastKit/Service                  WeatherService ← OpenMeteoClient (URLSess
 ```
 
 - Domain, scoring and data live in a local Swift package, tested with `swift test` (no simulator). View models live in the app and are tested in the hosted `ActivityForecastTests` target.
-- Test doubles never ship: `StubWeatherService` is compiled into the app only in Debug (shared by previews and tests), and previews are wrapped in `#if DEBUG`.
+- Test doubles never ship: `StubWeatherService` and the preview data are `internal` app fixtures (shared by previews and tests). Release whole-module optimisation removes them, verified with `nm` (0 symbols).
 - Search is debounced (300 ms) with `.task(id:)`. Superseded requests are cancelled, and a stale result can never overwrite a newer one (tested).
 - Each screen has one explicit `LoadState` (idle / loading / loaded / empty / failed + Retry).
 - The layout follows the window's width class, never the device: wide windows (iPad, iPhone Duo inner display) show search and forecast side by side, narrow ones collapse to search → forecast → Back. `BrowseModel` owns the search, selection, forecast and open day, so a fold, rotation or resize keeps them without fetching again (tested).

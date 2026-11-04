@@ -11,19 +11,19 @@ Format: Decision / Rationale / Alternatives considered.
 
 ## R2. Where test doubles live (revised during implementation)
 - **Decision**:
-  - `StubWeatherService` lives in the app under `#if DEBUG` (`App/Shared/StubWeatherService.swift`, `internal`). SwiftUI previews and `ActivityForecastTests` share it, the tests through `@testable import ActivityForecast`.
+  - `StubWeatherService` lives in the app as an `internal` type (`App/Shared/StubWeatherService.swift`). SwiftUI previews and `ActivityForecastTests` share it, the tests through `@testable import ActivityForecast`.
   - `Gate` and `Recorder` live in the test target (`AppTests/Support/`).
-  - Previews and `PreviewData` keep `#if DEBUG`.
+  - Previews and `PreviewData` have no `#if DEBUG` (R7, constitution 2.2.0).
   - There is no test-support package library (constitution 2.1.0).
 - **Rationale**: the first design, a `ForecastKitTestSupport` library linked by both the app (for previews) and the test target, failed two checks:
   1. The Release binary contained 78 `StubWeatherService`, 52 `Gate` and 54 `Recorder` symbols. Swift keeps protocol-conformance records, so linking the library ships it even when release code never calls it.
   2. Linking one package product from two targets made Xcode package it as a dynamic framework that embeds its own copy of `ForecastKit`. The test run logged "Class … is implemented in both …", a risk for dynamic casts such as `as? UserFacingError`.
 
-  `#Preview` bodies are type-checked in Release, so preview data can't avoid the release build without `#if DEBUG`. One Debug-only copy in the app fixes all three problems: Release has 0 such symbols, `ForecastKit` is linked once, and the test target links no package products.
+  One `internal` copy in the app fixes both: Release has 0 such symbols (unused internal code is removed by whole-module optimisation, which can't happen for `public` code in another module), `ForecastKit` is linked once, and the test target links no package products.
 - **Alternatives**: make `ForecastKit` a dynamic framework and link the support library into the app for Debug only (fragile: Xcode has no per-configuration package links; adds embedded frameworks); accept the doubles in Release (breaks constitution V).
 
 ## R3. Proving the release app has no test doubles (FR-004)
-- **Decision**: build Release and run `nm` on the app binary. There must be 0 `StubWeatherService`, `Gate`, `Recorder` and `PreviewData` symbols, and no embedded frameworks (quickstart #5). Verified on 2026-11-04: all 0.
+- **Decision**: build Release and run `nm` on the app binary. There must be 0 `StubWeatherService`, `Gate`, `Recorder` and `PreviewData` symbols, and no embedded frameworks (quickstart #5). Verified on 2026-11-04 both with and without `#if DEBUG` around previews: all 0.
 - **Rationale**: the binary is the real proof. Assumptions about dead-stripping turned out to be wrong (R2).
 
 ## R4. App unit-test target
@@ -50,5 +50,6 @@ Format: Decision / Rationale / Alternatives considered.
 - **Rationale**: each commit builds and passes. Step 3 has to be atomic because the tests must move with the types they reference.
 
 ## R7. Previews
-- **Decision**: `PreviewData.swift` and every `#Preview` block are wrapped in `#if DEBUG`. Preview helpers take `any WeatherService`, not the concrete stub.
-- **Rationale**: FR-005 and constitution 2.1.0. Wrapping only `PreviewData` in `#if DEBUG` made the Release build fail with "cannot find 'PreviewData' in scope" in `#Preview` bodies, which proves the bodies are compiled in Release. The owner's earlier request to drop the wrappers was reverted after this finding, with their agreement.
+- **Decision**: no `#if DEBUG` around `#Preview` blocks, `PreviewData` or `StubWeatherService` (owner's request, constitution 2.2.0). Preview helpers take `any WeatherService`, not the concrete stub.
+- **Rationale**: `#Preview` bodies are type-checked in Release, so their data must compile there. Because the fixtures are `internal` to the app module and nothing in production calls them, Release whole-module optimisation removes them. The Release binary has 0 `PreviewData` and 0 `StubWeatherService` symbols, the same result as with the wrappers. The `nm` check (quickstart #5) guards this on every change.
+- **History**: the wrappers were briefly restored while the stub was a `public` type in a separate package library. Public code in another module can't be dead-stripped, which is where the 78 symbols came from.

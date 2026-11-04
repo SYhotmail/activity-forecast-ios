@@ -36,6 +36,7 @@ The spec therefore depends on a constitution amendment (see Clarifications / FR-
 - Q: Where should the fake weather service live? → A: A separate test-support library inside the package, shared by package tests, app tests and app previews. The release app does not link it.
 - Q: Where should view-model tests run once the view models are in the app? → A: A new app unit-test target, run on a simulator as part of the pre-PR gates.
 - Q (revisited during implementation): The test-support library shipped the stub, `Gate` and `Recorder` in the Release binary (78/52/54 symbols) and duplicated `ForecastKit` at runtime once linked by both the app and the test target. How should test doubles be organised? → A: Debug-only in the app (the stub, shared by previews and tests via `@testable import`); `Gate`/`Recorder` in the test target; previews back in `#if DEBUG`; no test-support library. This supersedes the first answer (constitution 2.1.0).
+- Q: Remove the `#if DEBUG` wrappers from previews? → A: Yes (constitution 2.2.0). Preview data and the stub are `internal`, so Release whole-module optimisation removes them: 0 symbols in the Release binary, verified with `nm`.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -106,7 +107,7 @@ Every rule the view models enforce today is still covered by automated tests aft
 - **FR-001**: The package's production library MUST NOT contain the search, forecast or browse view models, or the screen load-state type.
 - **FR-002**: The app MUST contain those view models and the screen load-state type, with unchanged behaviour.
 - **FR-003**: The user-facing error categories MUST remain available to the data layer and to the app.
-- **FR-004**: The fake weather service MUST NOT be part of the package's production library and MUST NOT reach the release app. It lives in the app, compiled only in Debug, and is shared by SwiftUI previews and app tests.
+- **FR-004**: The fake weather service MUST NOT be part of the package's production library and MUST NOT reach the release app. It lives in the app as an `internal` type shared by SwiftUI previews and app tests. Production code never uses it, and the Release binary contains none of its symbols.
 - **FR-005**: App previews MUST keep working in debug builds with canned data and a fake service.
 - **FR-006**: Every existing view-model behaviour test MUST be kept, with unchanged expectations, and MUST run as part of the pre-PR gates, in a new app unit-test target run on a simulator.
 - **FR-007**: Domain, scoring and data-layer tests MUST keep running without a simulator, as today.
@@ -120,7 +121,7 @@ Every rule the view models enforce today is still covered by automated tests aft
 - **User-facing error**: offline, service unavailable, unexpected. It stays in the package, shared by the data layer and the app.
 - **Fake weather service**: the test and preview double. It leaves the package's production library.
 - **Test support utilities**: the timing gate and argument recorder. They are available wherever the view-model tests run.
-- **Debug-only test double**: the fake weather service, compiled into the app in Debug only and reached by tests through `@testable import`.
+- **App-internal test double**: the fake weather service, an `internal` app type used by previews and reached by tests through `@testable import`; removed from Release by optimisation.
 
 ## Success Criteria *(mandatory)*
 

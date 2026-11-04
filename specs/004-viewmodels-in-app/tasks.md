@@ -59,8 +59,8 @@ The original Phases 3–4 planned a `ForecastKitTestSupport` package library (T0
 - gates 1–4 pass.
 
 - [X] T005 [US2] `Packages/ForecastKit/Package.swift` keeps a single product, `ForecastKit` (comment added). The `ForecastKitTestSupport` library briefly added in this task was removed (research R2).
-- [X] T006 [US2] `git mv` `Packages/ForecastKit/Sources/ForecastKit/Service/StubWeatherService.swift` → `App/Shared/StubWeatherService.swift`: internal, wrapped in `#if DEBUG`, `import ForecastKit`. `git mv` `Packages/ForecastKit/Tests/ForecastKitTests/Support/{Gate,Recorder}.swift` → `AppTests/Support/` (internal). `StubURLProtocol.swift` stays in package tests.
-- [X] T007 [US2] `App/Shared/PreviewData.swift` and every `#Preview` block (ActivitySection, DayCell, DayDetailView, ForecastView, RootView, SearchView, LoadStateView) are wrapped in `#if DEBUG` again. `#Preview` bodies are compiled in Release (research R7). The SearchView preview helper takes `any WeatherService`.
+- [X] T006 [US2] `git mv` `Packages/ForecastKit/Sources/ForecastKit/Service/StubWeatherService.swift` → `App/Shared/StubWeatherService.swift`: internal, `import ForecastKit`. `git mv` `Packages/ForecastKit/Tests/ForecastKitTests/Support/{Gate,Recorder}.swift` → `AppTests/Support/` (internal). `StubURLProtocol.swift` stays in package tests.
+- [X] T007 [US2] Previews: the SearchView preview helper takes `any WeatherService`. The `#if DEBUG` wrappers were briefly restored, then removed for good at the owner's request (T018, constitution 2.2.0).
 - [X] T008 [US1] Split `Features/LoadState.swift`: `UserFacingError` moves to `Packages/ForecastKit/Sources/ForecastKit/Service/UserFacingError.swift` (public); `LoadState` moves to `App/Features/LoadState.swift` (internal, `import ForecastKit`).
 - [X] T009 [US1] `git mv` `Packages/ForecastKit/Sources/ForecastKit/Features/{SearchModel,ForecastModel,BrowseModel}.swift` → `App/Features/`, with every `public` removed and `import ForecastKit` added. The empty `Features/` directory is removed.
 - [X] T010 [US3] `git mv` the three view-model suites → `AppTests/`. Imports only: `import ForecastKit` + `@testable import ActivityForecast`. `AppTests/SmokeTests.swift` deleted.
@@ -94,6 +94,7 @@ The original Phases 3–4 planned a `ForecastKitTestSupport` package library (T0
 - [X] T016 Smoke run (quickstart #10): 001 quickstart #1–#6 and 003 quickstart #1–#4 on iPhone 16, iPhone Duo (folded and unfolded) and iPad. Steps needing taps are done by the author; record the results in the PR.
   - Result (2026-11-04): the build launches and keeps running on iPhone 16, iPhone Duo and iPad Pro 11". The tap-through checks (001 #2–#6, 003 #2–#4) passed, run by the author.
 - [X] T017 Mark completed tasks `[X]`; `git status` shows only planned files; delete `specs/004-viewmodels-in-app/baseline-vm-tests.txt` or keep it as evidence (keep: it documents SC-002).
+- [X] T018 Remove every `#if DEBUG` wrapper from the `#Preview` blocks, `App/Shared/PreviewData.swift` and `App/Shared/StubWeatherService.swift` (owner's request). Constitution amended to 2.2.0. Verified: lint 0; `swift test` 69; `xcodebuild test` 69 + 39; clean build with no warnings; Release `nm`: StubWeatherService 0, PreviewData 0, Gate 0, Recorder 0, no frameworks. The internal fixtures are removed by whole-module optimisation. `StubWeatherService(` is constructed only in `PreviewData.swift` and tests; the composition root uses `OpenMeteoClient`.
 
 ---
 
