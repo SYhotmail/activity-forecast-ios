@@ -67,6 +67,7 @@ No foundational phase: US1 and US2 share no code.
 - [X] T010 [P] In `README.md`, add one line under "Run it" (or a short "App icon" note): the icon is drawn by `scripts/make-app-icon.swift`; regenerate with `swift scripts/make-app-icon.swift` after changing it. Update the screenshot `docs/screenshots/01-search-idle.png` only if it shows the Home Screen (it does not today, so normally no change)
 - [X] T011 Run `swift test --package-path Packages/ForecastKit` (still 92 passing) and the simulator build. Walk through quickstart.md checks 1–9 (manual checks that need taps — 3, 4, 6, 7, 8 — by the author) and record the results in the PR
 - [X] T012 Mark completed tasks `[X]` in this file; confirm no files outside plan.md › Project Structure were added (`git status`)
+- [X] T013 Remove `scripts/make-app-icon.swift` and update README, quickstart, plan, research D1 and data-model (bug `remove-icon-script`, `.specify/bugs/remove-icon-script/`)
 
 ---
 
@@ -79,7 +80,7 @@ No foundational phase: US1 and US2 share no code.
 
 ## Parallel opportunities
 
-- US1 and US2 touch disjoint files (`scripts/`, `AppIcon.appiconset/` vs `Formatting.swift`, `ActivitySection.swift`, `DayDetailView.swift`) and can be built concurrently.
+- US1 and US2 touch disjoint files (`scripts/` (since removed), `AppIcon.appiconset/` vs `Formatting.swift`, `ActivitySection.swift`, `DayDetailView.swift`) and can be built concurrently.
 - Within US2: T007 ∥ T008 after T006.
 - T010 (README) ∥ any story task.
 

@@ -5,6 +5,7 @@ Decisions for [plan.md](./plan.md). Format: Decision / Rationale / Alternatives 
 ## D1. How the app icon artwork is produced
 - **Decision**: a checked-in Swift script, `scripts/make-app-icon.swift`, draws the icon with CoreGraphics and writes PNGs with ImageIO. Run with `swift scripts/make-app-icon.swift` on macOS; the generated PNGs are committed.
 - **Rationale**: the project has no designer and no third-party assets (FR-004). Drawing from shapes in code makes the artwork original, reviewable as a text diff and reproducible. Committing the PNGs means building the app never depends on running the script.
+- **Superseded 2026-11-04** (bug `remove-icon-script`): the script was removed once the PNGs were generated. The committed PNGs are now the source of truth; the script remains in git history (commit `2bdeee8`) as the provenance record for FR-004.
 - **Alternatives**: hand-made PNG in an image editor (not reproducible, binary-only review); Icon Composer `.icon` (needs Xcode 26, breaks the Xcode 16 constraint); rasterising an SF Symbol (not allowed: the SF Symbols licence excludes app icons and logos); stock/AI-generated art (licence uncertainty).
 
 ## D2. Icon variants and catalog format

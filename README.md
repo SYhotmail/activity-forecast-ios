@@ -20,7 +20,7 @@ Tests (≈ 0.02 s, no simulator needed):
 swift test --package-path Packages/ForecastKit
 ```
 
-The app icon is drawn from plain shapes by [`scripts/make-app-icon.swift`](scripts/make-app-icon.swift). After changing the artwork, regenerate the PNGs with `swift scripts/make-app-icon.swift`.
+The app icon is original artwork committed as PNGs (Default, Dark and Tinted) in `App/Resources/Assets.xcassets/AppIcon.appiconset/`.
 
 The manual end-to-end checks are listed in [`specs/001-activity-forecast-ranking/quickstart.md`](specs/001-activity-forecast-ranking/quickstart.md).
 
