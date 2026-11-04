@@ -24,6 +24,12 @@ final class SearchModel {
         self.service = service
     }
 
+    /// Whether the sidebar shows the map: only while the trimmed query is empty. One character
+    /// still shows the "type at least 2 letters" hint (specs/005 FR-001).
+    var showsMap: Bool {
+        Self.trimmed(query).isEmpty
+    }
+
     /// Searches for the current query, or returns to `.idle` when it is too short.
     ///
     /// Asking again for the query whose results are already shown makes no request: the
