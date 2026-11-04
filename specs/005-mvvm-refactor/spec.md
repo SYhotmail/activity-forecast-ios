@@ -15,7 +15,7 @@ Out of scope:
 - The search debounce stays view-driven.
 - No ViewData layer.
 - No `ForecastKit` changes.
-- No user-visible change.
+- No user-visible change, except the bug fix in FR-012 (found during the manual check).
 
 ## Context
 
@@ -25,7 +25,7 @@ The app is already layered MVVM: each screen has an observable view model, views
 2. **Wiring in views.** The search screen turns its list selection into a "select this place" call itself. The forecast screen keeps a private wrapper type that makes a day presentable as a sheet, and it maps the view model's open day to and from that wrapper itself.
 3. **Untested wiring.** Because that wiring lives in views, no automated test covers it.
 
-This is a structural change. The end user sees no difference.
+This is a structural change. The end user sees no difference, except that a forecast that could spin forever after picking a new city now loads (FR-012).
 
 ## Clarifications
 
@@ -113,16 +113,16 @@ When the user taps a day, the view asks the forecast view model to show that day
 - **FR-006**: The forecast view model MUST expose the presented day as a value a sheet can bind to directly. It MUST provide an intent to show a day's detail. Dismissing the sheet clears the presented day through that same value (research R3).
 - **FR-007**: The forecast view MUST present the day-detail sheet from that view-model value and route day taps through the show intent. No private presentation wrapper or mapping may remain in the view.
 - **FR-008**: The search debounce MUST stay driven by the view, unchanged (specs/003 research R5).
-- **FR-009**: No user-visible behaviour MAY change: the screens, states, the adaptive layout, keeping state across a resize, accessibility and the release binary's contents.
-- **FR-010**: The new view-model behaviours (FR-004, FR-006) MUST be developed test-first, with red and green commits. All view-model tests that existed before the change MUST still pass, with the same count (renames only).
-- **FR-012**: A forecast request MUST NOT be stopped by the screen's own appear/disappear cycle. It is cancelled only when the place is deselected or replaced (Back, or picking another place); a cancelled request's result is never shown. A second load request while one is running joins it instead of fetching again.
+- **FR-009**: Apart from the FR-012 fix, no user-visible behaviour MAY change: the screens, states, the adaptive layout, keeping state across a resize, accessibility and the release binary's contents.
+- **FR-010**: The new view-model behaviours (FR-004, FR-006) MUST be developed test-first, with red and green commits. All view-model tests that existed before the change MUST still pass under their new names, except two deliberate changes: `selectedDayRoundTrip` is replaced by the presentation tests (FR-006), and the two cancellation tests are rewritten for FR-012 (`cancelledResultDropped` cancels through the view model, and `cancelledLoadIfNeededRestarts` becomes `cancelledViewTaskKeepsLoading`).
 - **FR-011**: The living project documentation (the project guide and the README) MUST describe the new names and layout. Earlier feature specs stay unchanged as history. This feature's data model records the mapping from old names to new.
+- **FR-012**: A forecast request MUST NOT be stopped by the screen's own appear/disappear cycle. It is cancelled only when the place is deselected or replaced (Back, or picking another place), or when a retry supersedes it; a cancelled request's result is never shown. A second load request while one is running joins it instead of fetching again.
 
 ### Key Entities
 
 - **Browse view model**: owns the search, the selected place, and that place's forecast. It now exposes a bindable selection.
 - **Search view model**: the query and the place-search state. It is renamed only.
-- **Forecast view model**: one place's week and the day presented in the detail sheet. It now exposes a show intent; dismissing clears the presented day.
+- **Forecast view model**: one place's week and the day presented in the detail sheet. It now exposes a show intent; dismissing clears the presented day. It owns its fetch, which can be cancelled when the place is deselected (FR-012).
 - **Presented day**: the day whose detail sheet is open, in a form a sheet can identify. It replaces the view's private wrapper.
 - **Load state**: unchanged. It moves to the shared-views folder together with its view.
 
@@ -130,11 +130,12 @@ When the user taps a day, the view asks the forecast view model to show that day
 
 ### Measurable Outcomes
 
-- **SC-001**: All view-model tests from before the change pass under their new names, and every one of them is still there, by count.
+- **SC-001**: After the renames (US1), the view-model test list equals the baseline exactly. At the end it differs only by the replacements and rewrites listed in FR-010 and by the new tests.
 - **SC-002**: At least 5 new view-model tests cover selection (3) and day presentation (2 or more). They are written first, with red then green commits.
 - **SC-003**: The views contain 0 hand-written bindings for selection or the day sheet, and 0 private presentation wrapper types.
 - **SC-004**: All four quality gates pass: lint with 0 violations, package tests, app tests, and a clean build with 0 warnings. The release binary still contains 0 preview or fake-service symbols.
 - **SC-005**: The manual layout checks (iPhone, iPhone Duo outer and inner displays, iPad full screen and Split View) show no behavioural difference from before the change.
+- **SC-006**: Tests prove that a cancelled view task does not stop a forecast request, that a second load joins the running one (one fetch), and that selecting another place cancels the old request. They are written red, then green. On the iPhone 18 Pro, picking a city after an already-loaded one shows its forecast with no endless spinner.
 
 ## Assumptions
 

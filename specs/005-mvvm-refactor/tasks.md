@@ -188,6 +188,7 @@ Found by T022 on iPhone 18 Pro, and reproduced twice with trace logging. The for
 
   Commit `fix: … (005 T024, green)`.
 - [X] T025 Docs (CLAUDE.md), all gates, then the user re-checks Minsk on iPhone 18 Pro.
+- [ ] T026 Re-run quickstart.md › Manual layout checks after FR-012, because the fetch lifetime changed: Duo fold and unfold with a day sheet open and while a forecast is loading (no refetch, no spinner); iPad Split View row switching (the old request is cancelled, the new one loads); Back while loading. Record the results in PR #54.
 
 ---
 
@@ -197,6 +198,7 @@ Found by T022 on iPhone 18 Pro, and reproduced twice with trace logging. The for
 - **US1 (T003–T012)** blocks US2 and US3, because the new tests and code use the final names and paths. Within it, T003 comes first, then T004/T005 [P], then T006, T007, T008/T009 [P], then T010, T011, T012.
 - **US2 (T013–T015)** and **US3 (T016–T018)** are independent of each other once US1 is done; either order works. Within each story, red comes before green, which comes before the view update.
 - **Polish (T019–T022)** comes after all stories. T019 and T020 can run in parallel.
+- **Bug fix (T023–T026)** comes after the polish phase. T023 (red) comes before T024 (green), then T025, then T026.
 
 ## Parallel Opportunities
 

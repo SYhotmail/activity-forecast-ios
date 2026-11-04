@@ -35,14 +35,19 @@ Selection transitions, the same as before:
 - set(other): forecast replaced, together with its `presentedDay`.
 - set(nil): cleared.
 
+`select(_:)` also cancels the replaced forecast's request (FR-012).
+
 ## ForecastViewModel
 
-`place`, `state: LoadState<WeeklyRanking>`, `load()`, `loadIfNeeded()` and `retry()` are unchanged.
+`place` and `state: LoadState<WeeklyRanking>` are unchanged.
 
 | Member | Kind | Behaviour |
 |---|---|---|
 | `presentedDay: PresentedDay?` | **replaces** `selectedDay`, settable | `nil` = no sheet; the sheet binding writes `nil` on dismiss |
 | `showDetail(for day: DaySuitability)` | **new** intent | `presentedDay = PresentedDay(day: day)`; replaces any day already presented |
+| `cancel()` | **new** | stops the fetch in flight; its result is dropped and the state stays as it is |
+| `loadIfNeeded()` | **changed** | still skips when loaded; now joins a fetch in flight instead of starting a second one |
+| `load()` / `retry()` | **changed** | supersede any fetch in flight; a cancelled caller no longer stops the fetch |
 
 Loading never touches `presentedDay`, so a rebuild that calls `loadIfNeeded()` keeps the sheet open (specs/003 US3).
 

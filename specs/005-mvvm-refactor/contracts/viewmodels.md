@@ -12,5 +12,8 @@ This feature has no external interface. The contract here is between each view a
 | `ForecastView` | `.sheet(item: $model.presentedDay)` | `ForecastViewModel.presentedDay` |
 | `ActivitySection` (via `onSelect`) | day tap | `ForecastViewModel.showDetail(for:)` |
 | `ForecastView` | Retry | `ForecastViewModel.retry()` |
+| `SearchView` (selection change, Back) | via `BrowseViewModel.select(_:)` | `ForecastViewModel.cancel()` on the replaced forecast |
+
+The forecast view's `.task` only waits for the load. Cancelling it, as a stray disappear does, never cancels the request (FR-012).
 
 These stay view-local, as transient UI state: `BrowseView.columnVisibility`, `ForecastView`'s `@Namespace` for the zoom transition, and `DayDetailView`'s `dismiss`.

@@ -10,6 +10,7 @@ A behaviour-preserving refactor of the app layer to a stricter MVVM shape:
 1. **Renames and feature slices**: `…Model` → `…ViewModel`, `RootView` → `BrowseView`; each feature's view and view model share one folder. `LoadState` and `LoadStateView` move to `App/Views/LoadStateView/` (research R4).
 2. **Selection in the view model**: `BrowseViewModel.selection` is a computed get/set over `select(_:)`, so the list binds `$browse.selection` directly (R1).
 3. **Day sheet in the view model**: `ForecastViewModel.presentedDay: PresentedDay?` replaces `selectedDay`, and `showDetail(for:)` is the tap intent. The sheet binds `$model.presentedDay`, and the view's `DaySelection` and hand-written binding are deleted (R2, R3).
+4. **Bug fix: the forecast owns its fetch (FR-012)**: a cancelled view `.task` no longer stops the request. `loadIfNeeded()` joins a fetch already in flight, and `BrowseViewModel.select` cancels the replaced forecast's request (R6).
 
 The debounce stays in the view, there is no ViewData layer, and `ForecastKit` is unchanged.
 
@@ -49,14 +50,14 @@ Constitution v2.2.0.
 
 | Principle / Gate | Status |
 |---|---|
-| I. Concurrency | ✅ View models stay main-actor `@Observable`. `PresentedDay` is a `nonisolated` `Sendable` value type. No unsafe escapes, no new async code |
+| I. Concurrency | ⚠️ Justified exception (see Complexity Tracking): `ForecastViewModel` owns one unstructured fetch `Task` (FR-012). It is main-actor isolated, cancelled on deselect, retry or replace, and cancellation never surfaces as an error. Otherwise the view models stay main-actor `@Observable`, `PresentedDay` is a `nonisolated` `Sendable` value type, and there are no unsafe escapes |
 | II. Toolchain | ✅ Unchanged |
 | III. Adaptive layout | ✅ No layout change. The selection and sheet state stay in long-lived view models, so they still survive a fold or resize. The manual 003 checks are re-run (SC-005) |
 | IV. Test-First Logic | ✅ The new behaviour (`selection`, `presentedDay`/`showDetail`) gets red → green pairs. The renames keep every existing test, with the same count (R5) |
 | V. Layering / simplicity | ✅ App-only change. No new protocols, layers or libraries. `dismissDetail()` was dropped because nothing in production would call it (R3). Test doubles are untouched; the `nm` Release check is re-run because previews move |
 | Quality gates 1–4 | ✅ Planned: lint, `swift test`, `xcodebuild test`, clean build (quickstart) |
 
-**Post-design re-check**: ✅ still passes. The design adds one value type and two members, and removes one private type and two hand-written bindings.
+**Post-design re-check**: ✅ passes with one recorded exception (Principle I, FR-012). The design adds one value type, two members for presentation and selection, and the fetch-ownership members (`cancel()`, a private `loadTask`). It removes one private type and two hand-written bindings.
 
 ## Project Structure
 

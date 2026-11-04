@@ -28,3 +28,4 @@ Re-run the selection, sheet and Back items of `specs/003-universal-adaptive-layo
 - iPhone: search → tap place → forecast → tap day → sheet → Done → tap another day → sheet opens → Back.
 - iPhone Duo inner ↔ outer: with a day sheet open, fold and unfold. The sheet, the selection and the loaded week stay, and there is no refetch.
 - iPad, full screen and Split View: selecting a row updates the detail column. Re-selecting the same row does not reload. The sheet zooms from its cell.
+- iPhone 18 Pro (FR-012, SC-006): open a city and let it load, then search `minsk` and open it. The forecast loads, with no endless spinner. Then go Back while a forecast is loading, and open another city: it loads.

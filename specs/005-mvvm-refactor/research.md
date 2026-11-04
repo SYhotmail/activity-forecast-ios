@@ -62,3 +62,12 @@ No unknowns remained in the Technical Context. These are the design decisions be
   2. Phases B and C each have a `test: … (Txxx, red)` commit, then a `feat: … (Txxx, green)` commit.
   3. Docs come last.
 - **Rationale**: Constitution IV requires red/green pairs for new view-model behaviour. Doing the renames first means the new tests are written against the final names.
+
+## R6 — Who owns the forecast request (FR-012)
+
+- **Decision**: `ForecastViewModel` runs each fetch in a `Task` it stores. `load()` awaits that task, so cancelling the caller only stops the waiting. `loadIfNeeded()` joins a fetch already in flight. A newer `load()` (and so `retry()`) supersedes the current fetch, and `cancel()` stops it. `BrowseViewModel.select` cancels the replaced forecast.
+- **Rationale**: two traces on iPhone 18 Pro showed `appear → disappear` on the forecast screen with no Back and no new selection. That cancelled its `.task` while the screen stayed visible, and no further appear came to restart the load.
+- **Alternatives considered**:
+  - Retrying in `onAppear`: it depends on a SwiftUI event that did not arrive.
+  - `.task(id:)` keyed on the place: it is cancelled by the same stray disappear.
+  - Detaching the fetch and never cancelling it: a deselected place would keep fetching.
