@@ -37,7 +37,7 @@ Where a PM or designer would normally be asked, write down the chosen assumption
 - **Surfing**: the Forecast API has no wave or swell data, so surfing is scored from weather proxies only (wind, temperature, no storms). The UI says so.
 - **Outdoor sightseeing**: scores higher when it is dry, comfortable (~15–25 °C), calm and sunny.
 - **Indoor sightseeing**: always possible, so it has a baseline score that rises as outdoor conditions get worse.
-- **Search**: results show name, region and country so places with the same name can be told apart. Older responses never overwrite newer ones while the user is typing.
+- **Search**: results show name, region and country so places with the same name can be told apart. Older responses never overwrite newer ones while the user is typing. A place can also be chosen by tapping a map (Apple MapKit, additive to Open-Meteo search; see specs/005 and constitution 2.3.0).
 - **States**: loading, empty results, offline and service errors are all shown, with a retry.
 - Metric units, English only, internet required. No accounts, favourites, history or offline cache.
 - Basic accessibility: scalable text and screen-reader labels.

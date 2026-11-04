@@ -1,8 +1,8 @@
 # Activity Forecast (iOS)
 
-Search for a city or town and see how good each of the next 7 days is for **skiing, surfing, outdoor sightseeing and indoor sightseeing**. The four activities are ranked for the week. Every day gets a 0–100 score (Poor / Fair / Good / Excellent) and a plain-language reason, and each activity's best day is starred.
+Search for a city or town, or tap any point on the map, and see how good each of the next 7 days is for **skiing, surfing, outdoor sightseeing and indoor sightseeing**. The four activities are ranked for the week. Every day gets a 0–100 score (Poor / Fair / Good / Excellent) and a plain-language reason, and each activity's best day is starred.
 
-Weather comes from Open-Meteo's [Geocoding](https://open-meteo.com/en/docs/geocoding-api) and [Forecast](https://open-meteo.com/en/docs) APIs. There is no backend and no API key.
+Weather comes from Open-Meteo's [Geocoding](https://open-meteo.com/en/docs/geocoding-api) and [Forecast](https://open-meteo.com/en/docs) APIs. Points picked on the map are named with Apple MapKit, because Open-Meteo has no reverse geocoding. There is no backend and no API key.
 
 <img src="docs/screenshots/01-search-idle.png" width="280" alt="Search screen">
 
@@ -51,12 +51,13 @@ AI wrote most of the code. These checks were the guard against unverified output
 Layered **MVVM** with one-way dependencies (`App → ForecastKit → Foundation`):
 
 ```
-App/ (views)                         RootView (NavigationSplitView): Search | Forecast → Day detail sheet
+App/ (views)                         RootView (NavigationSplitView): Search or Map | Forecast → Day detail sheet
   ↓ observes / calls
-App/Features (view models)           BrowseModel → SearchModel, ForecastModel  (@Observable, MainActor by default, LoadState)
+App/Features (view models)           BrowseModel → SearchModel, MapPickerModel, ForecastModel  (@Observable, MainActor by default)
   ↓ uses
-ForecastKit/Scoring + Models         ActivityScorer, WeeklyRanker: pure, deterministic
+ForecastKit/Scoring + Models         ActivityScorer, WeeklyRanker, MapSelection: pure, deterministic
 ForecastKit/Service                  WeatherService ← OpenMeteoClient (URLSession + Codable), UserFacingError
+                                     PlaceLocating ← MapKitPlaceLocator (MapKit reverse geocoding)
 ```
 
 - Domain, scoring and data live in a local Swift package, tested with `swift test` (no simulator). View models live in the app and are tested in the hosted `ActivityForecastTests` target.
@@ -64,6 +65,7 @@ ForecastKit/Service                  WeatherService ← OpenMeteoClient (URLSess
 - Search is debounced (300 ms) with `.task(id:)`. Superseded requests are cancelled, and a stale result can never overwrite a newer one (tested).
 - Each screen has one explicit `LoadState` (idle / loading / loaded / empty / failed + Retry).
 - The layout follows the window's width class, never the device: wide windows (iPad, iPhone Duo inner display) show search and forecast side by side, narrow ones collapse to search → forecast → Back. `BrowseModel` owns the search, selection, forecast and open day, so a fold, rotation or resize keeps them without fetching again (tested).
+- An empty search shows a map. A tap drops a marker straight away, names it after the nearest town within 25 km (or its coordinates), and shows its week: at once in a wide window, after **Show forecast** in a narrow one. Only the latest tap can name the marker (tested).
 - `LocalDate` keeps forecast days as calendar components in the place's time zone, so the device time zone can never shift a day.
 
 ## Scoring model
@@ -85,11 +87,13 @@ Weekly score = mean of the days that have data ("No data" days are excluded, nev
 - **Model elevation.** Forecasts are for the grid cell (e.g. ~1,030 m for Chamonix), not ski-resort altitude, so mountain snow can be understated.
 - The scores are a transparent heuristic, not a validated model. The rainy-city margin (Indoor 65 vs Surfing 55) is the closest call and is pinned by a test.
 - **Search needs Latin script.** Open-Meteo geocoding returns nothing for non-Latin queries (e.g. `東京`, `Москва`), so the app shows "No places found"; `Tokyo` works. Accented names such as `Zürich` are fine.
+- **Map names come from Apple, not Open-Meteo.** A point picked on the map is named after the nearest locality within 25 km, otherwise by its coordinates; its forecast is always for the exact point. The app never asks for your location: the map opens on your device region's country.
 - Online only. No accounts, favourites, history or caching. Metric units, English.
 - 7 days = today + 6, in the selected place's local time zone.
 
 ## Trade-offs
 
+- **MapKit for the map**: a system framework, keyless and permission-free, so it keeps the "no third-party code, no API key" rule. It is the only way to name a tapped point without a second weather-unrelated service; the constitution (2.3.0) limits it to map display and the data layer.
 - **No third-party code**: there are only two GET endpoints. `URLSession` + `Codable` + Swift Testing covers it, and there is nothing to vet or update.
 - **One package, not several modules**: about 25 source files don't justify more boundaries. The package line already keeps views away from networking.
 - **No UI test suite**: XCUITests cost a lot to keep up for three screens. The logic is tested underneath and previews cover the states. With more time, I'd add one smoke UI test (search → forecast).
