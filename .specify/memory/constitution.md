@@ -68,7 +68,9 @@ they change.
 
 ### V. Focused Scope and Layered Simplicity
 
-- Dependencies point one way: `App → ForecastKit → Foundation`.
+- Dependencies point one way: `App → ForecastKit → Foundation`. Apple system frameworks are not
+  dependencies in this sense, with one limit: inside `ForecastKit`, MapKit and CoreLocation MAY be
+  imported by the data layer (`Service/`) only, for reverse geocoding and region lookup.
 - `App` holds the SwiftUI views and their view models (screen state, including the screen
   load state), plus the composition root.
 - `ForecastKit` holds only domain models, scoring and the data layer (service protocol,
@@ -98,8 +100,10 @@ production surface carries nothing a shipping app shouldn't call.
   deployment target.
 - Toolchain: Xcode 27+ / Swift 6.4 (`swift-tools-version: 6.4`), Swift 6 language mode
   (Principle II).
-- Data: Open-Meteo Geocoding and Forecast APIs only, called directly. No backend, no API key,
-  no persistence beyond the session.
+- Data: Open-Meteo Geocoding and Forecast APIs, called directly, for place search and weather.
+  Apple MapKit/CoreLocation (system frameworks, keyless) for map display and naming a map point
+  (reverse geocoding). No location permission, no backend, no API key, no persistence beyond the
+  session.
 - Lint: SwiftLint, configured by a checked-in `.swiftlint.yml` at the repository root.
 
 ## Development Workflow & Quality Gates
@@ -146,5 +150,9 @@ production surface carries nothing a shipping app shouldn't call.
   `ForecastKit` at runtime.
 - Q: Must previews be wrapped in `#if DEBUG`? → A: No (2.2.0). Fixtures are `internal` to the app,
   and Release whole-module optimisation removes them; verified with `nm` (0 symbols).
+- Q: May the app use Apple MapKit for choosing a place on a map? → A: Yes (2.3.0). MapKit/CoreLocation
+  for map display (App) and reverse geocoding (ForecastKit `Service/` only); keyless, no location
+  permission. Open-Meteo has no reverse geocoding (specs/005 research R2, R9). Domain and scoring
+  types still import only Foundation.
 
-**Version**: 2.2.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-04
+**Version**: 2.3.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-04
