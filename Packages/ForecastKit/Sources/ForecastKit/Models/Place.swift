@@ -20,6 +20,11 @@ public struct Place: Sendable, Hashable, Identifiable {
         self.timeZone = timeZone
     }
 
+    /// Where the forecast is fetched for (specs/005 data-model.md).
+    public var coordinate: Coordinate {
+        Coordinate(latitude: latitude, longitude: longitude)
+    }
+
     /// "Region, Country" with missing or empty parts dropped; `nil` when neither is known.
     public var subtitle: String? {
         let parts = [region, country].compactMap { $0 }.filter { !$0.isEmpty }
