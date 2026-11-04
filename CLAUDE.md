@@ -16,6 +16,13 @@ swift test --package-path Packages/ForecastKit
 swift test --package-path Packages/ForecastKit --filter WeeklyRankerTests
 swift test --package-path Packages/ForecastKit --filter "ActivityScorerTests/<testName>"
 
+# App view-model tests (hosted ActivityForecastTests) plus the package tests, on a simulator
+xcodebuild test -project ActivityForecast.xcodeproj -scheme ActivityForecast \
+  -destination 'platform=iOS Simulator,name=iPhone 16'
+# One app suite
+xcodebuild test -project ActivityForecast.xcodeproj -scheme ActivityForecast \
+  -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:ActivityForecastTests/SearchModelTests
+
 # Lint (PR gate: zero violations; config in .swiftlint.yml)
 swiftlint lint --strict
 
@@ -24,21 +31,21 @@ xcodebuild -project ActivityForecast.xcodeproj -scheme ActivityForecast \
   -destination 'generic/platform=iOS Simulator' build
 ```
 
-Before any PR, `swiftlint lint --strict`, the tests and a clean simulator build must all pass (`.specify/memory/constitution.md` › Quality Gates). There is no UI test target; screens are covered by SwiftUI previews (`App/Shared/PreviewData.swift`) and the manual checklists in `specs/001-activity-forecast-ranking/quickstart.md` and `specs/003-universal-adaptive-layout/quickstart.md` (iPhone, iPhone Duo, iPad window sizes).
+Before any PR, `swiftlint lint --strict`, `swift test`, `xcodebuild test` and a clean simulator build must all pass (`.specify/memory/constitution.md` › Quality Gates). There is no UI test target; screens are covered by SwiftUI previews (`App/Shared/PreviewData.swift`) and the manual checklists in `specs/001-activity-forecast-ranking/quickstart.md` and `specs/003-universal-adaptive-layout/quickstart.md` (iPhone, iPhone Duo, iPad window sizes).
 
 ## Architecture
 
-Layered MVVM, one-way dependencies `App → ForecastKit → Foundation`. All logic lives in the local package `Packages/ForecastKit` (referenced by the `.xcodeproj` as a local package) so it is testable with `swift test`; `App/` contains SwiftUI views only.
+Layered MVVM, one-way dependencies `App → ForecastKit → Foundation`. `App/` holds the SwiftUI views and their view models (`App/Features/`). The local package `Packages/ForecastKit` (one product) holds only domain, scoring and data, tested with `swift test`. View models are tested in the hosted `ActivityForecastTests` target (`AppTests/`), which links no package products: `ForecastKit` resolves from the host app, so there is one copy at runtime.
 
 - **Layout**: `App/RootView.swift` is a `NavigationSplitView` (search sidebar, forecast detail) pinned to `.balanced`/all columns. Compact width collapses it into the push flow, so the layout depends on width class only. `BrowseModel` holds the search, selected place, forecast and open day (`ForecastModel.selectedDay`); views call `loadIfNeeded()` / idempotent `search()` because a fold or resize can rebuild them.
-- **`Features/`**: `SearchModel`, `ForecastModel`, `BrowseModel` are `@MainActor @Observable` and expose a single `LoadState<Value>` (idle / loading / loaded / empty / failed). Failures are surfaced only as `UserFacingError` (offline / serviceUnavailable / unexpected) with retry. Search is debounced (300 ms, driven from the view via `.task(id:)`); superseded requests are cancelled and stale results must never overwrite newer ones — this is tested.
+- **`App/Features/`** (internal): `SearchModel`, `ForecastModel`, `BrowseModel` are `@MainActor @Observable` and expose a single `LoadState<Value>` (idle / loading / loaded / empty / failed). Failures are surfaced only as `UserFacingError` (offline / serviceUnavailable / unexpected) with retry. Search is debounced (300 ms, driven from the view via `.task(id:)`); superseded requests are cancelled and stale results must never overwrite newer ones — this is tested.
 - **`Scoring/`**: `ActivityScorer` (per-day score + plain-language reason) and `WeeklyRanker` (weekly mean over days with data, ranking, best-day star) are pure and deterministic. Factors are normalised with piecewise-linear ramps (`Ramp`) plus hard caps. The authoritative weight table is `research.md` R9; `WeeklyRankerTests` pins four reference weeks (snowy alpine, rainy city, sunny coast, hot/dry) — changing weights must keep those passing. Indoor = `30 + 0.6 × (100 − outdoor)`; best day is starred only at ≥ 25 (Fair); "No data" days are excluded, never counted as 0.
-- **`Service/`**: `WeatherService` protocol is the data boundary; `OpenMeteoClient` (URLSession + Codable DTOs in `OpenMeteoDTOs.swift`) is the live impl, `StubWeatherService` the fake for previews/model tests. `ActivityForecastApp` is the composition root and the only place that chooses the live service.
+- **`Service/`**: `WeatherService` protocol is the data boundary; `OpenMeteoClient` (URLSession + Codable DTOs in `OpenMeteoDTOs.swift`) is the live impl (it throws `UserFacingError`, also in `Service/`); the fake for previews and tests is the app's Debug-only `StubWeatherService`. `ActivityForecastApp` is the composition root and the only place that chooses the live service.
 - **`Models/`**: `LocalDate` keeps forecast days as calendar components in the *place's* time zone, so the device time zone never shifts a day. "7 days" = today + 6 in that zone.
 
 Open-Meteo quirks already encoded in the client (verified live): a geocoding search with no matches omits `results`; snow depth is hourly-only and in metres. Fixtures in `Tests/ForecastKitTests/Fixtures/` are recorded live responses.
 
-Test support: `StubURLProtocol` holds a process-wide handler, so any suite using it must be `@Suite(..., .serialized)`. In model tests, `Gate` scripts when an async stub returns, and `Recorder` captures the arguments stubs received.
+Test support: `StubURLProtocol` (package tests) holds a process-wide handler, so any suite using it must be `@Suite(..., .serialized)`. `StubWeatherService` lives in `App/Shared/` under `#if DEBUG` and is shared by previews and app tests (`@testable import ActivityForecast`); it must never be public or reach Release. In app tests, `AppTests/Support/Gate` scripts when an async stub returns, and `Recorder` captures the arguments stubs received. Keep `#Preview` blocks and `PreviewData` inside `#if DEBUG`: `#Preview` bodies are compiled in Release.
 
 ## Workflow conventions
 

@@ -82,11 +82,11 @@ The original Phases 3–4 planned a `ForecastKitTestSupport` package library (T0
 
 ## Phase 5: Polish
 
-- [ ] T014 [P] Update `README.md`:
+- [X] T014 [P] Update `README.md`:
   - Architecture diagram: `App/ (views + Features: BrowseModel, SearchModel, ForecastModel, LoadState)` → `ForecastKit (Models, Scoring, Service)`; test doubles are Debug-only in the app;
   - add the `xcodebuild test` command to the test commands;
   - replace "All logic lives in a local Swift package" with "Domain, scoring and data live in the package; view models live in the app and are tested in `ActivityForecastTests`".
-- [ ] T015 [P] Update `CLAUDE.md`:
+- [X] T015 [P] Update `CLAUDE.md`:
   - Commands: add `xcodebuild test … -destination 'platform=iOS Simulator,name=iPhone 16'` and `-only-testing:ActivityForecastTests/<Suite>` for one suite;
   - Architecture: `App/Features/` holds the view models; `ForecastKit` holds domain, scoring and data; `StubWeatherService` is Debug-only in `App/Shared`, `Gate`/`Recorder` are in `AppTests/Support`; previews stay in `#if DEBUG`;
   - drop the "`App/` contains SwiftUI views only" wording;
