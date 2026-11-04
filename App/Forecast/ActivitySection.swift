@@ -29,7 +29,7 @@ struct ActivitySection: View {
                     .foregroundStyle(.secondary)
             }
         } header: {
-            Text(Formatting.sectionHeader(ranking))
+            Label(Formatting.sectionHeader(ranking), systemImage: ranking.activity.symbolName)
                 .font(.headline)
                 .foregroundStyle(.primary)
                 .textCase(nil)

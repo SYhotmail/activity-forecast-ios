@@ -51,6 +51,11 @@ struct DayDetailView: View {
             .navigationTitle(day.activity.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Label(day.activity.title, systemImage: day.activity.symbolName)
+                        .labelStyle(.titleAndIcon)
+                        .font(.headline)
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
