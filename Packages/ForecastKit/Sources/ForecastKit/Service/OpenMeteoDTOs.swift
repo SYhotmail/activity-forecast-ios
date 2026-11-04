@@ -47,18 +47,21 @@ struct ForecastResponseDTO: Decodable {
         let windGusts10mMax: [Double?]?
         let sunshineDuration: [Double?]?
 
+        /// `.convertFromSnakeCase` turns `temperature_2m_max` into `temperature2MMax` (it
+        /// capitalises the segment after `_`, even when it starts with a digit), so the
+        /// digit-bearing keys need their converted spelling here. The rest match as is.
         enum CodingKeys: String, CodingKey {
             case time
-            case weatherCode = "weather_code"
-            case temperature2mMax = "temperature_2m_max"
-            case temperature2mMin = "temperature_2m_min"
-            case precipitationSum = "precipitation_sum"
-            case rainSum = "rain_sum"
-            case snowfallSum = "snowfall_sum"
-            case precipitationProbabilityMax = "precipitation_probability_max"
-            case windSpeed10mMax = "wind_speed_10m_max"
-            case windGusts10mMax = "wind_gusts_10m_max"
-            case sunshineDuration = "sunshine_duration"
+            case weatherCode
+            case precipitationSum
+            case rainSum
+            case snowfallSum
+            case precipitationProbabilityMax
+            case sunshineDuration
+            case temperature2mMax = "temperature2MMax"
+            case temperature2mMin = "temperature2MMin"
+            case windSpeed10mMax = "windSpeed10MMax"
+            case windGusts10mMax = "windGusts10MMax"
         }
     }
 
@@ -67,11 +70,6 @@ struct ForecastResponseDTO: Decodable {
         let time: [String]
         /// Metres.
         let snowDepth: [Double?]?
-
-        enum CodingKeys: String, CodingKey {
-            case time
-            case snowDepth = "snow_depth"
-        }
     }
 
     /// Maps to domain days. Days whose date cannot be parsed are dropped.

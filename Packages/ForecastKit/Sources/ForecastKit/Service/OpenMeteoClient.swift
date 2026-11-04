@@ -55,7 +55,7 @@ public struct OpenMeteoClient: WeatherService {
         components.queryItems = query.map { URLQueryItem(name: $0.0, value: $0.1) }
         // Built from constant parts, so a URL always results.
         var request = URLRequest(url: components.url!)
-        request.httpMethod = "GET"
+        assert(request.httpMethod == "GET")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         return request
     }
@@ -72,8 +72,10 @@ public struct OpenMeteoClient: WeatherService {
         }
         guard let http = response as? HTTPURLResponse else { throw UserFacingError.unexpected }
         guard (200..<300).contains(http.statusCode) else { throw UserFacingError.serviceUnavailable }
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
         do {
-            return try JSONDecoder().decode(Response.self, from: data)
+            return try decoder.decode(Response.self, from: data)
         } catch {
             throw UserFacingError.unexpected
         }
@@ -81,7 +83,7 @@ public struct OpenMeteoClient: WeatherService {
 
     /// Transport errors → `UserFacingError`, except cancellation which stays `CancellationError`.
     static func map(_ error: any Error) -> any Error {
-        if error is CancellationError { return CancellationError() }
+        if error is CancellationError { return error }
         guard let urlError = error as? URLError else { return UserFacingError.unexpected }
         switch urlError.code {
         case .cancelled:

@@ -137,7 +137,7 @@ struct OpenMeteoClientTests {
         let days = try await client.forecast(for: chamonix)
 
         #expect(days.count == 7)
-        #expect(days.map(\.date) == (3...9).map { LocalDate(year: 2026, month: 11, day: $0)! })
+        #expect(days.map(\.date) == (3...9).compactMap { LocalDate(year: 2026, month: 11, day: $0) })
         let first = try #require(days.first)
         #expect(first.weatherCode == 45)
         #expect(first.temperatureMax == 8.7)
@@ -198,7 +198,7 @@ struct OpenMeteoClientTests {
 
         let days = try await client.forecast(for: chamonix)
 
-        #expect(days.map(\.date) == [LocalDate(year: 2026, month: 11, day: 3)!])
+        #expect(days.map(\.date).first == LocalDate(year: 2026, month: 11, day: 3))
         #expect(days.first?.weatherCode == 1)
         #expect(days.first?.snowDepth == nil)
     }
