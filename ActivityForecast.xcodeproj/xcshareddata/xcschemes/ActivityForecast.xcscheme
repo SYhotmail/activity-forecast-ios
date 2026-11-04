@@ -38,6 +38,16 @@
                ReferencedContainer = "container:Packages/ForecastKit">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A10000000000000000000035"
+               BuildableName = "ActivityForecastTests.xctest"
+               BlueprintName = "ActivityForecastTests"
+               ReferencedContainer = "container:ActivityForecast.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

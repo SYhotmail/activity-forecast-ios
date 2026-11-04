@@ -33,7 +33,7 @@ description: "Task list for View Models Live in the App"
 
 ## Phase 2: Foundational (blocks US1 and US3): app unit-test target
 
-- [ ] T003 Add the hosted unit-test target `ActivityForecastTests` to `ActivityForecast.xcodeproj/project.pbxproj` (research R4), preferably via Xcode › File › New › Target › Unit Testing Bundle (Swift Testing, target to be tested: ActivityForecast):
+- [X] T003 Add the hosted unit-test target `ActivityForecastTests` to `ActivityForecast.xcodeproj/project.pbxproj` (research R4), preferably via Xcode › File › New › Target › Unit Testing Bundle (Swift Testing, target to be tested: ActivityForecast):
   - product type `com.apple.product-type.bundle.unit-test`;
   - `TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ActivityForecast.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ActivityForecast"`, `BUNDLE_LOADER = "$(TEST_HOST)"`;
   - `IPHONEOS_DEPLOYMENT_TARGET = 18.0`, `SWIFT_VERSION = 6.0`, `GENERATE_INFOPLIST_FILE = YES`, `TARGETED_DEVICE_FAMILY = "1,2"`, bundle id `com.example.ActivityForecastTests`;
@@ -42,7 +42,7 @@ description: "Task list for View Models Live in the App"
   - package product dependencies `ForecastKit` (and `ForecastKitTestSupport`, added in T006).
 
   Create `AppTests/SmokeTests.swift` with one `@Test func appModuleLinks()` that does `@testable import ActivityForecast` and passes. It proves the wiring and is deleted in T011.
-- [ ] T004 Add `ActivityForecastTests` as a `TestableReference` (`skipped = "NO"`) in the Test action of `ActivityForecast.xcodeproj/xcshareddata/xcschemes/ActivityForecast.xcscheme`, next to the existing `ForecastKitTests` entry. Run gate 3 and expect `ForecastKitTests` and the smoke test to pass. Commit `chore: app unit-test target ActivityForecastTests (004 T003-T004)`.
+- [X] T004 Add `ActivityForecastTests` as a `TestableReference` (`skipped = "NO"`) in the Test action of `ActivityForecast.xcodeproj/xcshareddata/xcschemes/ActivityForecast.xcscheme`, next to the existing `ForecastKitTests` entry. Run gate 3 and expect `ForecastKitTests` and the smoke test to pass. Commit `chore: app unit-test target ActivityForecastTests (004 T003-T004)`.
 
 **Checkpoint**: `xcodebuild test` runs both bundles.
 
