@@ -3,12 +3,8 @@ import ForecastKit
 
 /// One place's week, activities in rank order (contracts/ui.md › Forecast).
 struct ForecastView: View {
-    @State private var model: ForecastModel
+    let model: ForecastModel
     @State private var selection: DaySelection?
-
-    init(place: Place, service: any WeatherService) {
-        _model = State(initialValue: ForecastModel(place: place, service: service))
-    }
 
     var body: some View {
         LoadStateView(state: model.state, retry: { await model.retry() }, content: { ranking in
@@ -43,14 +39,18 @@ private struct DaySelection: Identifiable {
 
 #if DEBUG
 #Preview("Loaded") {
-    NavigationStack { ForecastView(place: PreviewData.paris, service: PreviewData.service) }
+    NavigationStack { ForecastView(model: ForecastModel(place: PreviewData.paris, service: PreviewData.service)) }
 }
 
 #Preview("Loading") {
-    NavigationStack { ForecastView(place: PreviewData.paris, service: PreviewData.hangingService) }
+    NavigationStack {
+        ForecastView(model: ForecastModel(place: PreviewData.paris, service: PreviewData.hangingService))
+    }
 }
 
 #Preview("Failed") {
-    NavigationStack { ForecastView(place: PreviewData.paris, service: PreviewData.offlineService) }
+    NavigationStack {
+        ForecastView(model: ForecastModel(place: PreviewData.paris, service: PreviewData.offlineService))
+    }
 }
 #endif

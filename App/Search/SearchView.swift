@@ -1,43 +1,49 @@
 import SwiftUI
 import ForecastKit
 
-/// Root screen: search a city or town and pick one (contracts/ui.md › Search).
+/// Sidebar / root screen: search a city or town and pick one (contracts/ui.md › Search).
+/// The selection drives the detail column, or pushes the forecast in compact width
+/// (specs/003 research.md R4).
 struct SearchView: View {
-    @Bindable var model: SearchModel
-    /// Handed to each pushed forecast screen.
-    let service: any WeatherService
+    @Bindable var browse: BrowseModel
+
+    private var search: SearchModel { browse.search }
 
     var body: some View {
+        @Bindable var search = search
         LoadStateView(
-            state: model.state,
+            state: search.state,
             idleMessage: "Type at least 2 letters to search",
-            emptyMessage: "No places found for '\(model.query)'",
-            retry: { await model.retry() },
+            emptyMessage: "No places found for '\(search.query)'",
+            retry: { await search.retry() },
             content: { places in
-                List(places) { place in
-                    NavigationLink(value: place) {
+                List(selection: selection) {
+                    ForEach(places) { place in
                         PlaceRow(place: place)
+                            .tag(Optional(place))
                     }
                 }
             }
         )
         .navigationTitle("Activity Forecast")
-        .searchable(text: $model.query,
+        .searchable(text: $search.query,
                     placement: .navigationBarDrawer(displayMode: .always),
                     prompt: "Search a city or town")
         .autocorrectionDisabled()
-        .task(id: model.query) {
+        .task(id: search.query) {
             // Debounce: a newer query cancels this task before the request starts (R5, FR-012).
             do {
                 try await Task.sleep(for: .milliseconds(300))
             } catch {
                 return
             }
-            await model.search()
+            await search.search()
         }
-        .navigationDestination(for: Place.self) { place in
-            ForecastView(place: place, service: service)
-        }
+    }
+
+    /// Selecting a row (tap, click or arrow keys + Return) selects the place (FR-008).
+    private var selection: Binding<Place?> {
+        Binding(get: { browse.selectedPlace }, set: { browse.select($0) })
     }
 }
 
@@ -61,9 +67,9 @@ private struct PlaceRow: View {
 #if DEBUG
 @MainActor
 private func searchPreview(_ service: StubWeatherService, query: String) -> some View {
-    let model = SearchModel(service: service)
-    model.query = query
-    return NavigationStack { SearchView(model: model, service: service) }
+    let browse = BrowseModel(service: service)
+    browse.search.query = query
+    return NavigationStack { SearchView(browse: browse) }
 }
 
 #Preview("Idle") { searchPreview(PreviewData.service, query: "") }
