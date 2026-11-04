@@ -5,9 +5,9 @@ import ForecastKit
 /// The selection drives the detail column, or pushes the forecast in compact width
 /// (specs/003 research.md R4).
 struct SearchView: View {
-    @Bindable var browse: BrowseModel
+    @Bindable var browse: BrowseViewModel
 
-    private var search: SearchModel { browse.search }
+    private var search: SearchViewModel { browse.search }
 
     var body: some View {
         @Bindable var search = search
@@ -20,7 +20,8 @@ struct SearchView: View {
                 // Rows are value links: in a wide window the link sets the list selection
                 // (detail column); in compact width, where a collapsed split view only selects
                 // plain rows in edit mode, the same link pushes the forecast (research.md R4).
-                List(places, selection: selection) { place in
+                // Selecting a row (tap, click or arrow keys + Return) selects the place (FR-008).
+                List(places, selection: $browse.selection) { place in
                     NavigationLink(value: place) {
                         PlaceRow(place: place)
                     }
@@ -42,11 +43,6 @@ struct SearchView: View {
             await search.search()
         }
     }
-
-    /// Selecting a row (tap, click or arrow keys + Return) selects the place (FR-008).
-    private var selection: Binding<Place?> {
-        Binding(get: { browse.selectedPlace }, set: { browse.select($0) })
-    }
 }
 
 /// Name first, then "region, country" so same-named places can be told apart (FR-002).
@@ -67,7 +63,7 @@ private struct PlaceRow: View {
 }
 
 private func searchPreview(_ service: any WeatherService, query: String) -> some View {
-    let browse = BrowseModel(service: service)
+    let browse = BrowseViewModel(service: service)
     browse.search.query = query
     return NavigationStack { SearchView(browse: browse) }
 }

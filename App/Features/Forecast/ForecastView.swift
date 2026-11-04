@@ -5,11 +5,12 @@ import ForecastKit
 /// All state lives in `model`, so a rebuild after a fold or resize keeps the loaded week and any
 /// open day sheet (specs/003 FR-007, US3).
 struct ForecastView: View {
-    let model: ForecastModel
+    let model: ForecastViewModel
     @Namespace private var dayTransition
     @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
+        @Bindable var model = model
         LoadStateView(state: model.state, retry: { await model.retry() }, content: { ranking in
             List {
                 if let subtitle = model.place.subtitle {
@@ -21,15 +22,15 @@ struct ForecastView: View {
                 }
                 ForEach(ranking.rankings) { activityRanking in
                     ActivitySection(ranking: activityRanking, transitionNamespace: dayTransition) { day in
-                        model.selectedDay = day
+                        model.showDetail(for: day)
                     }
                 }
             }
         })
         .navigationTitle(model.place.name)
         .task { await model.loadIfNeeded() }
-        .sheet(item: daySelection) { selection in
-            dayDetail(selection.day)
+        .sheet(item: $model.presentedDay) { presented in
+            dayDetail(presented.day)
         }
     }
 
@@ -44,31 +45,20 @@ struct ForecastView: View {
             DayDetailView(day: day)
         }
     }
-
-    private var daySelection: Binding<DaySelection?> {
-        Binding(get: { model.selectedDay.map { DaySelection(day: $0) } },
-                set: { model.selectedDay = $0?.day })
-    }
-}
-
-/// Identifies the day whose detail sheet is shown.
-private struct DaySelection: Identifiable {
-    let day: DaySuitability
-    var id: DaySuitability { day }
 }
 
 #Preview("Loaded") {
-    NavigationStack { ForecastView(model: ForecastModel(place: PreviewData.paris, service: PreviewData.service)) }
+    NavigationStack { ForecastView(model: ForecastViewModel(place: PreviewData.paris, service: PreviewData.service)) }
 }
 
 #Preview("Loading") {
     NavigationStack {
-        ForecastView(model: ForecastModel(place: PreviewData.paris, service: PreviewData.hangingService))
+        ForecastView(model: ForecastViewModel(place: PreviewData.paris, service: PreviewData.hangingService))
     }
 }
 
 #Preview("Failed") {
     NavigationStack {
-        ForecastView(model: ForecastModel(place: PreviewData.paris, service: PreviewData.offlineService))
+        ForecastView(model: ForecastViewModel(place: PreviewData.paris, service: PreviewData.offlineService))
     }
 }

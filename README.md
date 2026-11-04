@@ -51,9 +51,9 @@ AI wrote most of the code. These checks were the guard against unverified output
 Layered **MVVM** with one-way dependencies (`App → ForecastKit → Foundation`):
 
 ```
-App/ (views)                         RootView (NavigationSplitView): Search | Forecast → Day detail sheet
-  ↓ observes / calls
-App/Features (view models)           BrowseModel → SearchModel, ForecastModel  (@Observable, MainActor by default, LoadState)
+App/Features/<Feature>/ (views)      BrowseView (NavigationSplitView): SearchView | ForecastView → Day detail sheet
+  ↓ binds / calls intents
+App/Features/<Feature>/ (view models) BrowseViewModel → SearchViewModel, ForecastViewModel  (@Observable, MainActor by default, LoadState)
   ↓ uses
 ForecastKit/Scoring + Models         ActivityScorer, WeeklyRanker: pure, deterministic
 ForecastKit/Service                  WeatherService ← OpenMeteoClient (URLSession + Codable), UserFacingError
@@ -63,7 +63,7 @@ ForecastKit/Service                  WeatherService ← OpenMeteoClient (URLSess
 - Test doubles never ship: `StubWeatherService` and the preview data are `internal` app fixtures (shared by previews and tests). Release whole-module optimisation removes them, verified with `nm` (0 symbols).
 - Search is debounced (300 ms) with `.task(id:)`. Superseded requests are cancelled, and a stale result can never overwrite a newer one (tested).
 - Each screen has one explicit `LoadState` (idle / loading / loaded / empty / failed + Retry).
-- The layout follows the window's width class, never the device: wide windows (iPad, iPhone Duo inner display) show search and forecast side by side, narrow ones collapse to search → forecast → Back. `BrowseModel` owns the search, selection, forecast and open day, so a fold, rotation or resize keeps them without fetching again (tested).
+- The layout follows the window's width class, never the device: wide windows (iPad, iPhone Duo inner display) show search and forecast side by side, narrow ones collapse to search → forecast → Back. `BrowseViewModel` owns the search, selection, forecast and open day, so a fold, rotation or resize keeps them without fetching again (tested).
 - `LocalDate` keeps forecast days as calendar components in the place's time zone, so the device time zone can never shift a day.
 
 ## Scoring model
