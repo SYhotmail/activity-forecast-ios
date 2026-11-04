@@ -1,16 +1,45 @@
 import SwiftUI
 import ForecastKit
 
-/// Sidebar / root screen: search a city or town and pick one (contracts/ui.md › Search).
+/// Sidebar / root screen: search a city or town, or tap the map while the search is empty, and pick
+/// one (contracts/ui.md › Search, specs/005 contracts/ui.md).
 /// The selection drives the detail column, or pushes the forecast in compact width
 /// (specs/003 research.md R4).
 struct SearchView: View {
     @Bindable var browse: BrowseModel
+    /// The collapsed split view's visible column, for the map's Show forecast (specs/005 research R5).
+    @Binding var compactColumn: NavigationSplitViewColumn
 
     private var search: SearchModel { browse.search }
 
     var body: some View {
         @Bindable var search = search
+        Group {
+            if search.showsMap {
+                // An empty search shows the map instead of the idle hint (specs/005 FR-001).
+                MapPickerView(browse: browse, compactColumn: $compactColumn)
+            } else {
+                results
+            }
+        }
+        .navigationTitle("Activity Forecast")
+        .searchable(text: $search.query,
+                    placement: .navigationBarDrawer(displayMode: .always),
+                    prompt: "Search a city or town")
+        .autocorrectionDisabled()
+        .task(id: search.query) {
+            // Debounce: a newer query cancels this task before the request starts (R5, FR-012).
+            do {
+                try await Task.sleep(for: .milliseconds(300))
+            } catch {
+                return
+            }
+            await search.search()
+        }
+    }
+
+    /// The search states from specs/001: hint, loading, results, empty, error with retry.
+    private var results: some View {
         LoadStateView(
             state: search.state,
             idleMessage: "Type at least 2 letters to search",
@@ -27,20 +56,6 @@ struct SearchView: View {
                 }
             }
         )
-        .navigationTitle("Activity Forecast")
-        .searchable(text: $search.query,
-                    placement: .navigationBarDrawer(displayMode: .always),
-                    prompt: "Search a city or town")
-        .autocorrectionDisabled()
-        .task(id: search.query) {
-            // Debounce: a newer query cancels this task before the request starts (R5, FR-012).
-            do {
-                try await Task.sleep(for: .milliseconds(300))
-            } catch {
-                return
-            }
-            await search.search()
-        }
     }
 
     /// Selecting a row (tap, click or arrow keys + Return) selects the place (FR-008).
@@ -69,7 +84,7 @@ private struct PlaceRow: View {
 private func searchPreview(_ service: any WeatherService, query: String) -> some View {
     let browse = PreviewData.browse(service: service)
     browse.search.query = query
-    return NavigationStack { SearchView(browse: browse) }
+    return NavigationStack { SearchView(browse: browse, compactColumn: .constant(.sidebar)) }
 }
 
 #Preview("Idle") { searchPreview(PreviewData.service, query: "") }

@@ -9,10 +9,13 @@ struct RootView: View {
     /// Both columns visible by default, including iPad portrait, where `.automatic` would hide
     /// the search behind a button (FR-006). The user can still collapse the sidebar.
     @State private var columnVisibility = NavigationSplitViewVisibility.all
+    /// The column a collapsed (compact) split view shows. The map's Show forecast sets it to
+    /// `.detail` to push the forecast, since the map is not a selectable list (specs/005 research R5).
+    @State private var compactColumn = NavigationSplitViewColumn.sidebar
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            SearchView(browse: browse)
+        NavigationSplitView(columnVisibility: $columnVisibility, preferredCompactColumn: $compactColumn) {
+            SearchView(browse: browse, compactColumn: $compactColumn)
         } detail: {
             // One stable NavigationStack for the whole detail column. Without it, a forecast pushed
             // in compact width (folded Duo) stopped redrawing when its state changed; re-creating
@@ -26,7 +29,7 @@ struct RootView: View {
                     ContentUnavailableView(
                         "Pick a place",
                         systemImage: "map",
-                        description: Text("Search for a city or town to see its week.")
+                        description: Text("Search for a city or town, or tap the map, to see its week.")
                     )
                 }
             }
