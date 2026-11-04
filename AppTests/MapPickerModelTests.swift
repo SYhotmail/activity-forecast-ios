@@ -201,4 +201,28 @@ struct MapPickerModelTests {
         await model.loadInitialRegionIfNeeded()
         #expect(await codes.values == ["GB"])
     }
+
+    // MARK: - Search selection on the map (US2, FR-008)
+
+    nonisolated static let paris = SearchModelTests.parisFrance
+
+    @Test("show(place) marks a named pin and centres the camera on it at city zoom")
+    func showCentresOnPlace() throws {
+        let model = MapPickerModel(locator: StubPlaceLocator(), regionCode: nil)
+        model.show(Self.paris)
+        #expect(model.pin == MapPin(coordinate: Self.paris.coordinate, place: Self.paris))
+        let region = try #require(model.camera.region)
+        #expect(abs(region.center.latitude - Self.paris.latitude) < 0.0001)
+        #expect(abs(region.center.longitude - Self.paris.longitude) < 0.0001)
+        #expect(region.span.latitudeDelta <= 0.5)
+        #expect(region.span.longitudeDelta <= 0.5)
+    }
+
+    @Test("The device-region country never overrides a place picked from search")
+    func regionDoesNotOverrideShownPlace() async {
+        let model = MapPickerModel(locator: StubPlaceLocator(region: { _ in Self.france }), regionCode: "FR")
+        model.show(Self.paris)
+        await model.loadInitialRegionIfNeeded()
+        #expect(model.camera.region?.center.latitude == Self.paris.latitude)
+    }
 }

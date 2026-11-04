@@ -157,4 +157,22 @@ struct BrowseModelTests {
         await model.locateMapPin(selectingWhenNamed: true)
         #expect(MapPickerModelTests.isWorld(model.map.camera))
     }
+
+    @Test("Picking a place from search marks it on the map and centres the map on it (US2, FR-008)")
+    func searchSelectionShowsOnMap() {
+        let model = Self.mapBrowse()
+        model.select(Self.paris)
+        #expect(model.map.pin?.place == Self.paris)
+        #expect(model.map.camera.region?.center.latitude == Self.paris.latitude)
+    }
+
+    @Test("Clearing the selection leaves the map's pin and camera as they were")
+    func clearingSelectionKeepsMap() {
+        let model = Self.mapBrowse()
+        model.select(Self.paris)
+        let pin = model.map.pin
+        model.select(nil)
+        #expect(model.map.pin == pin)
+        #expect(model.map.camera.region?.center.latitude == Self.paris.latitude)
+    }
 }
