@@ -57,7 +57,6 @@ private struct DaySelection: Identifiable {
     var id: DaySuitability { day }
 }
 
-#if DEBUG
 #Preview("Loaded") {
     NavigationStack { ForecastView(model: ForecastModel(place: PreviewData.paris, service: PreviewData.service)) }
 }
@@ -73,4 +72,3 @@ private struct DaySelection: Identifiable {
         ForecastView(model: ForecastModel(place: PreviewData.paris, service: PreviewData.offlineService))
     }
 }
-#endif
