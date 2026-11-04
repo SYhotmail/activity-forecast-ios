@@ -14,17 +14,21 @@ struct RootView: View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             SearchView(browse: browse)
         } detail: {
-            // No NavigationStack here: the detail column already has a navigation bar, and a
-            // nested stack hides the Back button once the split view collapses (folded Duo).
-            if let forecast = browse.forecast {
-                ForecastView(model: forecast)
-                    .id(forecast.place)
-            } else {
-                ContentUnavailableView(
-                    "Pick a place",
-                    systemImage: "map",
-                    description: Text("Search for a city or town to see its week.")
-                )
+            // One stable NavigationStack for the whole detail column. Without it, a forecast pushed
+            // in compact width (folded Duo) stopped redrawing when its state changed; re-creating
+            // the stack per place (an `.id` on the stack) lost the Back button. Only the content
+            // inside is swapped per place.
+            NavigationStack {
+                if let forecast = browse.forecast {
+                    ForecastView(model: forecast)
+                        .id(forecast.place)
+                } else {
+                    ContentUnavailableView(
+                        "Pick a place",
+                        systemImage: "map",
+                        description: Text("Search for a city or town to see its week.")
+                    )
+                }
             }
         }
         .navigationSplitViewStyle(.balanced)

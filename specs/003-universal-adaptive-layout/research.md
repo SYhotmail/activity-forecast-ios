@@ -5,7 +5,7 @@ Decisions for [plan.md](./plan.md). Format: Decision / Rationale / Alternatives 
 ## R1. Layout container
 - **Decision**: replace the root `NavigationStack` with a two-column `NavigationSplitView`: sidebar = search, detail = forecast or a "Pick a place" placeholder. Use the default `.automatic` column visibility and style.
 - **Rationale**: the system collapses a split view into a single stack in compact width. That gives the narrow behaviour (FR-005) on iPhone, the iPhone Duo outer display, Slide Over and narrow Split View or Stage Manager windows. It switches back to two columns in regular width (FR-006). The choice comes from the window's size class, not the device (FR-004), and one hierarchy means nothing is rebuilt from scratch on a fold.
-- **Correction (2026-11-04)**: the detail column must not wrap the forecast in its own `NavigationStack`. A nested stack hid the Back button once the split view collapsed (folded iPhone Duo); the detail column's own navigation bar is enough.
+- **Correction (2026-11-04)**: the detail column is wrapped in **one stable** `NavigationStack`, and only its content is swapped per place (`.id` on the forecast, never on the stack). Re-creating the stack per place lost the Back button on the folded iPhone Duo. Removing the stack fixed Back, but then a forecast pushed in compact width stopped redrawing (endless spinner offline, Retry appearing dead). Both were found by the author's manual checks.
 - **Alternatives**: branching on `horizontalSizeClass` between a `NavigationStack` tree and an `HStack` tree. That duplicates navigation, loses state on every switch and needs manual back handling. A three-column split view was rejected by the FR-012 clarification (detail stays a sheet).
 
 ## R2. Who owns navigation state
