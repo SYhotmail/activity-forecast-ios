@@ -10,6 +10,9 @@ public final class ForecastModel {
     public let place: Place
     /// Starts as `.loading`: the screen begins fetching as soon as it appears.
     public private(set) var state: LoadState<WeeklyRanking> = .loading
+    /// The day whose detail sheet is open; `nil` when closed. Kept here rather than in the view
+    /// so a fold or window resize that rebuilds the column keeps the sheet open (specs/003 US3).
+    public var selectedDay: DaySuitability?
 
     private let service: any WeatherService
 
@@ -35,6 +38,14 @@ public final class ForecastModel {
         }
         guard !Task.isCancelled else { return }
         state = outcome
+    }
+
+    /// Loads unless the week is already loaded. Views call this from `.task`, which reruns when
+    /// a fold or resize rebuilds them, so a loaded week is never fetched again (specs/003 FR-007,
+    /// research.md R3). A load cancelled mid-flight leaves `.loading`, so the next call retries.
+    public func loadIfNeeded() async {
+        if case .loaded = state { return }
+        await load()
     }
 
     /// Loads again after a failure (FR-011).
