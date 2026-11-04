@@ -104,7 +104,7 @@ All of Phase 3 is **one atomic commit**: `refactor: View/ViewModel names and fea
 ### Implementation (green)
 
 - [X] T014 [US2] In `App/Features/Browse/BrowseViewModel.swift`, add the doc-commented `var selection: Place? { get { selectedPlace } set { select(newValue) } }`. The comment should say: "Bindable selection for the search list; setting it applies `select(_:)`'s rules (specs/005 FR-004)". Run G-app, which must pass. Commit `feat: bindable browse selection (005 T014, green)`.
-- [ ] T015 [US2] In `App/Features/Search/SearchView.swift`:
+- [X] T015 [US2] In `App/Features/Search/SearchView.swift`:
   - replace `List(places, selection: selection)` with `List(places, selection: $browse.selection)`;
   - delete the private `selection: Binding<Place?>` property;
   - move its "(FR-008)" comment onto the `List` line.
