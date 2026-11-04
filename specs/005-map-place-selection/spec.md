@@ -89,14 +89,14 @@ Naming a tapped spot takes a moment. The user sees the marker straight away with
 
 ### Functional Requirements
 
-- **FR-001**: The search area MUST show an interactive map (pan and zoom) whenever the search text, ignoring surrounding spaces, is empty. When the text is not empty, it MUST show the existing search states unchanged (specs/001).
+- **FR-001**: The search area MUST always show an interactive map (pan and zoom). When the search text, ignoring surrounding spaces, is not empty, the existing search states (specs/001) MUST show in a drop-down over the top of the map, not a separate screen. Picking a result MUST close the drop-down and keep the search text; editing the text or focusing the search field MUST reopen it.
 - **FR-002**: Users MUST be able to select any point on the map, on land or at sea, by tapping it.
 - **FR-003**: A selected point MUST be named after the nearest town or city, with region and country, displayed the same way as a search result (name, then "region, country"). If no town or city is found within 25 km of the point, or naming fails, it MUST be named by its coordinates (latitude and longitude, with hemisphere).
 - **FR-004**: A marker MUST appear at the tapped point immediately, before naming finishes, with a "locating" label until the name is known.
 - **FR-005**: Selecting a point on the map MUST show the same ranked 7-day forecast as selecting a search result. In a wide layout, the forecast in the detail column MUST update without any further action as soon as the point is named (or falls back to its coordinates). In a narrow layout, a tap MUST only mark and name the point and offer a "Show forecast" control. Choosing it MUST push the forecast with Back returning to the map. Tapping another point instead MUST move the marker without pushing anything.
 - **FR-006**: The forecast for a map-selected point MUST be for that exact point, with its 7 days counted in that point's own local time zone (today + 6, as in specs/001).
 - **FR-007**: Only the most recent tap MAY change the selection and its name. Naming for an earlier tap MUST be abandoned, MUST NOT overwrite a newer selection, and MUST NOT show an error.
-- **FR-008**: A place selected from search results MUST be marked on the map, and when the search text is cleared the map MUST be centred on it.
+- **FR-008**: A place selected from search results MUST be marked on the map and the map MUST be centred on it.
 - **FR-009**: The visible map area, the marker and the selection MUST be kept when the device is folded or unfolded, rotated or the window resized, and when the user switches between typing (results list) and an empty search (map).
 - **FR-010**: Panning or zooming the map MUST NOT change the selection. Tapping the marker of the currently selected place MUST NOT reload its forecast.
 - **FR-011**: The app MUST NOT ask for the user's location. Until the user moves the map or selects a place, it MUST show the country from the device's region setting, or the whole world when that region is unknown or names no country.

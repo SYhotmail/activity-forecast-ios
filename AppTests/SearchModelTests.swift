@@ -255,20 +255,34 @@ extension SearchModelTests {
         #expect(await calls.values == ["Paris", "Paris"])
     }
 
-    @Test("The map shows only while the trimmed query is empty (specs/005 FR-001)",
-          arguments: [("", true), ("   ", true), ("a", false), ("Paris", false)])
-    func showsMap(query: String, expected: Bool) {
+    @Test("The results drop-down shows only while the trimmed query is not empty (specs/005 FR-001)",
+          arguments: [("", false), ("   ", false), ("a", true), ("Paris", true)])
+    func showsResults(query: String, expected: Bool) {
         let model = SearchModel(service: StubWeatherService())
         model.query = query
-        #expect(model.showsMap == expected)
+        #expect(model.showsResults == expected)
     }
 
-    @Test("Clearing the query back to whitespace shows the map again")
-    func clearingShowsMap() {
+    @Test("Dismissing hides the drop-down until the query changes, keeping the results")
+    func dismissUntilQueryChanges() async {
+        let model = SearchModel(service: StubWeatherService(search: { _ in [Self.parisFrance] }))
+        model.query = "Paris"
+        await model.search()
+        model.dismissResults()
+        #expect(!model.showsResults)
+        #expect(model.state == .loaded([Self.parisFrance]))
+        model.query = "Paris"
+        #expect(!model.showsResults)
+        model.query = "Pari"
+        #expect(model.showsResults)
+    }
+
+    @Test("Presenting reopens a dismissed drop-down")
+    func presentReopens() {
         let model = SearchModel(service: StubWeatherService())
         model.query = "Paris"
-        #expect(!model.showsMap)
-        model.query = " "
-        #expect(model.showsMap)
+        model.dismissResults()
+        model.presentResults()
+        #expect(model.showsResults)
     }
 }

@@ -13,8 +13,15 @@ final class SearchModel {
     /// Minimum trimmed query length that triggers a search (FR-001).
     static let minimumQueryLength = 2
 
-    var query = ""
+    var query = "" {
+        didSet {
+            // Typing opens the drop-down again after a pick closed it.
+            if query != oldValue { resultsDismissed = false }
+        }
+    }
     private(set) var state: LoadState<[Place]> = .idle
+    /// Set when a place is picked, so the drop-down gets out of the map's way.
+    private var resultsDismissed = false
     /// Trimmed query that produced the current `.loaded`/`.empty` state, if any.
     private var lastQuery: String?
 
@@ -24,10 +31,21 @@ final class SearchModel {
         self.service = service
     }
 
-    /// Whether the sidebar shows the map: only while the trimmed query is empty. One character
-    /// still shows the "type at least 2 letters" hint (specs/005 FR-001).
-    var showsMap: Bool {
-        Self.trimmed(query).isEmpty
+    /// Whether the results drop-down shows over the map: while the trimmed query is not empty and
+    /// no place has been picked since it last changed. One character shows the "type at least
+    /// 2 letters" hint there (specs/005 FR-001).
+    var showsResults: Bool {
+        !resultsDismissed && !Self.trimmed(query).isEmpty
+    }
+
+    /// Closes the drop-down, keeping the query and its results (a place was picked).
+    func dismissResults() {
+        resultsDismissed = true
+    }
+
+    /// Opens the drop-down again for the current query (the search field was focused).
+    func presentResults() {
+        resultsDismissed = false
     }
 
     /// Searches for the current query, or returns to `.idle` when it is too short.

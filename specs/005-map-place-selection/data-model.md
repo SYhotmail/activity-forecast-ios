@@ -55,7 +55,7 @@ See [contracts/place-locating.md](./contracts/place-locating.md).
 - Invariant (unchanged): `forecast?.place == selectedPlace`. Re-selecting the same place keeps the forecast (FR-010).
 
 ### SearchModel *(changed)*
-- `var showsMap: Bool`: true when the query trimmed of whitespace is empty (FR-001). With 1 character it is false, and the existing idle hint shows.
+- `var showsResults: Bool`: true when the query trimmed of whitespace is not empty and no place has been picked since it last changed (FR-001). With 1 character the drop-down shows the existing idle hint. `dismissResults()` (called by `BrowseModel.select`) closes it; changing the query or `presentResults()` (search field focused) reopens it.
 
 ## State transitions (map pin)
 

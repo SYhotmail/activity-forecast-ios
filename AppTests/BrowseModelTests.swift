@@ -166,6 +166,15 @@ struct BrowseModelTests {
         #expect(model.map.camera.region?.center.latitude == Self.paris.latitude)
     }
 
+    @Test("Picking a place from search closes the results drop-down and keeps the query")
+    func searchSelectionClosesDropDown() {
+        let model = Self.mapBrowse()
+        model.search.query = "Paris"
+        model.select(Self.paris)
+        #expect(!model.search.showsResults)
+        #expect(model.search.query == "Paris")
+    }
+
     @Test("Clearing the selection leaves the map's pin and camera as they were")
     func clearingSelectionKeepsMap() {
         let model = Self.mapBrowse()

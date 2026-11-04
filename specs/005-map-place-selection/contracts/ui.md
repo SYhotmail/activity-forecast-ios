@@ -1,6 +1,6 @@
 # Contract: Map in the search sidebar
 
-Extends [003 contracts/ui.md](../../003-universal-adaptive-layout/contracts/ui.md). Every search state, string and label defined in 001 and 003 is unchanged when the search text is not empty.
+Extends [003 contracts/ui.md](../../003-universal-adaptive-layout/contracts/ui.md). Every search state, string and label defined in 001 and 003 is unchanged; when the search text is not empty they show in a drop-down card over the top of the map (FR-001).
 
 ## Sidebar content
 | Search text (trimmed) | Sidebar shows |

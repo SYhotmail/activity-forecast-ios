@@ -30,10 +30,12 @@ final class BrowseModel {
     }
 
     /// Selects `place` from search results (or clears the selection with `nil`). The map marks it
-    /// and centres on it, so map and search agree (specs/005 FR-008).
+    /// and centres on it, so map and search agree (specs/005 FR-008), and the results drop-down
+    /// closes so the map is visible again.
     func select(_ place: Place?) {
         if let place {
             map.show(place)
+            search.dismissResults()
         }
         apply(place)
     }
