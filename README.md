@@ -8,21 +8,22 @@ Weather comes from Open-Meteo's [Geocoding](https://open-meteo.com/en/docs/geoco
 
 ## Run it
 
-Requirements: Xcode 16+ (Swift 6), iOS 18+ simulator. Nothing to install: no third-party dependencies, native `.xcodeproj`.
+Requirements: Xcode 27+ (Swift 6.4 toolchain), iOS 18+ simulator. The app is universal: iPhone, iPhone Duo (both displays) and iPad at every window size. Nothing to install: no third-party dependencies, native `.xcodeproj`. [SwiftLint](https://github.com/realm/SwiftLint) is only needed for the lint gate.
 
 ```bash
-open ActivityForecast.xcodeproj      # scheme "ActivityForecast", any iPhone simulator, ⌘R
+open ActivityForecast.xcodeproj      # scheme "ActivityForecast", any iPhone, iPhone Duo or iPad simulator, ⌘R
 ```
 
 Tests (≈ 0.02 s, no simulator needed):
 
 ```bash
 swift test --package-path Packages/ForecastKit
+swiftlint lint --strict              # PR gate: zero violations (.swiftlint.yml)
 ```
 
 The app icon is original artwork committed as PNGs (Default, Dark and Tinted) in `App/Resources/Assets.xcassets/AppIcon.appiconset/`.
 
-The manual end-to-end checks are listed in [`specs/001-activity-forecast-ranking/quickstart.md`](specs/001-activity-forecast-ranking/quickstart.md).
+The manual end-to-end checks are listed in [`specs/001-activity-forecast-ranking/quickstart.md`](specs/001-activity-forecast-ranking/quickstart.md), and the device and window-size matrix in [`specs/003-universal-adaptive-layout/quickstart.md`](specs/003-universal-adaptive-layout/quickstart.md).
 
 ## How I worked
 
@@ -48,9 +49,9 @@ AI wrote most of the code. These checks were the guard against unverified output
 Layered **MVVM** with one-way dependencies (`App → ForecastKit → Foundation`):
 
 ```
-App/ (SwiftUI views only)            Search → Forecast → Day detail sheet
+App/ (SwiftUI views only)            RootView (NavigationSplitView): Search | Forecast → Day detail sheet
   ↓ observes / calls
-ForecastKit/Features                 SearchModel, ForecastModel  (@MainActor @Observable, LoadState)
+ForecastKit/Features                 BrowseModel → SearchModel, ForecastModel  (@MainActor @Observable, LoadState)
   ├→ ForecastKit/Scoring + Models    ActivityScorer, WeeklyRanker: pure, deterministic
   └→ ForecastKit/Service             WeatherService ← OpenMeteoClient (URLSession + Codable)
 ```
@@ -58,6 +59,7 @@ ForecastKit/Features                 SearchModel, ForecastModel  (@MainActor @Ob
 - All logic lives in a local Swift package, so it is testable with `swift test` and needs no simulator.
 - Search is debounced (300 ms) with `.task(id:)`. Superseded requests are cancelled, and a stale result can never overwrite a newer one (tested).
 - Each screen has one explicit `LoadState` (idle / loading / loaded / empty / failed + Retry).
+- The layout follows the window's width class, never the device: wide windows (iPad, iPhone Duo inner display) show search and forecast side by side, narrow ones collapse to search → forecast → Back. `BrowseModel` owns the search, selection, forecast and open day, so a fold, rotation or resize keeps them without fetching again (tested).
 - `LocalDate` keeps forecast days as calendar components in the place's time zone, so the device time zone can never shift a day.
 
 ## Scoring model
@@ -79,7 +81,7 @@ Weekly score = mean of the days that have data ("No data" days are excluded, nev
 - **Model elevation.** Forecasts are for the grid cell (e.g. ~1,030 m for Chamonix), not ski-resort altitude, so mountain snow can be understated.
 - The scores are a transparent heuristic, not a validated model. The rainy-city margin (Indoor 65 vs Surfing 55) is the closest call and is pinned by a test.
 - **Search needs Latin script.** Open-Meteo geocoding returns nothing for non-Latin queries (e.g. `東京`, `Москва`), so the app shows "No places found"; `Tokyo` works. Accented names such as `Zürich` are fine.
-- Online only. No accounts, favourites, history or caching. Metric units, English, iPhone portrait-first.
+- Online only. No accounts, favourites, history or caching. Metric units, English.
 - 7 days = today + 6, in the selected place's local time zone.
 
 ## Trade-offs
@@ -87,4 +89,4 @@ Weekly score = mean of the days that have data ("No data" days are excluded, nev
 - **No third-party code**: there are only two GET endpoints. `URLSession` + `Codable` + Swift Testing covers it, and there is nothing to vet or update.
 - **One package, not several modules**: about 25 source files don't justify more boundaries. The package line already keeps views away from networking.
 - **No UI test suite**: XCUITests cost a lot to keep up for three screens. The logic is tested underneath and previews cover the states. With more time, I'd add one smoke UI test (search → forecast).
-- **iOS 18 minimum**: reviewers on Xcode 16 can still build it. Newer APIs (e.g. `navigationSubtitle`) were skipped for that reason.
+- **iOS 18 minimum, Xcode 27 toolchain**: the deployment target stays at iOS 18, but building needs the Swift 6.4 toolchain (constitution Principle II). APIs newer than iOS 18 need `if #available`.
