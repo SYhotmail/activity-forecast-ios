@@ -195,3 +195,62 @@ extension SearchModelTests {
         #expect(model.state == .loaded([london]))
     }
 }
+
+// MARK: - No repeat request for an unchanged query (specs/003 FR-007, data-model.md › SearchModel)
+
+/// The sidebar's `.task(id: query)` runs again whenever a fold or resize rebuilds it, so asking
+/// for the results already shown must not reach the service.
+extension SearchModelTests {
+    private static func countingService(_ calls: Recorder<String>, returning places: [Place])
+        -> StubWeatherService {
+        StubWeatherService(search: { query in
+            await calls.append(query)
+            return places
+        })
+    }
+
+    @Test("Searching the same query again keeps the results and makes no request")
+    func sameQueryIsNotRequestedAgain() async {
+        let calls = Recorder<String>()
+        let model = SearchModel(service: Self.countingService(calls, returning: [Self.parisFrance]))
+        model.query = "Paris"
+        await model.search()
+        await model.search()
+        #expect(await calls.values == ["Paris"])
+        #expect(model.state == .loaded([Self.parisFrance]))
+    }
+
+    @Test("An empty result for the same query is not requested again either")
+    func sameEmptyQueryIsNotRequestedAgain() async {
+        let calls = Recorder<String>()
+        let model = SearchModel(service: Self.countingService(calls, returning: []))
+        model.query = "zzqxw"
+        await model.search()
+        await model.search()
+        #expect(await calls.values == ["zzqxw"])
+        #expect(model.state == .empty)
+    }
+
+    @Test("A changed query searches again; whitespace alone is not a change")
+    func changedQuerySearchesAgain() async {
+        let calls = Recorder<String>()
+        let model = SearchModel(service: Self.countingService(calls, returning: [Self.parisFrance]))
+        model.query = "Paris"
+        await model.search()
+        model.query = " Paris "
+        await model.search()
+        model.query = "London"
+        await model.search()
+        #expect(await calls.values == ["Paris", "London"])
+    }
+
+    @Test("retry() always searches, even when results are loaded")
+    func retryAlwaysSearches() async {
+        let calls = Recorder<String>()
+        let model = SearchModel(service: Self.countingService(calls, returning: [Self.parisFrance]))
+        model.query = "Paris"
+        await model.search()
+        await model.retry()
+        #expect(await calls.values == ["Paris", "Paris"])
+    }
+}
