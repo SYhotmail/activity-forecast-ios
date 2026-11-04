@@ -1,7 +1,5 @@
 # Intent: Activity Forecast Ranking
 
-Source: `test_task.pdf` (Senior / Lead Native Mobile Engineer take-home).
-
 ## 1. Goal
 A native mobile app where a user searches for a city or town and sees how suitable each of the **next 7 days** is for four activities:
 - Skiing
