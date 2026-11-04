@@ -94,7 +94,7 @@ All of Phase 3 is **one atomic commit**: `refactor: View/ViewModel names and fea
 
 ### Tests (red)
 
-- [ ] T013 [US2] Add three `@Test`s to `AppTests/BrowseViewModelTests.swift`, using the existing `StubWeatherService`, `Recorder` and `ForecastViewModelTests.alpineWeek` fixtures:
+- [X] T013 [US2] Add three `@Test`s to `AppTests/BrowseViewModelTests.swift`, using the existing `StubWeatherService`, `Recorder` and `ForecastViewModelTests.alpineWeek` fixtures:
   - (a) `selectionSelects`: on a fresh model, setting `model.selection = Self.paris` makes `selectedPlace == Self.paris`, `selection == Self.paris`, and `forecast?.state == .loading`;
   - (b) `selectionReselectKeepsForecast`: set the selection, `await model.forecast!.load()`, then set the same place again. The result is the identical forecast instance (`===`), it is not `.loading`, and the recorder shows exactly one fetch;
   - (c) `selectionNilClears`: setting `nil` makes `selectedPlace == nil` and `forecast == nil`.

@@ -87,4 +87,42 @@ struct BrowseViewModelTests {
         model.select(nil)
         #expect(model.search === search)
     }
+
+    // MARK: - Bindable selection for the search list (specs/005 FR-004)
+
+    @Test("Setting the selection selects the place and starts its forecast")
+    func selectionSelects() {
+        let model = BrowseViewModel(service: StubWeatherService())
+        model.selection = Self.paris
+        #expect(model.selectedPlace == Self.paris)
+        #expect(model.selection == Self.paris)
+        #expect(model.forecast?.place == Self.paris)
+        #expect(model.forecast?.state == .loading)
+    }
+
+    @Test("Setting the selection to the current place keeps its loaded forecast and never refetches")
+    func selectionReselectKeepsForecast() async throws {
+        let fetches = Recorder<Place>()
+        let model = BrowseViewModel(service: StubWeatherService(forecast: { place in
+            await fetches.append(place)
+            return ForecastViewModelTests.alpineWeek
+        }))
+        model.selection = Self.paris
+        let first = try #require(model.forecast)
+        await first.load()
+
+        model.selection = Self.paris
+        #expect(model.forecast === first)
+        #expect(model.forecast?.state != .loading)
+        #expect(await fetches.values == [Self.paris])
+    }
+
+    @Test("Clearing the selection clears the place and its forecast")
+    func selectionNilClears() {
+        let model = BrowseViewModel(service: StubWeatherService())
+        model.selection = Self.paris
+        model.selection = nil
+        #expect(model.selectedPlace == nil)
+        #expect(model.forecast == nil)
+    }
 }
