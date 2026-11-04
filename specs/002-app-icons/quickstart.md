@@ -3,11 +3,6 @@
 ## Prerequisites
 As in [001 quickstart](../001-activity-forecast-ranking/quickstart.md): macOS, Xcode 16+, an iOS 18+ simulator.
 
-## Regenerate the icon (only when the artwork changes)
-```bash
-swift scripts/make-app-icon.swift      # writes the 3 PNGs into App/Resources/Assets.xcassets/AppIcon.appiconset/
-```
-
 ## Build and test
 ```bash
 swift test --package-path Packages/ForecastKit           # expected: unchanged, all 92 tests pass
