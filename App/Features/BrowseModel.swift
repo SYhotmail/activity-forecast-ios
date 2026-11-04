@@ -7,7 +7,6 @@ import Observation
 /// It outlives any single view, so when a fold, rotation or window resize rebuilds the
 /// columns, they reattach to the same search, selection and forecast instead of starting
 /// over (FR-006, FR-007, research.md R2).
-@MainActor
 @Observable
 final class BrowseModel {
     /// The sidebar's search. One instance for the model's lifetime.

@@ -8,7 +8,6 @@ import Observation
 /// so SwiftUI cancels a superseded search when the query changes (research.md R5).
 /// A result is only applied if its task was not cancelled and the query has not changed
 /// since the request started, so older text never replaces newer results (FR-012).
-@MainActor
 @Observable
 final class SearchModel {
     /// Minimum trimmed query length that triggers a search (FR-001).

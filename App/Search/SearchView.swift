@@ -66,7 +66,6 @@ private struct PlaceRow: View {
     }
 }
 
-@MainActor
 private func searchPreview(_ service: any WeatherService, query: String) -> some View {
     let browse = BrowseModel(service: service)
     browse.search.query = query

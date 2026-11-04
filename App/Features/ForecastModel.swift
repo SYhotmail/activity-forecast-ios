@@ -5,7 +5,6 @@ import Observation
 ///
 /// The view calls `load()` from `.task`, so leaving the screen cancels the request; a
 /// cancelled load never changes the state.
-@MainActor
 @Observable
 final class ForecastModel {
     let place: Place

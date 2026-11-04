@@ -5,7 +5,7 @@ import ForecastKit
 /// `@testable import`. It compiles into Release because `#Preview` bodies do, but production code
 /// MUST never use it: only `ActivityForecastApp` chooses the service, and it uses `OpenMeteoClient`
 /// (constitution Principle V).
-struct StubWeatherService: WeatherService {
+nonisolated struct StubWeatherService: WeatherService {
     var search: @Sendable (String) async throws -> [Place]
     var forecast: @Sendable (Place) async throws -> [DailyWeather]
 

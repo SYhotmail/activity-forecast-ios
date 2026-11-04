@@ -53,7 +53,7 @@ Layered **MVVM** with one-way dependencies (`App → ForecastKit → Foundation`
 ```
 App/ (views)                         RootView (NavigationSplitView): Search | Forecast → Day detail sheet
   ↓ observes / calls
-App/Features (view models)           BrowseModel → SearchModel, ForecastModel  (@MainActor @Observable, LoadState)
+App/Features (view models)           BrowseModel → SearchModel, ForecastModel  (@Observable, MainActor by default, LoadState)
   ↓ uses
 ForecastKit/Scoring + Models         ActivityScorer, WeeklyRanker: pure, deterministic
 ForecastKit/Service                  WeatherService ← OpenMeteoClient (URLSession + Codable), UserFacingError
