@@ -67,7 +67,7 @@ private struct PlaceRow: View {
 }
 
 private func searchPreview(_ service: any WeatherService, query: String) -> some View {
-    let browse = BrowseModel(service: service)
+    let browse = PreviewData.browse(service: service)
     browse.search.query = query
     return NavigationStack { SearchView(browse: browse) }
 }

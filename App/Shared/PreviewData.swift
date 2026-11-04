@@ -45,6 +45,32 @@ nonisolated enum PreviewData {
         forecast: { _ in throw UserFacingError.offline }
     )
 
+    /// A ski village, used as the locality the map names a tapped point after (specs/005).
+    static let chamonix = Place(id: 3027301, name: "Chamonix-Mont-Blanc", region: "Auvergne-Rhône-Alpes",
+                                country: "France", latitude: 45.92, longitude: 6.87,
+                                timeZone: "Europe/Paris")
+
+    /// Names every tap after Chamonix and knows France's bounds.
+    static let locator = StubPlaceLocator(
+        nearest: { _ in chamonix },
+        region: { _ in
+            GeoRegion(center: Coordinate(latitude: 46.6, longitude: 2.4), latitudeDelta: 9, longitudeDelta: 11)
+        }
+    )
+
+    /// Never answers, to preview a marker that is still locating.
+    static let hangingLocator = StubPlaceLocator(
+        nearest: { _ in try await Task.sleep(for: .seconds(3600)); return nil },
+        region: { _ in try await Task.sleep(for: .seconds(3600)); return nil }
+    )
+
+    /// A browse model wired to preview doubles.
+    @MainActor
+    static func browse(service: any WeatherService = PreviewData.service,
+                       locator: any PlaceLocating = PreviewData.locator) -> BrowseModel {
+        BrowseModel(service: service, locator: locator, regionCode: "FR")
+    }
+
     // Mirrors DailyWeather's fields so each preview day reads as one labelled row.
     // swiftlint:disable function_parameter_count
     private static func day(_ day: Int, code: Int, tmax: Double, tmin: Double,

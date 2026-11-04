@@ -36,11 +36,11 @@ struct RootView: View {
 }
 
 #Preview("Nothing selected") {
-    RootView(browse: BrowseModel(service: PreviewData.service))
+    RootView(browse: PreviewData.browse())
 }
 
 #Preview("Place selected") {
-    let browse = BrowseModel(service: PreviewData.service)
+    let browse = PreviewData.browse()
     browse.search.query = "Paris"
     browse.select(PreviewData.paris)
     return RootView(browse: browse)

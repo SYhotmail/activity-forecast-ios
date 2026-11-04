@@ -17,9 +17,16 @@ final class BrowseModel {
     private(set) var forecast: ForecastModel?
 
     private let service: any WeatherService
+    /// Names map taps and finds the initial map region (specs/005). Used from T014 on.
+    private let locator: any PlaceLocating
+    /// The device region's code, e.g. "GB"; decides the map's first view (specs/005 FR-011).
+    private let regionCode: String?
 
-    init(service: any WeatherService) {
+    /// No defaults: production code must never fall back to a test double (constitution Principle V).
+    init(service: any WeatherService, locator: any PlaceLocating, regionCode: String?) {
         self.service = service
+        self.locator = locator
+        self.regionCode = regionCode
         search = SearchModel(service: service)
     }
 
