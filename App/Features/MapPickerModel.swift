@@ -49,15 +49,20 @@ final class MapPickerModel {
     ///
     /// A named pin is returned as it is, with no lookup, so a view rebuilt by a fold can call this
     /// again safely (FR-009). The result is applied only if the pin is still the one that was looked
-    /// up and the task was not cancelled; an older tap never names a newer pin (FR-007).
+    /// up and the task was not cancelled; an older tap never names a newer pin (FR-007). A failed
+    /// lookup names the pin by its coordinates instead of showing an error (US3).
     func locatePin() async -> Place? {
         guard let current = pin else { return nil }
         if let place = current.place { return place }
         let nearest: Place?
         do {
             nearest = try await locator.nearestLocality(to: current.coordinate)
-        } catch {
+        } catch is CancellationError {
             return nil
+        } catch {
+            // Naming failures are never shown: the point is named by its coordinates and its
+            // forecast can still load (spec US3).
+            nearest = nil
         }
         guard !Task.isCancelled, pin == current else { return nil }
         let place = MapSelection.place(at: current.coordinate, nearest: nearest)
