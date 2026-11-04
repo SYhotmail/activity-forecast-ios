@@ -5,9 +5,9 @@ import ForecastKit
 /// The selection drives the detail column, or pushes the forecast in compact width
 /// (specs/003 research.md R4).
 struct SearchView: View {
-    @Bindable var browse: BrowseModel
+    @Bindable var browse: BrowseViewModel
 
-    private var search: SearchModel { browse.search }
+    private var search: SearchViewModel { browse.search }
 
     var body: some View {
         @Bindable var search = search
@@ -67,7 +67,7 @@ private struct PlaceRow: View {
 }
 
 private func searchPreview(_ service: any WeatherService, query: String) -> some View {
-    let browse = BrowseModel(service: service)
+    let browse = BrowseViewModel(service: service)
     browse.search.query = query
     return NavigationStack { SearchView(browse: browse) }
 }

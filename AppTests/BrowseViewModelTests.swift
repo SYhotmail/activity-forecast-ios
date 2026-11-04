@@ -4,15 +4,15 @@ import ForecastKit
 
 /// Selection and forecast ownership for the adaptive layout (specs/003 data-model.md › BrowseModel).
 @MainActor
-@Suite("BrowseModel: selection and forecast ownership (FR-006, FR-007)")
-struct BrowseModelTests {
-    nonisolated static let paris = SearchModelTests.parisFrance
-    nonisolated static let texas = SearchModelTests.parisTexas
+@Suite("BrowseViewModel: selection and forecast ownership (FR-006, FR-007)")
+struct BrowseViewModelTests {
+    nonisolated static let paris = SearchViewModelTests.parisFrance
+    nonisolated static let texas = SearchViewModelTests.parisTexas
 
     @Test("Starts with nothing selected and a search model using the same service")
     func startsEmpty() async {
         let calls = Recorder<String>()
-        let model = BrowseModel(service: StubWeatherService(search: { query in
+        let model = BrowseViewModel(service: StubWeatherService(search: { query in
             await calls.append(query)
             return [Self.paris]
         }))
@@ -26,7 +26,7 @@ struct BrowseModelTests {
 
     @Test("Selecting a place creates its forecast in the loading state")
     func selectCreatesForecast() {
-        let model = BrowseModel(service: StubWeatherService())
+        let model = BrowseViewModel(service: StubWeatherService())
         model.select(Self.paris)
         #expect(model.selectedPlace == Self.paris)
         #expect(model.forecast?.place == Self.paris)
@@ -36,9 +36,9 @@ struct BrowseModelTests {
     @Test("Selecting the same place again keeps the forecast and never fetches twice")
     func reselectKeepsForecast() async throws {
         let fetches = Recorder<Place>()
-        let model = BrowseModel(service: StubWeatherService(forecast: { place in
+        let model = BrowseViewModel(service: StubWeatherService(forecast: { place in
             await fetches.append(place)
-            return ForecastModelTests.alpineWeek
+            return ForecastViewModelTests.alpineWeek
         }))
         model.select(Self.paris)
         let first = try #require(model.forecast)
@@ -53,7 +53,7 @@ struct BrowseModelTests {
 
     @Test("Selecting a different place replaces the forecast")
     func selectOtherReplaces() throws {
-        let model = BrowseModel(service: StubWeatherService())
+        let model = BrowseViewModel(service: StubWeatherService())
         model.select(Self.paris)
         let first = try #require(model.forecast)
         model.select(Self.texas)
@@ -63,7 +63,7 @@ struct BrowseModelTests {
 
     @Test("Clearing the selection drops the forecast")
     func selectNilClears() {
-        let model = BrowseModel(service: StubWeatherService())
+        let model = BrowseViewModel(service: StubWeatherService())
         model.select(Self.paris)
         model.select(nil)
         #expect(model.selectedPlace == nil)
@@ -72,7 +72,7 @@ struct BrowseModelTests {
 
     @Test("The forecast always belongs to the selected place")
     func invariantHolds() {
-        let model = BrowseModel(service: StubWeatherService())
+        let model = BrowseViewModel(service: StubWeatherService())
         for place in [Self.paris, Self.texas, nil, Self.paris] {
             model.select(place)
             #expect(model.forecast?.place == model.selectedPlace)
@@ -81,7 +81,7 @@ struct BrowseModelTests {
 
     @Test("The search model is the same instance for the model's lifetime")
     func searchIsStable() {
-        let model = BrowseModel(service: StubWeatherService())
+        let model = BrowseViewModel(service: StubWeatherService())
         let search = model.search
         model.select(Self.paris)
         model.select(nil)

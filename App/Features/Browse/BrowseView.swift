@@ -4,8 +4,8 @@ import ForecastKit
 /// Adaptive root (specs/003 contracts/ui.md): search in the sidebar, the selected place's
 /// forecast in the detail column. In compact width the split view collapses into a stack,
 /// giving the narrow search → forecast → Back flow (research.md R1, FR-004…FR-006).
-struct RootView: View {
-    @Bindable var browse: BrowseModel
+struct BrowseView: View {
+    @Bindable var browse: BrowseViewModel
     /// Both columns visible by default, including iPad portrait, where `.automatic` would hide
     /// the search behind a button (FR-006). The user can still collapse the sidebar.
     @State private var columnVisibility = NavigationSplitViewVisibility.all
@@ -36,12 +36,12 @@ struct RootView: View {
 }
 
 #Preview("Nothing selected") {
-    RootView(browse: BrowseModel(service: PreviewData.service))
+    BrowseView(browse: BrowseViewModel(service: PreviewData.service))
 }
 
 #Preview("Place selected") {
-    let browse = BrowseModel(service: PreviewData.service)
+    let browse = BrowseViewModel(service: PreviewData.service)
     browse.search.query = "Paris"
     browse.select(PreviewData.paris)
-    return RootView(browse: browse)
+    return BrowseView(browse: browse)
 }

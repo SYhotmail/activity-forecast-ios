@@ -2,25 +2,25 @@ import ForecastKit
 import Observation
 
 /// Navigation state shared by the narrow (stack) and wide (side-by-side) layouts
-/// (specs/003 contracts/ui.md, data-model.md › BrowseModel).
+/// (specs/003 contracts/ui.md, data-model.md › BrowseModel; renamed in specs/005 data-model.md).
 ///
 /// It outlives any single view, so when a fold, rotation or window resize rebuilds the
 /// columns, they reattach to the same search, selection and forecast instead of starting
 /// over (FR-006, FR-007, research.md R2).
 @Observable
-final class BrowseModel {
+final class BrowseViewModel {
     /// The sidebar's search. One instance for the model's lifetime.
-    let search: SearchModel
+    let search: SearchViewModel
     /// The place whose forecast is shown; `nil` when nothing is selected.
     private(set) var selectedPlace: Place?
     /// The forecast for `selectedPlace`. Invariant: `forecast?.place == selectedPlace`.
-    private(set) var forecast: ForecastModel?
+    private(set) var forecast: ForecastViewModel?
 
     private let service: any WeatherService
 
     init(service: any WeatherService) {
         self.service = service
-        search = SearchModel(service: service)
+        search = SearchViewModel(service: service)
     }
 
     /// Selects `place`. Re-selecting the current place keeps its forecast as it is, so a
@@ -28,6 +28,6 @@ final class BrowseModel {
     func select(_ place: Place?) {
         guard place != selectedPlace else { return }
         selectedPlace = place
-        forecast = place.map { ForecastModel(place: $0, service: service) }
+        forecast = place.map { ForecastViewModel(place: $0, service: service) }
     }
 }

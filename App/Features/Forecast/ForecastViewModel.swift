@@ -1,12 +1,12 @@
 import ForecastKit
 import Observation
 
-/// Screen model for one place's ranked week (contracts/ui.md › Forecast).
+/// View model for one place's ranked week (contracts/ui.md › Forecast).
 ///
 /// The view calls `load()` from `.task`, so leaving the screen cancels the request; a
 /// cancelled load never changes the state.
 @Observable
-final class ForecastModel {
+final class ForecastViewModel {
     let place: Place
     /// Starts as `.loading`: the screen begins fetching as soon as it appears.
     private(set) var state: LoadState<WeeklyRanking> = .loading

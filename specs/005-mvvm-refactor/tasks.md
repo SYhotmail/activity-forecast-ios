@@ -50,7 +50,7 @@ None. US1's moves are the base the other stories build on, so they are done firs
 
 All of Phase 3 is **one atomic commit**: `refactor: View/ViewModel names and feature-slice folders (005 T003–T012)`.
 
-- [ ] T003 [US1] Create the folders and `git mv` the files (the project uses file-system-synchronised groups, so no `project.pbxproj` edit):
+- [X] T003 [US1] Create the folders and `git mv` the files (the project uses file-system-synchronised groups, so no `project.pbxproj` edit):
   - `App/RootView.swift` → `App/Features/Browse/BrowseView.swift`
   - `App/Features/BrowseModel.swift` → `App/Features/Browse/BrowseViewModel.swift`
   - `App/Search/SearchView.swift` → `App/Features/Search/SearchView.swift`
@@ -62,21 +62,21 @@ All of Phase 3 is **one atomic commit**: `refactor: View/ViewModel names and fea
   - `AppTests/{Search,Forecast,Browse}ModelTests.swift` → `AppTests/{Search,Forecast,Browse}ViewModelTests.swift`
 
   Remove the now-empty `App/Search/` and `App/Forecast/`.
-- [ ] T004 [P] [US1] Rename `final class SearchModel` → `SearchViewModel` in `App/Features/Search/SearchViewModel.swift`. Keep the doc comment, changing "Screen model" to "View model".
-- [ ] T005 [P] [US1] Rename `final class ForecastModel` → `ForecastViewModel` in `App/Features/Forecast/ForecastViewModel.swift`. Leave `selectedDay` untouched for now (US3 changes it).
-- [ ] T006 [US1] Rename `final class BrowseModel` → `BrowseViewModel` in `App/Features/Browse/BrowseViewModel.swift`, along with its member types: `let search: SearchViewModel`, `private(set) var forecast: ForecastViewModel?`, and the `SearchViewModel(...)`/`ForecastViewModel(...)` initialisers. Keep the comment citing `specs/003 … data-model.md › BrowseModel`, and add "(now `BrowseViewModel`, specs/005 data-model.md)".
-- [ ] T007 [US1] In `App/Features/Browse/BrowseView.swift`, rename `struct RootView` → `BrowseView` and `@Bindable var browse: BrowseViewModel`, and update both `#Preview`s.
-- [ ] T008 [P] [US1] In `App/Features/Search/SearchView.swift`, change to `@Bindable var browse: BrowseViewModel` and `private var search: SearchViewModel`, and update `searchPreview(_:query:)`.
-- [ ] T009 [P] [US1] In `App/Features/Forecast/ForecastView.swift`, change to `let model: ForecastViewModel` and update the three `#Preview`s.
-- [ ] T010 [US1] In `App/ActivityForecastApp.swift`, change to `@State private var browse = BrowseViewModel(service: OpenMeteoClient())` and `BrowseView(browse: browse)`.
-- [ ] T011 [US1] Rename the test suites and their references:
+- [X] T004 [P] [US1] Rename `final class SearchModel` → `SearchViewModel` in `App/Features/Search/SearchViewModel.swift`. Keep the doc comment, changing "Screen model" to "View model".
+- [X] T005 [P] [US1] Rename `final class ForecastModel` → `ForecastViewModel` in `App/Features/Forecast/ForecastViewModel.swift`. Leave `selectedDay` untouched for now (US3 changes it).
+- [X] T006 [US1] Rename `final class BrowseModel` → `BrowseViewModel` in `App/Features/Browse/BrowseViewModel.swift`, along with its member types: `let search: SearchViewModel`, `private(set) var forecast: ForecastViewModel?`, and the `SearchViewModel(...)`/`ForecastViewModel(...)` initialisers. Keep the comment citing `specs/003 … data-model.md › BrowseModel`, and add "(now `BrowseViewModel`, specs/005 data-model.md)".
+- [X] T007 [US1] In `App/Features/Browse/BrowseView.swift`, rename `struct RootView` → `BrowseView` and `@Bindable var browse: BrowseViewModel`, and update both `#Preview`s.
+- [X] T008 [P] [US1] In `App/Features/Search/SearchView.swift`, change to `@Bindable var browse: BrowseViewModel` and `private var search: SearchViewModel`, and update `searchPreview(_:query:)`.
+- [X] T009 [P] [US1] In `App/Features/Forecast/ForecastView.swift`, change to `let model: ForecastViewModel` and update the three `#Preview`s.
+- [X] T010 [US1] In `App/ActivityForecastApp.swift`, change to `@State private var browse = BrowseViewModel(service: OpenMeteoClient())` and `BrowseView(browse: browse)`.
+- [X] T011 [US1] Rename the test suites and their references:
   - `struct SearchModelTests` → `SearchViewModelTests` in `AppTests/SearchViewModelTests.swift`, `ForecastModelTests` → `ForecastViewModelTests` in `AppTests/ForecastViewModelTests.swift`, `BrowseModelTests` → `BrowseViewModelTests` in `AppTests/BrowseViewModelTests.swift`;
   - the `@Suite("…")` titles;
   - every `SearchModel(`/`ForecastModel(`/`BrowseModel(` constructor call;
   - the cross-suite fixture references (`SearchModelTests.parisFrance` → `SearchViewModelTests.parisFrance`, `ForecastModelTests.alpineWeek` → `ForecastViewModelTests.alpineWeek`).
 
   Test bodies are otherwise unchanged.
-- [ ] T012 [US1] Verify, then make the Phase 3 commit:
+- [X] T012 [US1] Verify, then make the Phase 3 commit:
   - G-lint is 0;
   - G-app passes;
   - the test list equals `baseline-vm-tests.txt` after `sed 's/ModelTests/ViewModelTests/'` (same count);

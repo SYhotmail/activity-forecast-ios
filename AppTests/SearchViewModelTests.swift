@@ -3,8 +3,8 @@ import ForecastKit
 @testable import ActivityForecast
 
 @MainActor
-@Suite("SearchModel: query → idle / loading / loaded (FR-001, FR-002)")
-struct SearchModelTests {
+@Suite("SearchViewModel: query → idle / loading / loaded (FR-001, FR-002)")
+struct SearchViewModelTests {
     nonisolated static let parisFrance = Place(id: 2988507, name: "Paris", region: "Île-de-France Region",
                                    country: "France", latitude: 48.85, longitude: 2.35,
                                    timeZone: "Europe/Paris")
@@ -14,7 +14,7 @@ struct SearchModelTests {
 
     @Test("Starts idle with an empty query")
     func startsIdle() {
-        let model = SearchModel(service: StubWeatherService())
+        let model = SearchViewModel(service: StubWeatherService())
         #expect(model.query.isEmpty)
         #expect(model.state == .idle)
     }
@@ -26,7 +26,7 @@ struct SearchModelTests {
             Issue.record("service must not be called for a short query")
             return []
         })
-        let model = SearchModel(service: service)
+        let model = SearchViewModel(service: service)
         model.query = query
         await model.search()
         #expect(model.state == .idle)
@@ -41,7 +41,7 @@ struct SearchModelTests {
             await release.wait()
             return [Self.parisFrance, Self.parisTexas]
         })
-        let model = SearchModel(service: service)
+        let model = SearchViewModel(service: service)
         model.query = "Paris"
 
         let search = Task { await model.search() }
@@ -56,7 +56,7 @@ struct SearchModelTests {
     @Test("Sends the trimmed query to the service")
     func trimsQuery() async {
         let received = Recorder<String>()
-        let model = SearchModel(service: StubWeatherService(search: { query in
+        let model = SearchViewModel(service: StubWeatherService(search: { query in
             await received.append(query)
             return [Self.parisFrance]
         }))
@@ -67,7 +67,7 @@ struct SearchModelTests {
 
     @Test("No matches is the empty state, not an empty list")
     func noMatchesIsEmpty() async {
-        let model = SearchModel(service: StubWeatherService(search: { _ in [] }))
+        let model = SearchViewModel(service: StubWeatherService(search: { _ in [] }))
         model.query = "zzqxw"
         await model.search()
         #expect(model.state == .empty)
@@ -75,7 +75,7 @@ struct SearchModelTests {
 
     @Test("Loaded results carry displayName so same-named places can be told apart (FR-002)")
     func resultsCarryDisplayName() async {
-        let model = SearchModel(service: StubWeatherService(search: { _ in
+        let model = SearchViewModel(service: StubWeatherService(search: { _ in
             [Self.parisFrance, Self.parisTexas]
         }))
         model.query = "Paris"
@@ -92,7 +92,7 @@ struct SearchModelTests {
 
     @Test("Shortening the query back below 2 characters returns to idle")
     func backToIdle() async {
-        let model = SearchModel(service: StubWeatherService(search: { _ in [Self.parisFrance] }))
+        let model = SearchViewModel(service: StubWeatherService(search: { _ in [Self.parisFrance] }))
         model.query = "Paris"
         await model.search()
         model.query = "P"
@@ -103,11 +103,11 @@ struct SearchModelTests {
 
 // MARK: - Failures, retry and stale results (FR-011, FR-012)
 
-extension SearchModelTests {
+extension SearchViewModelTests {
     @Test("A UserFacingError from the service is shown as that error",
           arguments: [UserFacingError.offline, .serviceUnavailable, .unexpected])
     func userFacingError(error: UserFacingError) async {
-        let model = SearchModel(service: StubWeatherService(search: { _ in throw error }))
+        let model = SearchViewModel(service: StubWeatherService(search: { _ in throw error }))
         model.query = "Paris"
         await model.search()
         #expect(model.state == .failed(error))
@@ -116,7 +116,7 @@ extension SearchModelTests {
     @Test("Any other error is shown as unexpected")
     func otherError() async {
         struct Boom: Error {}
-        let model = SearchModel(service: StubWeatherService(search: { _ in throw Boom() }))
+        let model = SearchViewModel(service: StubWeatherService(search: { _ in throw Boom() }))
         model.query = "Paris"
         await model.search()
         #expect(model.state == .failed(.unexpected))
@@ -125,7 +125,7 @@ extension SearchModelTests {
     @Test("retry() after a failure searches again and recovers")
     func retryRecovers() async {
         let attempts = Recorder<String>()
-        let model = SearchModel(service: StubWeatherService(search: { query in
+        let model = SearchViewModel(service: StubWeatherService(search: { query in
             await attempts.append(query)
             if await attempts.values.count == 1 { throw UserFacingError.offline }
             return [Self.parisFrance]
@@ -141,7 +141,7 @@ extension SearchModelTests {
 
     @Test("A CancellationError from the service never changes the state")
     func cancellationErrorIgnored() async {
-        let model = SearchModel(service: StubWeatherService(search: { _ in throw CancellationError() }))
+        let model = SearchViewModel(service: StubWeatherService(search: { _ in throw CancellationError() }))
         model.query = "Paris"
         await model.search()
         #expect(model.state == .loading)
@@ -151,7 +151,7 @@ extension SearchModelTests {
     func cancelledResultDropped() async {
         let started = Gate()
         let release = Gate()
-        let model = SearchModel(service: StubWeatherService(search: { _ in
+        let model = SearchViewModel(service: StubWeatherService(search: { _ in
             started.open()
             await release.wait()
             return [Self.parisFrance]
@@ -174,7 +174,7 @@ extension SearchModelTests {
                                 timeZone: "Europe/London")
         let lonStarted = Gate()
         let releaseLon = Gate()
-        let model = SearchModel(service: StubWeatherService(search: { query in
+        let model = SearchViewModel(service: StubWeatherService(search: { query in
             if query == "Lon" {
                 lonStarted.open()
                 await releaseLon.wait()   // the older request answers last
@@ -201,7 +201,7 @@ extension SearchModelTests {
 
 /// The sidebar's `.task(id: query)` runs again whenever a fold or resize rebuilds it, so asking
 /// for the results already shown must not reach the service.
-extension SearchModelTests {
+extension SearchViewModelTests {
     private static func countingService(_ calls: Recorder<String>, returning places: [Place])
         -> StubWeatherService {
         StubWeatherService(search: { query in
@@ -213,7 +213,7 @@ extension SearchModelTests {
     @Test("Searching the same query again keeps the results and makes no request")
     func sameQueryIsNotRequestedAgain() async {
         let calls = Recorder<String>()
-        let model = SearchModel(service: Self.countingService(calls, returning: [Self.parisFrance]))
+        let model = SearchViewModel(service: Self.countingService(calls, returning: [Self.parisFrance]))
         model.query = "Paris"
         await model.search()
         await model.search()
@@ -224,7 +224,7 @@ extension SearchModelTests {
     @Test("An empty result for the same query is not requested again either")
     func sameEmptyQueryIsNotRequestedAgain() async {
         let calls = Recorder<String>()
-        let model = SearchModel(service: Self.countingService(calls, returning: []))
+        let model = SearchViewModel(service: Self.countingService(calls, returning: []))
         model.query = "zzqxw"
         await model.search()
         await model.search()
@@ -235,7 +235,7 @@ extension SearchModelTests {
     @Test("A changed query searches again; whitespace alone is not a change")
     func changedQuerySearchesAgain() async {
         let calls = Recorder<String>()
-        let model = SearchModel(service: Self.countingService(calls, returning: [Self.parisFrance]))
+        let model = SearchViewModel(service: Self.countingService(calls, returning: [Self.parisFrance]))
         model.query = "Paris"
         await model.search()
         model.query = " Paris "
@@ -248,7 +248,7 @@ extension SearchModelTests {
     @Test("retry() always searches, even when results are loaded")
     func retryAlwaysSearches() async {
         let calls = Recorder<String>()
-        let model = SearchModel(service: Self.countingService(calls, returning: [Self.parisFrance]))
+        let model = SearchViewModel(service: Self.countingService(calls, returning: [Self.parisFrance]))
         model.query = "Paris"
         await model.search()
         await model.retry()
