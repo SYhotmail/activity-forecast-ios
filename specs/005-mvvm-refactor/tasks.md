@@ -188,7 +188,7 @@ Found by T022 on iPhone 18 Pro, and reproduced twice with trace logging. The for
 
   Commit `fix: … (005 T024, green)`.
 - [X] T025 Docs (CLAUDE.md), all gates, then the user re-checks Minsk on iPhone 18 Pro.
-- [ ] T026 Re-run quickstart.md › Manual layout checks after FR-012, because the fetch lifetime changed: Duo fold and unfold with a day sheet open and while a forecast is loading (no refetch, no spinner); iPad Split View row switching (the old request is cancelled, the new one loads); Back while loading. Record the results in PR #54.
+- [X] T026 Re-run quickstart.md › Manual layout checks after FR-012, because the fetch lifetime changed: Duo fold and unfold with a day sheet open and while a forecast is loading (no refetch, no spinner); iPad Split View row switching (the old request is cancelled, the new one loads); Back while loading. Record the results in PR #54. *(Passed 2026-11-04, reported by the user.)*
 
 ---
 
