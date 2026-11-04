@@ -123,7 +123,7 @@ All of Phase 3 is **one atomic commit**: `refactor: View/ViewModel names and fea
 
 ### Tests (red)
 
-- [ ] T016 [US3] In `AppTests/ForecastViewModelTests.swift`, replace the `selectedDayRoundTrip` test with three `@Test`s:
+- [X] T016 [US3] In `AppTests/ForecastViewModelTests.swift`, replace the `selectedDayRoundTrip` test with three `@Test`s:
   - (a) `showDetailPresentsDay`: `presentedDay` starts as `nil`. After `model.showDetail(for: day)`, `presentedDay?.day == day` and `presentedDay?.id == day`. Then `showDetail(for: otherDay)` replaces it with `otherDay`;
   - (b) `dismissClearsPresentedDay`: show a day, then set `model.presentedDay = nil`. The result is `nil`, and `showDetail(for: day)` presents it again;
   - (c) `presentedDaySurvivesReload`: load the week, show a day, then `await model.loadIfNeeded()`. The same day is still presented, and the recorder shows one fetch.

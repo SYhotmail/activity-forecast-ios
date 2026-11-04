@@ -197,15 +197,50 @@ extension ForecastViewModelTests {
         #expect(model.state == .loaded(WeeklyRanker.rank(Self.alpineWeek, for: Self.paris)))
     }
 
-    @Test("selectedDay starts empty and can be set and cleared")
-    func selectedDayRoundTrip() throws {
+    // MARK: - Day detail presentation (specs/005 FR-006)
+
+    @Test("showDetail(for:) presents the day, and showing another replaces it")
+    func showDetailPresentsDay() throws {
         let model = ForecastViewModel(place: Self.paris, service: StubWeatherService())
-        #expect(model.selectedDay == nil)
-        let ranking = WeeklyRanker.rank(Self.alpineWeek, for: Self.paris)
-        let day = try #require(ranking.rankings.first?.days.first)
-        model.selectedDay = day
-        #expect(model.selectedDay == day)
-        model.selectedDay = nil
-        #expect(model.selectedDay == nil)
+        #expect(model.presentedDay == nil)
+        let days = WeeklyRanker.rank(Self.alpineWeek, for: Self.paris).rankings[0].days
+        let day = try #require(days.first)
+        let other = try #require(days.last)
+
+        model.showDetail(for: day)
+        #expect(model.presentedDay?.day == day)
+        #expect(model.presentedDay?.id == day)
+
+        model.showDetail(for: other)
+        #expect(model.presentedDay?.day == other)
+    }
+
+    @Test("Dismissing clears the presented day, and the day can be shown again")
+    func dismissClearsPresentedDay() throws {
+        let model = ForecastViewModel(place: Self.paris, service: StubWeatherService())
+        let day = try #require(WeeklyRanker.rank(Self.alpineWeek, for: Self.paris).rankings[0].days.first)
+
+        model.showDetail(for: day)
+        model.presentedDay = nil
+        #expect(model.presentedDay == nil)
+
+        model.showDetail(for: day)
+        #expect(model.presentedDay?.day == day)
+    }
+
+    @Test("A presented day survives a rebuild's loadIfNeeded() without a refetch (specs/003 US3)")
+    func presentedDaySurvivesReload() async throws {
+        let fetches = Recorder<Place>()
+        let model = ForecastViewModel(place: Self.paris, service: StubWeatherService(forecast: { place in
+            await fetches.append(place)
+            return Self.alpineWeek
+        }))
+        await model.loadIfNeeded()
+        let day = try #require(WeeklyRanker.rank(Self.alpineWeek, for: Self.paris).rankings[0].days.first)
+        model.showDetail(for: day)
+
+        await model.loadIfNeeded()
+        #expect(model.presentedDay?.day == day)
+        #expect(await fetches.values == [Self.paris])
     }
 }
