@@ -16,6 +16,14 @@ final class BrowseViewModel {
     /// The forecast for `selectedPlace`. Invariant: `forecast?.place == selectedPlace`.
     private(set) var forecast: ForecastViewModel?
 
+    /// The search list's selection, bound directly by the list. Setting it applies `select(_:)`,
+    /// so a rebuilt list reporting its current row again never restarts the forecast
+    /// (specs/005 FR-004).
+    var selection: Place? {
+        get { selectedPlace }
+        set { select(newValue) }
+    }
+
     private let service: any WeatherService
 
     init(service: any WeatherService) {
