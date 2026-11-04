@@ -18,7 +18,7 @@ swift test --package-path Packages/ForecastKit --filter "ActivityScorerTests/<te
 
 # Build the app
 xcodebuild -project ActivityForecast.xcodeproj -scheme ActivityForecast \
-  -destination 'platform=iOS Simulator,name=iPhone 16' build
+  -destination 'generic/platform=iOS Simulator' build
 ```
 
 No linter is configured. There is no UI test target; screens are covered by SwiftUI previews (`App/Shared/PreviewData.swift`) and the manual checklist in `specs/001-activity-forecast-ranking/quickstart.md`.

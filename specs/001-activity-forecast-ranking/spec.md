@@ -74,7 +74,7 @@ A user searching for a common name (e.g. "Paris" or "Springfield") needs to tell
 ### Edge Cases
 
 - Search text that is empty or a single character: no search is performed and a hint is shown.
-- Place names with accents or non-Latin characters (e.g. "Zürich", "東京") are searchable and displayed correctly.
+- Place names with accents (e.g. "Zürich") are searchable and displayed correctly. Non-Latin queries (e.g. "東京") return no matches from Open-Meteo geocoding (verified live 2026-11-04) and show the empty state; the Latin name ("Tokyo") works.
 - The forecast returns fewer than 7 days or some weather values are missing: available days are scored; missing days or values are shown as "No data" rather than as a misleading rating.
 - A place far from the sea is selected: Surfing is still scored from weather, and the weather-only caveat stays visible.
 - A place with no snow is selected (warm, low-lying, or simply snowless that week): Skiing scores Poor on every day without snowfall or snow cover, even if it freezes.
