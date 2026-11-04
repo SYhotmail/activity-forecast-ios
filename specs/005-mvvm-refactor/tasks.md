@@ -153,19 +153,20 @@ All of Phase 3 is **one atomic commit**: `refactor: View/ViewModel names and fea
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T019 [P] Update `CLAUDE.md` › Architecture:
+- [X] T019 [P] Update `CLAUDE.md` › Architecture:
   - the paths (`App/Features/{Browse,Search,Forecast}/`, `App/Views/LoadStateView/`, `App/RootView.swift` → `App/Features/Browse/BrowseView.swift`);
   - the names (`SearchViewModel`, `ForecastViewModel`, `BrowseViewModel`, `ForecastViewModel.presentedDay`, `BrowseViewModel.selection`);
   - the example `-only-testing:ActivityForecastTests/SearchViewModelTests`;
   - add `005 MVVM refactor` to the spec list in Workflow conventions.
-- [ ] T020 [P] Update `README.md`: the architecture lines (around line 54–56, `RootView` and `App/Features (view models) BrowseModel → …`) and any other reference to the old names or folders.
-- [ ] T021 Final gates (quickstart.md):
+- [X] T020 [P] Update `README.md`: the architecture lines (around line 54–56, `RootView` and `App/Features (view models) BrowseModel → …`) and any other reference to the old names or folders.
+- [X] T021 Final gates (quickstart.md):
   - G-lint is 0, `swift test` passes, G-app passes, and the clean simulator build has 0 project warnings;
   - Release `nm` check: no `StubWeatherService`/`PreviewData` symbols;
   - the test-list diff against the baseline shows only renames plus the 6 new tests minus `selectedDayRoundTrip`;
   - `grep -rn "Binding(get" App/` is empty.
 
   Commit `docs: CLAUDE.md and README for MVVM refactor (005 T019–T021)`.
+  *(Results 2026-11-04: lint 0; `swift test` 69 pass; `xcodebuild test` 69 package + 44 app pass; clean simulator build with 0 project warnings; Release `nm`: 0 `StubWeatherService`/`PreviewData` symbols; test-list diff is +6 new, −`selectedDayRoundTrip`, everything else identical; no `Binding(get` in `App/`.)*
 - [ ] T022 Manual checks from quickstart.md › Manual layout checks (iPhone; Duo outer/inner with an open sheet across a fold; iPad full screen and Split View). Record the results for the PR description, then mark the tasks done in this file.
 
 ---
