@@ -82,3 +82,24 @@ struct MapSelectionTests {
     }
 }
 
+/// MapKit (iOS/macOS 26) gives "city, context" strings, not a region field (specs/005 research R2).
+/// Shapes recorded live on 2026-11-04.
+@Suite("MapKitPlaceLocator: region from MapKit's city context")
+struct MapKitRegionParsingTests {
+    @Test("The region is what the context adds between the city and the country", arguments: [
+        ("Cupertino, CA United States", "Cupertino", "United States", "CA" as String?),
+        ("Cupertino, CA, United States", "Cupertino", "United States", "CA"),
+        ("Chamonix, France", "Chamonix", "France", nil),
+        ("Courmayeur", "Courmayeur", "Italy", nil),
+        ("Paris, Île-de-France", "Paris", "France", "Île-de-France"),
+        ("Elsewhere, Region", "Paris", "France", nil)
+    ])
+    func region(context: String, city: String, country: String, expected: String?) {
+        #expect(MapKitPlaceLocator.region(fromCityContext: context, city: city, country: country) == expected)
+    }
+
+    @Test("No context means no region")
+    func noContext() {
+        #expect(MapKitPlaceLocator.region(fromCityContext: nil, city: "Paris", country: "France") == nil)
+    }
+}
