@@ -167,7 +167,27 @@ All of Phase 3 is **one atomic commit**: `refactor: View/ViewModel names and fea
 
   Commit `docs: CLAUDE.md and README for MVVM refactor (005 T019–T021)`.
   *(Results 2026-11-04: lint 0; `swift test` 69 pass; `xcodebuild test` 69 package + 44 app pass; clean simulator build with 0 project warnings; Release `nm`: 0 `StubWeatherService`/`PreviewData` symbols; test-list diff is +6 new, −`selectedDayRoundTrip`, everything else identical; no `Binding(get` in `App/`.)*
-- [ ] T022 Manual checks from quickstart.md › Manual layout checks (iPhone; Duo outer/inner with an open sheet across a fold; iPad full screen and Split View). Record the results for the PR description, then mark the tasks done in this file.
+- [x] T022 Manual checks from quickstart.md › Manual layout checks (iPhone; Duo outer/inner with an open sheet across a fold; iPad full screen and Split View). Record the results for the PR description, then mark the tasks done in this file.
+
+---
+
+## Phase 7: Bug fix — endless spinner after picking a new city (FR-012)
+
+Found by T022 on iPhone 18 Pro, and reproduced twice with trace logging. The forecast screen got `appear → disappear` with no Back and no new selection, so its `.task` was cancelled mid-flight, `load()` correctly dropped the result, and no new appear came to restart it.
+
+- [X] T023 Red tests:
+  - `AppTests/ForecastViewModelTests.swift`: `cancelledViewTaskKeepsLoading` replaces `cancelledLoadIfNeededRestarts`. Cancelling the calling task leaves the load running, and the next `loadIfNeeded()` joins it (one fetch, loaded).
+  - `AppTests/ForecastViewModelTests.swift`: `cancelledResultDropped` now cancels through `model.cancel()` instead of the caller's task.
+  - `AppTests/BrowseViewModelTests.swift`: `selectOtherCancelsPreviousLoad`.
+
+  Commit `test: … (005 T023, red)`.
+- [ ] T024 Green:
+  - `ForecastViewModel` runs each fetch in a view-model-owned `Task`, which `load()` awaits. Cancelling the caller only stops the waiting. `loadIfNeeded()` joins a fetch already in flight, `load()` (and so `retry()`) supersedes it, and `cancel()` stops it.
+  - `BrowseViewModel.select` cancels the replaced forecast.
+  - Record the constitution I exception (one unstructured task) in plan.md › Complexity Tracking.
+
+  Commit `fix: … (005 T024, green)`.
+- [ ] T025 Docs (CLAUDE.md), all gates, then the user re-checks Minsk on iPhone 18 Pro.
 
 ---
 

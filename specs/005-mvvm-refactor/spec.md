@@ -34,6 +34,7 @@ This is a structural change. The end user sees no difference.
 - Q: How far should the refactor go? → A: Renames, feature-slice folders, and moving the selection and day-sheet wiring into the view models. The debounce stays in the view (specs/003 research R5). No ViewData layer.
 - Q: Where do the shared load-state type and its view live? → A: Together in their own folder, `App/Views/LoadStateView/`, not in `Shared/`.
 - Q: Track as a spec or as a plain refactor? → A: As a spec (this feature).
+- Bug found in the T022 manual check (iPhone 18 Pro): after a loaded city, picking a new one (Minsk) showed an endless spinner. A trace showed SwiftUI sending the forecast screen a stray disappear mid-push, which cancelled its `.task` while it stayed visible, and nothing restarted the load. The bug predates this feature. Q: Fix? → A: The forecast view model owns its request; a view's task being cancelled no longer stops it, and deselecting the place cancels it (FR-012).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -114,6 +115,7 @@ When the user taps a day, the view asks the forecast view model to show that day
 - **FR-008**: The search debounce MUST stay driven by the view, unchanged (specs/003 research R5).
 - **FR-009**: No user-visible behaviour MAY change: the screens, states, the adaptive layout, keeping state across a resize, accessibility and the release binary's contents.
 - **FR-010**: The new view-model behaviours (FR-004, FR-006) MUST be developed test-first, with red and green commits. All view-model tests that existed before the change MUST still pass, with the same count (renames only).
+- **FR-012**: A forecast request MUST NOT be stopped by the screen's own appear/disappear cycle. It is cancelled only when the place is deselected or replaced (Back, or picking another place); a cancelled request's result is never shown. A second load request while one is running joins it instead of fetching again.
 - **FR-011**: The living project documentation (the project guide and the README) MUST describe the new names and layout. Earlier feature specs stay unchanged as history. This feature's data model records the mapping from old names to new.
 
 ### Key Entities

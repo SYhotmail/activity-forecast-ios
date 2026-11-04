@@ -117,7 +117,7 @@ extension ForecastViewModelTests {
         #expect(model.state == .loading)
     }
 
-    @Test("A cancelled load drops its result even when the service still answers")
+    @Test("cancel() drops the in-flight result even when the service still answers (specs/005 FR-012)")
     func cancelledResultDropped() async {
         let started = Gate()
         let release = Gate()
@@ -128,7 +128,7 @@ extension ForecastViewModelTests {
         }))
         let load = Task { await model.load() }
         await started.wait()
-        load.cancel()
+        model.cancel()
         release.open()
         await load.value
         #expect(model.state == .loading)
@@ -173,8 +173,8 @@ extension ForecastViewModelTests {
         #expect(await calls.values.count == 2)
     }
 
-    @Test("A loadIfNeeded() cancelled mid-flight leaves loading, and the next one fetches once")
-    func cancelledLoadIfNeededRestarts() async {
+    @Test("A view task cancelled mid-flight does not stop the load; the next call joins it (specs/005 FR-012)")
+    func cancelledViewTaskKeepsLoading() async {
         let started = Gate()
         let release = Gate()
         let calls = Recorder<Place>()
@@ -185,15 +185,16 @@ extension ForecastViewModelTests {
             return Self.alpineWeek
         }))
 
+        // SwiftUI can send a stray disappear during a push, cancelling the view's `.task`
+        // while the screen stays visible (bug: endless spinner on iPhone 18 Pro).
         let first = Task { await model.loadIfNeeded() }
         await started.wait()
         first.cancel()
-        release.open()
         await first.value
-        #expect(model.state == .loading)
+        release.open()
 
         await model.loadIfNeeded()
-        #expect(await calls.values.count == 2)
+        #expect(await calls.values.count == 1)
         #expect(model.state == .loaded(WeeklyRanker.rank(Self.alpineWeek, for: Self.paris)))
     }
 

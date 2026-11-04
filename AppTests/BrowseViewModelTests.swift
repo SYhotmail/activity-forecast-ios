@@ -125,4 +125,24 @@ struct BrowseViewModelTests {
         #expect(model.selectedPlace == nil)
         #expect(model.forecast == nil)
     }
+
+    @Test("Selecting another place cancels the previous forecast's request (specs/005 FR-012)")
+    func selectOtherCancelsPreviousLoad() async throws {
+        let started = Gate()
+        let release = Gate()
+        let model = BrowseViewModel(service: StubWeatherService(forecast: { _ in
+            started.open()
+            await release.wait()
+            return ForecastViewModelTests.alpineWeek
+        }))
+        model.select(Self.paris)
+        let previous = try #require(model.forecast)
+        let load = Task { await previous.loadIfNeeded() }
+        await started.wait()
+
+        model.select(Self.texas)
+        release.open()
+        await load.value
+        #expect(previous.state == .loading)
+    }
 }
