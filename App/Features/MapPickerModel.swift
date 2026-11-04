@@ -22,6 +22,8 @@ nonisolated struct MapPin: Hashable, Sendable {
 final class MapPickerModel {
     /// The default view: the whole world.
     static let worldRegion = MKCoordinateRegion(.world)
+    /// Degrees shown around a place picked from search: about 30 km, a town and its surroundings.
+    static let citySpan = 0.3
 
     /// What the map shows. Bound to the map, so pans and zooms write back here.
     var camera: MapCameraPosition = .region(worldRegion)
@@ -61,6 +63,16 @@ final class MapPickerModel {
         let place = MapSelection.place(at: current.coordinate, nearest: nearest)
         pin = MapPin(coordinate: current.coordinate, place: place)
         return place
+    }
+
+    /// Marks `place`, chosen from search results, and centres the map on it at city zoom, so map and
+    /// search agree on the selection (specs/005 FR-008). Map taps never call this, so the map never
+    /// jumps under the user's finger (research R7).
+    func show(_ place: Place) {
+        pin = MapPin(coordinate: place.coordinate, place: place)
+        camera = .region(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude),
+            span: MKCoordinateSpan(latitudeDelta: Self.citySpan, longitudeDelta: Self.citySpan)))
     }
 
     /// Moves the first view to the device region's country, once per session (FR-011, research R6).

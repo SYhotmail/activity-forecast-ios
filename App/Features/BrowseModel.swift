@@ -29,12 +29,13 @@ final class BrowseModel {
         map = MapPickerModel(locator: locator, regionCode: regionCode)
     }
 
-    /// Selects `place`. Re-selecting the current place keeps its forecast as it is, so a
-    /// loaded week is never fetched again; any other place gets a fresh forecast.
+    /// Selects `place` from search results (or clears the selection with `nil`). The map marks it
+    /// and centres on it, so map and search agree (specs/005 FR-008).
     func select(_ place: Place?) {
-        guard place != selectedPlace else { return }
-        selectedPlace = place
-        forecast = place.map { ForecastModel(place: $0, service: service) }
+        if let place {
+            map.show(place)
+        }
+        apply(place)
     }
 
     /// Names the map's pin and, in a wide layout, selects it so the detail column shows its week
@@ -42,14 +43,21 @@ final class BrowseModel {
     /// The view calls this from `.task(id: pin)`, so a newer tap cancels it (research R4).
     func locateMapPin(selectingWhenNamed: Bool) async {
         guard let place = await map.locatePin(), selectingWhenNamed else { return }
-        select(place)
+        apply(place)
     }
 
     /// The narrow layout's Show forecast: selects the named pin's place (specs/005 FR-005).
     /// Does nothing while the pin is still locating.
     func selectMapPin() {
         guard let place = map.pin?.place else { return }
-        select(place)
+        apply(place)
     }
 
+    /// Makes `place` the selection without moving the map. Re-selecting the current place keeps its
+    /// forecast as it is, so a loaded week is never fetched again; any other place gets a fresh one.
+    private func apply(_ place: Place?) {
+        guard place != selectedPlace else { return }
+        selectedPlace = place
+        forecast = place.map { ForecastModel(place: $0, service: service) }
+    }
 }
