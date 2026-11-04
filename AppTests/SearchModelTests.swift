@@ -254,4 +254,21 @@ extension SearchModelTests {
         await model.retry()
         #expect(await calls.values == ["Paris", "Paris"])
     }
+
+    @Test("The map shows only while the trimmed query is empty (specs/005 FR-001)",
+          arguments: [("", true), ("   ", true), ("a", false), ("Paris", false)])
+    func showsMap(query: String, expected: Bool) {
+        let model = SearchModel(service: StubWeatherService())
+        model.query = query
+        #expect(model.showsMap == expected)
+    }
+
+    @Test("Clearing the query back to whitespace shows the map again")
+    func clearingShowsMap() {
+        let model = SearchModel(service: StubWeatherService())
+        model.query = "Paris"
+        #expect(!model.showsMap)
+        model.query = " "
+        #expect(model.showsMap)
+    }
 }

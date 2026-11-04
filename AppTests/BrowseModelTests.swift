@@ -87,4 +87,74 @@ struct BrowseModelTests {
         model.select(nil)
         #expect(model.search === search)
     }
+
+    // MARK: - Map selection (specs/005)
+
+    private static func mapBrowse(calls: Recorder<Coordinate>? = nil) -> BrowseModel {
+        BrowseModel(service: StubWeatherService(), locator: StubPlaceLocator(nearest: { coordinate in
+            await calls?.append(coordinate)
+            return MapPickerModelTests.locality(near: coordinate)
+        }), regionCode: nil)
+    }
+
+    @Test("The map model uses the injected locator")
+    func mapUsesLocator() async {
+        let calls = Recorder<Coordinate>()
+        let model = Self.mapBrowse(calls: calls)
+        model.map.tap(at: MapPickerModelTests.alps)
+        await model.locateMapPin(selectingWhenNamed: false)
+        #expect(await calls.values == [MapPickerModelTests.alps])
+    }
+
+    @Test("Wide layout: a named map pin is selected and gets its forecast (FR-005)")
+    func wideSelectsNamedPin() async throws {
+        let model = Self.mapBrowse()
+        model.map.tap(at: MapPickerModelTests.alps)
+        await model.locateMapPin(selectingWhenNamed: true)
+        let place = try #require(model.map.pin?.place)
+        #expect(model.selectedPlace == place)
+        #expect(model.forecast?.place == place)
+    }
+
+    @Test("Narrow layout: naming selects nothing until Show forecast (FR-005)")
+    func narrowWaitsForShowForecast() async throws {
+        let model = Self.mapBrowse()
+        model.map.tap(at: MapPickerModelTests.alps)
+        await model.locateMapPin(selectingWhenNamed: false)
+        let place = try #require(model.map.pin?.place)
+        #expect(model.selectedPlace == nil)
+
+        model.selectMapPin()
+        #expect(model.selectedPlace == place)
+        #expect(model.forecast?.place == place)
+    }
+
+    @Test("Show forecast does nothing while the pin is locating or absent")
+    func showForecastNeedsNamedPin() {
+        let model = Self.mapBrowse()
+        model.selectMapPin()
+        #expect(model.selectedPlace == nil)
+        model.map.tap(at: MapPickerModelTests.alps)
+        model.selectMapPin()
+        #expect(model.selectedPlace == nil)
+    }
+
+    @Test("Selecting the map pin's place again keeps its forecast (FR-010)")
+    func reselectMapPinKeepsForecast() async throws {
+        let model = Self.mapBrowse()
+        model.map.tap(at: MapPickerModelTests.alps)
+        await model.locateMapPin(selectingWhenNamed: true)
+        let forecast = try #require(model.forecast)
+        await model.locateMapPin(selectingWhenNamed: true)
+        model.selectMapPin()
+        #expect(model.forecast === forecast)
+    }
+
+    @Test("A map selection never moves the camera (research R7)")
+    func mapSelectionKeepsCamera() async {
+        let model = Self.mapBrowse()
+        model.map.tap(at: MapPickerModelTests.alps)
+        await model.locateMapPin(selectingWhenNamed: true)
+        #expect(MapPickerModelTests.isWorld(model.map.camera))
+    }
 }
