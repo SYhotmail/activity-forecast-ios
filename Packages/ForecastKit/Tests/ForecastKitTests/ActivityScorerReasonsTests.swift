@@ -70,7 +70,8 @@ extension ActivityScorerTests {
             Reason(kind: .negative, detail: .heavyRain(.millimetres(12)))
         ])
         let thaw = with(Self.perfectSkiing) {
-            $0.snowfall = .centimetres(0); $0.snowDepth = .centimetres(0); $0.temperatureMin = .celsius(4); $0.temperatureMax = .celsius(9)
+            $0.snowfall = .centimetres(0); $0.snowDepth = .centimetres(0)
+            $0.temperatureMin = .celsius(4); $0.temperatureMax = .celsius(9)
         }
         #expect(reasons(.skiing, thaw).first == Reason(kind: .cap, detail: .noSnowOnGround))
         #expect(reasons(.skiing, thaw).count <= 2)
@@ -88,7 +89,9 @@ extension ActivityScorerTests {
 
     @Test("indoor sightseeing is explained by the weather outside")
     func indoorReasons() {
-        let rainy = with(Self.perfectOutdoor) { $0.precipitation = .millimetres(12); $0.temperatureMax = .celsius(3); $0.sunshine = .hours(0) }
+        let rainy = with(Self.perfectOutdoor) {
+            $0.precipitation = .millimetres(12); $0.temperatureMax = .celsius(3); $0.sunshine = .hours(0)
+        }
         #expect(reasons(.indoorSightseeing, rainy) == [
             Reason(kind: .positive, detail: .poorWeatherOutside)
         ])
@@ -100,7 +103,10 @@ extension ActivityScorerTests {
     @Test("every scored day has one or two reasons, for every activity", arguments: Activity.allCases)
     func oneOrTwoReasons(activity: Activity) {
         let days = [Self.perfectSkiing, Self.perfectSurfing, Self.perfectOutdoor,
-                    with(Self.perfectOutdoor) { $0.weatherCode = 95; $0.windSpeedMax = .kilometresPerHour(60); $0.precipitation = .millimetres(20) }]
+                    with(Self.perfectOutdoor) {
+                        $0.weatherCode = 95; $0.windSpeedMax = .kilometresPerHour(60)
+                        $0.precipitation = .millimetres(20)
+                    }]
         for day in days {
             #expect((1...2).contains(reasons(activity, day).count))
         }
@@ -109,7 +115,8 @@ extension ActivityScorerTests {
     @Test("reasons carry the measurement as received; the app formats it")
     func rawValues() {
         let drizzle = with(Self.perfectOutdoor) { $0.precipitation = .millimetres(7.5); $0.rain = .millimetres(7.5) }
-        #expect(reasons(.outdoorSightseeing, drizzle).first == Reason(kind: .negative, detail: .rain(.millimetres(7.5))))
+        #expect(reasons(.outdoorSightseeing, drizzle).first
+                == Reason(kind: .negative, detail: .rain(.millimetres(7.5))))
         // Received in inches, explained in inches: the app converts for display (specs/006 FR-006).
         let usDrizzle = with(Self.perfectOutdoor) { $0.precipitation = .inches(0.3); $0.rain = .inches(0.3) }
         #expect(reasons(.outdoorSightseeing, usDrizzle).first == Reason(kind: .negative, detail: .rain(.inches(0.3))))

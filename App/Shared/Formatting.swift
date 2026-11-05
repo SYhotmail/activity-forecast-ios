@@ -30,42 +30,43 @@ enum Formatting {
     /// Shown in place of any value the forecast did not provide (FR-013).
     static let missing = "—"
 
-    // Forecast values arrive and are scored in metric. These convert them for display to the
-    // units of the user's locale and settings (FR-016): "20 °C" in Germany, "68°F" in the US.
+    // Forecast values arrive as measurements in whatever units were fetched (specs/006). These
+    // show them in the units of the user's locale and settings (FR-016): "20 °C" in Germany,
+    // "68°F" in the US, whatever unit the value came in.
 
-    /// Air temperature from °C, e.g. "20 °C" / "68°F".
-    static func temperature(_ celsius: Double?, locale: Locale = .autoupdatingCurrent) -> String {
-        measurement(celsius, UnitTemperature.celsius, usage: .weather, locale: locale)
+    /// Air temperature, e.g. "20 °C" / "68°F".
+    static func temperature(_ value: Measurement<UnitTemperature>?, locale: Locale = .autoupdatingCurrent) -> String {
+        measurement(value, usage: .weather, locale: locale)
     }
 
-    /// Rain or precipitation from mm, e.g. "12 mm" / "0.47 in".
-    static func rainfall(_ millimetres: Double?, locale: Locale = .autoupdatingCurrent) -> String {
-        measurement(millimetres, UnitLength.millimeters, usage: .rainfall, fractionDigits: 2, locale: locale)
+    /// Rain or precipitation, e.g. "12 mm" / "0.47 in".
+    static func rainfall(_ value: Measurement<UnitLength>?, locale: Locale = .autoupdatingCurrent) -> String {
+        measurement(value, usage: .rainfall, fractionDigits: 2, locale: locale)
     }
 
-    /// Snowfall or snow depth from cm, e.g. "20 cm" / "7.87 in".
-    static func snow(_ centimetres: Double?, locale: Locale = .autoupdatingCurrent) -> String {
-        measurement(centimetres, UnitLength.centimeters, usage: .snowfall, fractionDigits: 2, locale: locale)
+    /// Snowfall or snow depth, e.g. "20 cm" / "7.87 in".
+    static func snow(_ value: Measurement<UnitLength>?, locale: Locale = .autoupdatingCurrent) -> String {
+        measurement(value, usage: .snowfall, fractionDigits: 2, locale: locale)
     }
 
-    /// Wind or gust speed from km/h, e.g. "65 km/h" / "40.4 mph".
-    static func windSpeed(_ kilometresPerHour: Double?, locale: Locale = .autoupdatingCurrent) -> String {
-        measurement(kilometresPerHour, UnitSpeed.kilometersPerHour, usage: .wind, locale: locale)
+    /// Wind or gust speed, e.g. "65 km/h" / "40.4 mph".
+    static func windSpeed(_ value: Measurement<UnitSpeed>?, locale: Locale = .autoupdatingCurrent) -> String {
+        measurement(value, usage: .wind, locale: locale)
     }
 
-    /// A duration in hours, e.g. "6 hr".
-    static func hours(_ hours: Double?, locale: Locale = .autoupdatingCurrent) -> String {
-        measurement(hours, UnitDuration.hours, usage: .asProvided, locale: locale)
+    /// A duration in hours, e.g. "6 hr" (sunshine arrives in seconds).
+    static func hours(_ value: Measurement<UnitDuration>?, locale: Locale = .autoupdatingCurrent) -> String {
+        measurement(value?.converted(to: .hours), usage: .asProvided, locale: locale)
     }
 
     /// Lengths allow two decimals so light rain in inches (1 mm = 0.04 in) never reads as 0;
     /// temperature and speed allow one. "—" when missing (FR-013).
     private static func measurement<U: Dimension>(
-        _ value: Double?, _ unit: U, usage: MeasurementFormatUnitUsage<U>,
+        _ value: Measurement<U>?, usage: MeasurementFormatUnitUsage<U>,
         fractionDigits: Int = 1, locale: Locale
     ) -> String {
         guard let value else { return missing }
-        return Measurement(value: value, unit: unit).formatted(
+        return value.formatted(
             .measurement(width: .abbreviated, usage: usage,
                          numberFormatStyle: .number.precision(.fractionLength(0...fractionDigits)))
             .locale(locale))

@@ -4,9 +4,13 @@ import Foundation
 /// No API key is needed. Failures are thrown as `UserFacingError`; cancellation as `CancellationError`.
 public struct OpenMeteoClient: WeatherService {
     private let session: URLSession
+    private let units: ForecastUnits
 
-    public init(session: URLSession = .shared) {
+    /// - Parameter units: what the forecast is requested in. Values are decoded in the units the
+    ///   response states, whatever was asked (specs/006 FR-001, FR-004).
+    public init(session: URLSession = .shared, units: ForecastUnits = .metric) {
         self.session = session
+        self.units = units
     }
 
     public func searchPlaces(matching query: String) async throws -> [Place] {
@@ -17,7 +21,7 @@ public struct OpenMeteoClient: WeatherService {
     }
 
     public func forecast(for place: Place) async throws -> [DailyWeather] {
-        let request = Self.forecastRequest(latitude: place.latitude, longitude: place.longitude)
+        let request = Self.forecastRequest(latitude: place.latitude, longitude: place.longitude, units: units)
         let response: ForecastResponseDTO = try await fetch(request)
         return try response.dailyWeather()
     }
@@ -39,7 +43,7 @@ public struct OpenMeteoClient: WeatherService {
     //TODO: rate limit,
     //TODO: search based on language code..
 
-    static func forecastRequest(latitude: Double, longitude: Double) -> URLRequest {
+    static func forecastRequest(latitude: Double, longitude: Double, units: ForecastUnits) -> URLRequest {
         request(host: "api.open-meteo.com", path: "/v1/forecast", query: [
             ("latitude", String(latitude)),
             ("longitude", String(longitude)),
@@ -47,7 +51,10 @@ public struct OpenMeteoClient: WeatherService {
             ("hourly", "snow_depth"),
             ("timezone", "auto"),
             ("timeformat", "unixtime"),
-            ("forecast_days", "7")
+            ("forecast_days", "7"),
+            ("temperature_unit", units.temperature.rawValue),
+            ("wind_speed_unit", units.windSpeed.rawValue),
+            ("precipitation_unit", units.precipitation.rawValue)
         ])
     }
 

@@ -21,9 +21,11 @@ struct ForecastUnitsTests {
                 == ForecastUnits(temperature: .celsius, windSpeed: .milesPerHour, precipitation: .millimetres))
     }
 
-    @Test("the user's temperature setting overrides the region default")
+    @Test("the user's temperature setting (ICU `mu` keyword) overrides the region default")
     func temperatureOverride() {
-        #expect(ForecastUnits(locale: Locale(identifier: "en_US@temperature=celsius")).temperature == .celsius)
-        #expect(ForecastUnits(locale: Locale(identifier: "de_DE@temperature=fahrenheit")).temperature == .fahrenheit)
+        #expect(ForecastUnits(locale: Locale(identifier: "en_US@mu=celsius"))
+                == ForecastUnits(temperature: .celsius, windSpeed: .milesPerHour, precipitation: .inches))
+        #expect(ForecastUnits(locale: Locale(identifier: "de_DE@mu=fahrenhe"))
+                == ForecastUnits(temperature: .fahrenheit, windSpeed: .kilometresPerHour, precipitation: .millimetres))
     }
 }

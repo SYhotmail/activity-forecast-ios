@@ -63,7 +63,9 @@ struct ActivityScorerTests {
     ])
     func skiingSnow(snowfall: Double, depth: Double, expected: Int) {
         // Zero snow hits the no-snow cap (raw 50 → 10); any snow lifts it.
-        let weather = with(Self.perfectSkiing) { $0.snowfall = .centimetres(snowfall); $0.snowDepth = .centimetres(depth) }
+        let weather = with(Self.perfectSkiing) {
+            $0.snowfall = .centimetres(snowfall); $0.snowDepth = .centimetres(depth)
+        }
         #expect(score(.skiing, weather) == expected)
     }
 
@@ -92,7 +94,8 @@ struct ActivityScorerTests {
     func skiingCap() {
         // Raw: snow 0 + cold 0.6×25 + wind 15 + rain 10 = 40.
         let mild = with(Self.perfectSkiing) {
-            $0.snowfall = .centimetres(0); $0.snowDepth = .centimetres(0); $0.temperatureMax = .celsius(2); $0.temperatureMin = .celsius(1)
+            $0.snowfall = .centimetres(0); $0.snowDepth = .centimetres(0)
+            $0.temperatureMax = .celsius(2); $0.temperatureMin = .celsius(1)
         }
         let capped = ActivityScorer.suitability(for: .skiing, on: mild)
         #expect(capped.score == 10)
@@ -113,7 +116,10 @@ struct ActivityScorerTests {
         #expect(score(.skiing, with(mild) { $0.snowfall = .centimetres(1) }) == 45)
 
         // A raw score already below the cap is kept.
-        let awful = with(mild) { $0.temperatureMax = .celsius(20); $0.temperatureMin = .celsius(10); $0.rain = .millimetres(20); $0.windGustsMax = .kilometresPerHour(100) }
+        let awful = with(mild) {
+            $0.temperatureMax = .celsius(20); $0.temperatureMin = .celsius(10)
+            $0.rain = .millimetres(20); $0.windGustsMax = .kilometresPerHour(100)
+        }
         #expect(score(.skiing, awful) == 0)
     }
 
@@ -137,7 +143,8 @@ struct ActivityScorerTests {
         (0.0, 100), (5.0, 85), (10.0, 70), (40.0, 70)
     ])
     func surfingDry(precipitation: Double, expected: Int) {
-        #expect(score(.surfing, with(Self.perfectSurfing) { $0.precipitation = .millimetres(precipitation) }) == expected)
+        let weather = with(Self.perfectSurfing) { $0.precipitation = .millimetres(precipitation) }
+        #expect(score(.surfing, weather) == expected)
     }
 
     @Test("surfing cap: thunderstorm (WMO 95–99) → at most 10", arguments: [
@@ -157,7 +164,8 @@ struct ActivityScorerTests {
         (-5.0, 65), (0.0, 65), (12.0, 93), (15.0, 100), (25.0, 100), (35.0, 73), (38.0, 65), (45.0, 65)
     ])
     func outdoorComfort(tmax: Double, expected: Int) {
-        #expect(score(.outdoorSightseeing, with(Self.perfectOutdoor) { $0.temperatureMax = .celsius(tmax) }) == expected)
+        let weather = with(Self.perfectOutdoor) { $0.temperatureMax = .celsius(tmax) }
+        #expect(score(.outdoorSightseeing, weather) == expected)
     }
 
     @Test("outdoor dry factor: 1 − max(min(precip/10, 1), probability/100 × 0.5), weight 35", arguments: [
@@ -175,7 +183,8 @@ struct ActivityScorerTests {
         (0.0, 100), (20.0, 100), (30.0, 95), (50.0, 85), (80.0, 85)
     ])
     func outdoorCalm(wind: Double, expected: Int) {
-        #expect(score(.outdoorSightseeing, with(Self.perfectOutdoor) { $0.windSpeedMax = .kilometresPerHour(wind) }) == expected)
+        let weather = with(Self.perfectOutdoor) { $0.windSpeedMax = .kilometresPerHour(wind) }
+        #expect(score(.outdoorSightseeing, weather) == expected)
     }
 
     @Test("outdoor sun factor: min(sunshine hours / 8, 1), weight 15", arguments: [

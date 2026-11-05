@@ -1,37 +1,33 @@
+import Foundation
+
 /// Forecast for one local day (spec: Daily Weather). Every value is optional because
 /// the service can return `null`; missing values must never be scored as zero (FR-013).
+/// Quantities carry their unit, as received (specs/006 FR-003).
 public struct DailyWeather: Sendable, Hashable {
     public let date: LocalDate
     /// WMO weather interpretation code.
     public var weatherCode: Int?
-    /// °C
-    public var temperatureMax: Double?
-    /// °C
-    public var temperatureMin: Double?
-    /// mm
-    public var precipitation: Double?
-    /// mm
-    public var rain: Double?
-    /// cm
-    public var snowfall: Double?
-    /// cm, daily maximum of the hourly snow depth.
-    public var snowDepth: Double?
+    public var temperatureMax: Measurement<UnitTemperature>?
+    public var temperatureMin: Measurement<UnitTemperature>?
+    public var precipitation: Measurement<UnitLength>?
+    public var rain: Measurement<UnitLength>?
+    public var snowfall: Measurement<UnitLength>?
+    /// Daily maximum of the hourly snow depth.
+    public var snowDepth: Measurement<UnitLength>?
     /// %
     public var precipitationProbability: Double?
-    /// km/h
-    public var windSpeedMax: Double?
-    /// km/h
-    public var windGustsMax: Double?
-    /// hours
-    public var sunshine: Double?
+    public var windSpeedMax: Measurement<UnitSpeed>?
+    public var windGustsMax: Measurement<UnitSpeed>?
+    public var sunshine: Measurement<UnitDuration>?
 
     public init(date: LocalDate, weatherCode: Int? = nil,
-                temperatureMax: Double? = nil, temperatureMin: Double? = nil,
-                precipitation: Double? = nil, rain: Double? = nil,
-                snowfall: Double? = nil, snowDepth: Double? = nil,
+                temperatureMax: Measurement<UnitTemperature>? = nil,
+                temperatureMin: Measurement<UnitTemperature>? = nil,
+                precipitation: Measurement<UnitLength>? = nil, rain: Measurement<UnitLength>? = nil,
+                snowfall: Measurement<UnitLength>? = nil, snowDepth: Measurement<UnitLength>? = nil,
                 precipitationProbability: Double? = nil,
-                windSpeedMax: Double? = nil, windGustsMax: Double? = nil,
-                sunshine: Double? = nil) {
+                windSpeedMax: Measurement<UnitSpeed>? = nil, windGustsMax: Measurement<UnitSpeed>? = nil,
+                sunshine: Measurement<UnitDuration>? = nil) {
         self.date = date
         self.weatherCode = weatherCode
         self.temperatureMax = temperatureMax
