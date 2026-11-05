@@ -15,6 +15,7 @@ Gates: `swiftlint lint --strict`, `swift test --package-path Packages/ForecastKi
 - [X] T004 Docs: specs/001 FR-016 and contracts/open-meteo.md note units from the response; CLAUDE.md quirks line.
 
 - [X] T006 Send only non-default unit parameters (red, then green); FR-001 amended.
+- [X] T007 Leave out `forecast_days` (default 7); keep `timezone=auto` and `timeformat=unixtime` (defaults GMT, ISO 8601), commented.
 
 ## Phase 3: Polish
 

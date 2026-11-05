@@ -23,9 +23,9 @@ Response 200:
 
 ## Forecast — 7 days
 
-`GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,snowfall_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,sunshine_duration&hourly=snow_depth&timezone=auto&timeformat=unixtime&forecast_days=7&temperature_unit={celsius|fahrenheit}&wind_speed_unit={kmh|ms|mph|kn}&precipitation_unit={mm|inch}`
+`GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,snowfall_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,sunshine_duration&hourly=snow_depth&timezone=auto&timeformat=unixtime&temperature_unit={celsius|fahrenheit}&wind_speed_unit={kmh|ms|mph|kn}&precipitation_unit={mm|inch}`
 
-The unit parameters come from `ForecastUnits` and are sent only when they differ from the defaults `celsius`, `kmh`, `mm` (specs/006 FR-001).
+Defaults are left out: `forecast_days` (7) and the unit parameters. `timezone=auto` and `timeformat=unixtime` are sent because their defaults are GMT and ISO 8601 (verified live 2026-11-05). The unit parameters come from `ForecastUnits` and are sent only when they differ from the defaults `celsius`, `kmh`, `mm` (specs/006 FR-001).
 
 Response 200 (abridged):
 ```json

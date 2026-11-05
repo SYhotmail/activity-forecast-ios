@@ -49,9 +49,12 @@ public struct OpenMeteoClient: WeatherService {
             ("longitude", String(longitude)),
             ("daily", dailyVariables),
             ("hourly", "snow_depth"),
+            // Not defaults, so always sent: `timezone` defaults to GMT, which would cut days and
+            // daily maxima at UTC midnight; `auto` uses the place's zone (FR-003). `timeformat`
+            // defaults to ISO 8601 strings; Unix seconds are dated with that zone, DST-safe.
             ("timezone", "auto"),
-            ("timeformat", "unixtime"),
-            ("forecast_days", "7")
+            ("timeformat", "unixtime")
+            // `forecast_days` is left out: the default is 7, today + 6 (FR-003, verified live).
         ] + unitParameters(units))
     }
 
