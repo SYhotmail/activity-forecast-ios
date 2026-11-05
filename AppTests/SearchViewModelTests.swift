@@ -22,7 +22,7 @@ struct SearchViewModelTests {
     @Test("A query shorter than 2 characters (after trimming) is idle and never hits the service",
           arguments: ["", "P", "  P  ", "   "])
     func shortQueryIsIdle(query: String) async {
-        let service = StubWeatherService(search: { _ in
+        let service = StubWeatherService(search: { _, _ in
             Issue.record("service must not be called for a short query")
             return []
         })
@@ -36,7 +36,7 @@ struct SearchViewModelTests {
     func loadingThenLoaded() async {
         let started = Gate()
         let release = Gate()
-        let service = StubWeatherService(search: { _ in
+        let service = StubWeatherService(search: { _, _ in
             started.open()
             await release.wait()
             return [Self.parisFrance, Self.parisTexas]
@@ -56,7 +56,7 @@ struct SearchViewModelTests {
     @Test("Sends the trimmed query to the service")
     func trimsQuery() async {
         let received = Recorder<String>()
-        let model = SearchViewModel(service: StubWeatherService(search: { query in
+        let model = SearchViewModel(service: StubWeatherService(search: { query, _ in
             await received.append(query)
             return [Self.parisFrance]
         }))
@@ -65,9 +65,27 @@ struct SearchViewModelTests {
         #expect(await received.values == ["Paris"])
     }
 
+    @Test("Sends the language detected for the query with it (specs/007 FR-006)", arguments: [
+        ("Мінск", ["en", "be"], "be"),
+        ("Paris", ["de", "en"], "de"),
+        ("Paris", ["en", "be"], nil)
+    ] as [(String, [String], String?)])
+    func sendsQueryLanguage(query: String, candidates: [String], expected: String?) async {
+        let received = Recorder<String?>()
+        let model = SearchViewModel(
+            service: StubWeatherService(search: { _, language in
+                await received.append(language)
+                return [Self.parisFrance]
+            }),
+            language: .fixed(candidates))
+        model.query = query
+        await model.search()
+        #expect(await received.values == [expected])
+    }
+
     @Test("No matches is the empty state, not an empty list")
     func noMatchesIsEmpty() async {
-        let model = SearchViewModel(service: StubWeatherService(search: { _ in [] }))
+        let model = SearchViewModel(service: StubWeatherService(search: { _, _ in [] }))
         model.query = "zzqxw"
         await model.search()
         #expect(model.state == .empty)
@@ -75,7 +93,7 @@ struct SearchViewModelTests {
 
     @Test("Loaded results carry displayName so same-named places can be told apart (FR-002)")
     func resultsCarryDisplayName() async {
-        let model = SearchViewModel(service: StubWeatherService(search: { _ in
+        let model = SearchViewModel(service: StubWeatherService(search: { _, _ in
             [Self.parisFrance, Self.parisTexas]
         }))
         model.query = "Paris"
@@ -92,7 +110,7 @@ struct SearchViewModelTests {
 
     @Test("Shortening the query back below 2 characters returns to idle")
     func backToIdle() async {
-        let model = SearchViewModel(service: StubWeatherService(search: { _ in [Self.parisFrance] }))
+        let model = SearchViewModel(service: StubWeatherService(search: { _, _ in [Self.parisFrance] }))
         model.query = "Paris"
         await model.search()
         model.query = "P"
@@ -107,7 +125,7 @@ extension SearchViewModelTests {
     @Test("A UserFacingError from the service is shown as that error",
           arguments: [UserFacingError.offline, .serviceUnavailable, .unexpected])
     func userFacingError(error: UserFacingError) async {
-        let model = SearchViewModel(service: StubWeatherService(search: { _ in throw error }))
+        let model = SearchViewModel(service: StubWeatherService(search: { _, _ in throw error }))
         model.query = "Paris"
         await model.search()
         #expect(model.state == .failed(error))
@@ -116,7 +134,7 @@ extension SearchViewModelTests {
     @Test("Any other error is shown as unexpected")
     func otherError() async {
         struct Boom: Error {}
-        let model = SearchViewModel(service: StubWeatherService(search: { _ in throw Boom() }))
+        let model = SearchViewModel(service: StubWeatherService(search: { _, _ in throw Boom() }))
         model.query = "Paris"
         await model.search()
         #expect(model.state == .failed(.unexpected))
@@ -125,7 +143,7 @@ extension SearchViewModelTests {
     @Test("retry() after a failure searches again and recovers")
     func retryRecovers() async {
         let attempts = Recorder<String>()
-        let model = SearchViewModel(service: StubWeatherService(search: { query in
+        let model = SearchViewModel(service: StubWeatherService(search: { query, _ in
             await attempts.append(query)
             if await attempts.values.count == 1 { throw UserFacingError.offline }
             return [Self.parisFrance]
@@ -141,7 +159,7 @@ extension SearchViewModelTests {
 
     @Test("A CancellationError from the service never changes the state")
     func cancellationErrorIgnored() async {
-        let model = SearchViewModel(service: StubWeatherService(search: { _ in throw CancellationError() }))
+        let model = SearchViewModel(service: StubWeatherService(search: { _, _ in throw CancellationError() }))
         model.query = "Paris"
         await model.search()
         #expect(model.state == .loading)
@@ -151,7 +169,7 @@ extension SearchViewModelTests {
     func cancelledResultDropped() async {
         let started = Gate()
         let release = Gate()
-        let model = SearchViewModel(service: StubWeatherService(search: { _ in
+        let model = SearchViewModel(service: StubWeatherService(search: { _, _ in
             started.open()
             await release.wait()
             return [Self.parisFrance]
@@ -174,7 +192,7 @@ extension SearchViewModelTests {
                                 timeZone: "Europe/London")
         let lonStarted = Gate()
         let releaseLon = Gate()
-        let model = SearchViewModel(service: StubWeatherService(search: { query in
+        let model = SearchViewModel(service: StubWeatherService(search: { query, _ in
             if query == "Lon" {
                 lonStarted.open()
                 await releaseLon.wait()   // the older request answers last
@@ -204,7 +222,7 @@ extension SearchViewModelTests {
 extension SearchViewModelTests {
     private static func countingService(_ calls: Recorder<String>, returning places: [Place])
         -> StubWeatherService {
-        StubWeatherService(search: { query in
+        StubWeatherService(search: { query, _ in
             await calls.append(query)
             return places
         })

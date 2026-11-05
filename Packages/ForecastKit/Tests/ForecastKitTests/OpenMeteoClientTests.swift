@@ -51,11 +51,11 @@ struct OpenMeteoClientTests {
 
     // MARK: - Requests
 
-    @Test("Search request hits the geocoding endpoint with a trimmed, percent-encoded name")
+    @Test("Search request hits the geocoding endpoint with a trimmed, percent-encoded name, in English by default")
     func searchRequest() async throws {
         try Self.serve("geocoding-empty")
 
-        _ = try await client.searchPlaces(matching: "  New York ")
+        _ = try await client.searchPlaces(matching: "  New York ", language: nil)
 
         let request = try #require(StubURLProtocol.requests.first)
         let url = try #require(request.url)
@@ -65,8 +65,18 @@ struct OpenMeteoClientTests {
         #expect(url.path() == "/v1/search")
         #expect(url.absoluteString.contains("name=New%20York"))
         #expect(try Self.queryItems(of: request) == [
-            "name": "New York", "count": "10", "language": "en", "format": "json"
+            "name": "New York", "count": "10", "format": "json"
         ])
+    }
+
+    @Test("Search sends the query's language, except English, the API default (specs/007 FR-002)",
+          arguments: [("be", "be"), ("zh", "zh"), ("en", nil), (nil, nil)] as [(String?, String?)])
+    func searchRequestLanguage(language: String?, expected: String?) async throws {
+        try Self.serve("geocoding-empty")
+
+        _ = try await client.searchPlaces(matching: "Мінск", language: language)
+
+        #expect(try Self.queryItems(of: StubURLProtocol.requests.first)["language"] == expected)
     }
 
     @Test("Forecast request asks for the contract's variables and leaves out defaults (7 days, metric units)")
@@ -98,7 +108,7 @@ struct OpenMeteoClientTests {
     func searchDecodesPlaces() async throws {
         try Self.serve("geocoding-paris")
 
-        let places = try await client.searchPlaces(matching: "Paris")
+        let places = try await client.searchPlaces(matching: "Paris", language: nil)
 
         #expect(places.count >= 2)
         let france = try #require(places.first)
@@ -115,7 +125,7 @@ struct OpenMeteoClientTests {
     func searchEmpty() async throws {
         try Self.serve("geocoding-empty")
 
-        let places = try await client.searchPlaces(matching: "zzqxw")
+        let places = try await client.searchPlaces(matching: "zzqxw", language: nil)
 
         #expect(places.isEmpty)
     }
@@ -126,7 +136,7 @@ struct OpenMeteoClientTests {
         {"results":[{"id":1,"name":"Nowhere","latitude":1.5,"longitude":-2.5,"timezone":"UTC"}]}
         """)
 
-        let places = try await client.searchPlaces(matching: "Nowhere")
+        let places = try await client.searchPlaces(matching: "Nowhere", language: nil)
 
         #expect(places == [Place(id: 1, name: "Nowhere", region: nil, country: nil,
                                  latitude: 1.5, longitude: -2.5, timeZone: "UTC")])
@@ -242,7 +252,7 @@ struct OpenMeteoClientTests {
         Self.serve(json: #"{"error":true,"reason":"Boom"}"#, status: status)
 
         await #expect(throws: UserFacingError.serviceUnavailable) {
-            try await client.searchPlaces(matching: "Paris")
+            try await client.searchPlaces(matching: "Paris", language: nil)
         }
         await #expect(throws: UserFacingError.serviceUnavailable) {
             try await client.forecast(for: chamonix)
@@ -255,7 +265,7 @@ struct OpenMeteoClientTests {
         StubURLProtocol.stub { _ in .failure(URLError(code)) }
 
         await #expect(throws: UserFacingError.offline) {
-            try await client.searchPlaces(matching: "Paris")
+            try await client.searchPlaces(matching: "Paris", language: nil)
         }
         await #expect(throws: UserFacingError.offline) {
             try await client.forecast(for: chamonix)
@@ -267,7 +277,7 @@ struct OpenMeteoClientTests {
         Self.serve(json: "{ not json")
 
         await #expect(throws: UserFacingError.unexpected) {
-            try await client.searchPlaces(matching: "Paris")
+            try await client.searchPlaces(matching: "Paris", language: nil)
         }
         await #expect(throws: UserFacingError.unexpected) {
             try await client.forecast(for: chamonix)
@@ -279,7 +289,7 @@ struct OpenMeteoClientTests {
         StubURLProtocol.stub { _ in .failure(URLError(.cancelled)) }
 
         await #expect(throws: CancellationError.self) {
-            try await client.searchPlaces(matching: "Paris")
+            try await client.searchPlaces(matching: "Paris", language: nil)
         }
         await #expect(throws: CancellationError.self) {
             try await client.forecast(for: chamonix)
