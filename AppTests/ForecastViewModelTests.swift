@@ -12,9 +12,11 @@ struct ForecastViewModelTests {
     /// Seven snowy, cold days: a clear Skiing week.
     nonisolated static let alpineWeek: [DailyWeather] = (3...9).map { day in
         DailyWeather(date: LocalDate(year: 2026, month: 11, day: day)!, weatherCode: 73,
-                     temperatureMax: -5, temperatureMin: -10, precipitation: 2, rain: 0,
-                     snowfall: 20, snowDepth: 80, precipitationProbability: 80,
-                     windSpeedMax: 15, windGustsMax: 25, sunshine: 2)
+                     temperatureMax: .celsius(-5), temperatureMin: .celsius(-10),
+                     precipitation: .millimetres(2), rain: .millimetres(0),
+                     snowfall: .centimetres(20), snowDepth: .centimetres(80), precipitationProbability: 80,
+                     windSpeedMax: .kilometresPerHour(15), windGustsMax: .kilometresPerHour(25),
+                     sunshine: .hours(2))
     }
 
     @Test("Starts loading so the screen never shows a blank idle state")

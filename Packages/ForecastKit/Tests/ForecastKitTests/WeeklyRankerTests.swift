@@ -16,7 +16,7 @@ struct WeeklyRankerTests {
     static func day(_ offset: Int, code: Int, tmax: Double, tmin: Double,
                     precipitation: Double, rain: Double? = nil, snowfall: Double, depth: Double,
                     probability: Double, wind: Double, gusts: Double, sun: Double) -> DailyWeather {
-        DailyWeather(date: date(offset), weatherCode: code, temperatureMax: tmax, temperatureMin: tmin,
+        DailyWeather.metric(date: date(offset), weatherCode: code, temperatureMax: tmax, temperatureMin: tmin,
                      precipitation: precipitation, rain: rain ?? precipitation,
                      snowfall: snowfall, snowDepth: depth, precipitationProbability: probability,
                      windSpeedMax: wind, windGustsMax: gusts, sunshine: sun)
@@ -126,7 +126,7 @@ struct WeeklyRankerTests {
 
     /// 20 °C, dry, light wind, 9 h sun: Outdoor sightseeing 100. `sun: 0` gives 85.
     func outdoorDay(_ offset: Int, sun: Double = 9, probability: Double? = 0) -> DailyWeather {
-        DailyWeather(date: Self.date(offset), weatherCode: 1, temperatureMax: 20, temperatureMin: 12,
+        DailyWeather.metric(date: Self.date(offset), weatherCode: 1, temperatureMax: 20, temperatureMin: 12,
                      precipitation: 0, rain: 0, snowfall: 0, snowDepth: 0,
                      precipitationProbability: probability, windSpeedMax: 10, windGustsMax: 20, sunshine: sun)
     }
@@ -224,7 +224,7 @@ struct WeeklyRankerTests {
             let result: DaySuitability.Result = score.map {
                 .scored(score: $0, label: SuitabilityLabel(score: $0), reasons: [])
             } ?? .noData
-            return DaySuitability(activity: activity, weather: DailyWeather(date: date(offset)), result: result)
+            return DaySuitability(activity: activity, weather: DailyWeather.metric(date: date(offset)), result: result)
         }
     }
 

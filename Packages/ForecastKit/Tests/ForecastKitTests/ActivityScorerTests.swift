@@ -10,19 +10,19 @@ struct ActivityScorerTests {
     static let date = LocalDate(year: 2026, month: 11, day: 3)!
 
     /// Snowy, cold, calm: Skiing 100.
-    static let perfectSkiing = DailyWeather(
+    static let perfectSkiing = DailyWeather.metric(
         date: date, weatherCode: 73, temperatureMax: -5, temperatureMin: -10,
         precipitation: 2, rain: 0, snowfall: 20, snowDepth: 80,
         precipitationProbability: 80, windSpeedMax: 15, windGustsMax: 25, sunshine: 2)
 
     /// 22 °C, 25 km/h breeze, dry: Surfing 100.
-    static let perfectSurfing = DailyWeather(
+    static let perfectSurfing = DailyWeather.metric(
         date: date, weatherCode: 1, temperatureMax: 22, temperatureMin: 15,
         precipitation: 0, rain: 0, snowfall: 0, snowDepth: 0,
         precipitationProbability: 0, windSpeedMax: 25, windGustsMax: 40, sunshine: 9)
 
     /// 20 °C, dry, light wind, 9 h sun: Outdoor sightseeing 100.
-    static let perfectOutdoor = DailyWeather(
+    static let perfectOutdoor = DailyWeather.metric(
         date: date, weatherCode: 1, temperatureMax: 20, temperatureMin: 12,
         precipitation: 0, rain: 0, snowfall: 0, snowDepth: 0,
         precipitationProbability: 0, windSpeedMax: 10, windGustsMax: 20, sunshine: 9)
@@ -63,7 +63,7 @@ struct ActivityScorerTests {
     ])
     func skiingSnow(snowfall: Double, depth: Double, expected: Int) {
         // Zero snow hits the no-snow cap (raw 50 → 10); any snow lifts it.
-        let weather = with(Self.perfectSkiing) { $0.snowfall = snowfall; $0.snowDepth = depth }
+        let weather = with(Self.perfectSkiing) { $0.snowfall = .centimetres(snowfall); $0.snowDepth = .centimetres(depth) }
         #expect(score(.skiing, weather) == expected)
     }
 
@@ -71,28 +71,28 @@ struct ActivityScorerTests {
         (-20.0, 100), (0.0, 100), (2.0, 90), (5.0, 75), (15.0, 75)
     ])
     func skiingCold(tmax: Double, expected: Int) {
-        #expect(score(.skiing, with(Self.perfectSkiing) { $0.temperatureMax = tmax }) == expected)
+        #expect(score(.skiing, with(Self.perfectSkiing) { $0.temperatureMax = .celsius(tmax) }) == expected)
     }
 
     @Test("skiing wind factor uses gusts: ≤ 30 → 1, ≥ 70 → 0, weight 15", arguments: [
         (0.0, 100), (30.0, 100), (60.0, 89), (70.0, 85), (120.0, 85)
     ])
     func skiingWind(gusts: Double, expected: Int) {
-        #expect(score(.skiing, with(Self.perfectSkiing) { $0.windGustsMax = gusts }) == expected)
+        #expect(score(.skiing, with(Self.perfectSkiing) { $0.windGustsMax = .kilometresPerHour(gusts) }) == expected)
     }
 
     @Test("skiing no-rain factor: 1 − min(rain/10, 1), weight 10", arguments: [
         (0.0, 100), (5.0, 95), (10.0, 90), (25.0, 90)
     ])
     func skiingRain(rain: Double, expected: Int) {
-        #expect(score(.skiing, with(Self.perfectSkiing) { $0.rain = rain }) == expected)
+        #expect(score(.skiing, with(Self.perfectSkiing) { $0.rain = .millimetres(rain) }) == expected)
     }
 
     @Test("skiing cap: no snowfall and no snow depth → at most 10, whatever the temperature")
     func skiingCap() {
         // Raw: snow 0 + cold 0.6×25 + wind 15 + rain 10 = 40.
         let mild = with(Self.perfectSkiing) {
-            $0.snowfall = 0; $0.snowDepth = 0; $0.temperatureMax = 2; $0.temperatureMin = 1
+            $0.snowfall = .centimetres(0); $0.snowDepth = .centimetres(0); $0.temperatureMax = .celsius(2); $0.temperatureMin = .celsius(1)
         }
         let capped = ActivityScorer.suitability(for: .skiing, on: mild)
         #expect(capped.score == 10)
@@ -103,17 +103,17 @@ struct ActivityScorerTests {
 
         // Found in a live check (Chamonix, 0 cm snow, tmin −3.9 °C scored Fair 25 with a ★ best day):
         // you cannot ski without snow, so a freezing night must not lift the cap.
-        #expect(score(.skiing, with(mild) { $0.temperatureMin = -4 }) == 10)
-        #expect(score(.skiing, with(mild) { $0.temperatureMax = -2; $0.temperatureMin = -8 }) == 10)
+        #expect(score(.skiing, with(mild) { $0.temperatureMin = .celsius(-4) }) == 10)
+        #expect(score(.skiing, with(mild) { $0.temperatureMax = .celsius(-2); $0.temperatureMin = .celsius(-8) }) == 10)
         // The skiing score does not read tmin, so a missing tmin is not "No data".
         #expect(score(.skiing, with(mild) { $0.temperatureMin = nil }) == 10)
 
         // Any snow on its own lifts the cap.
-        #expect(score(.skiing, with(mild) { $0.snowDepth = 10 }) == 45)
-        #expect(score(.skiing, with(mild) { $0.snowfall = 1 }) == 45)
+        #expect(score(.skiing, with(mild) { $0.snowDepth = .centimetres(10) }) == 45)
+        #expect(score(.skiing, with(mild) { $0.snowfall = .centimetres(1) }) == 45)
 
         // A raw score already below the cap is kept.
-        let awful = with(mild) { $0.temperatureMax = 20; $0.temperatureMin = 10; $0.rain = 20; $0.windGustsMax = 100 }
+        let awful = with(mild) { $0.temperatureMax = .celsius(20); $0.temperatureMin = .celsius(10); $0.rain = .millimetres(20); $0.windGustsMax = .kilometresPerHour(100) }
         #expect(score(.skiing, awful) == 0)
     }
 
@@ -123,21 +123,21 @@ struct ActivityScorerTests {
         (0.0, 72), (7.5, 86), (15.0, 100), (35.0, 100), (42.5, 80), (50.0, 60), (90.0, 60)
     ])
     func surfingWind(wind: Double, expected: Int) {
-        #expect(score(.surfing, with(Self.perfectSurfing) { $0.windSpeedMax = wind }) == expected)
+        #expect(score(.surfing, with(Self.perfectSurfing) { $0.windSpeedMax = .kilometresPerHour(wind) }) == expected)
     }
 
     @Test("surfing warmth factor: ≤ 5 → 0, 18–30 → 1, ≥ 38 → 0.5, weight 30", arguments: [
         (-5.0, 70), (5.0, 70), (11.5, 85), (18.0, 100), (30.0, 100), (36.0, 89), (38.0, 85), (45.0, 85)
     ])
     func surfingWarmth(tmax: Double, expected: Int) {
-        #expect(score(.surfing, with(Self.perfectSurfing) { $0.temperatureMax = tmax }) == expected)
+        #expect(score(.surfing, with(Self.perfectSurfing) { $0.temperatureMax = .celsius(tmax) }) == expected)
     }
 
     @Test("surfing dry factor: 1 − min(precipitation/10, 1), weight 30", arguments: [
         (0.0, 100), (5.0, 85), (10.0, 70), (40.0, 70)
     ])
     func surfingDry(precipitation: Double, expected: Int) {
-        #expect(score(.surfing, with(Self.perfectSurfing) { $0.precipitation = precipitation }) == expected)
+        #expect(score(.surfing, with(Self.perfectSurfing) { $0.precipitation = .millimetres(precipitation) }) == expected)
     }
 
     @Test("surfing cap: thunderstorm (WMO 95–99) → at most 10", arguments: [
@@ -157,7 +157,7 @@ struct ActivityScorerTests {
         (-5.0, 65), (0.0, 65), (12.0, 93), (15.0, 100), (25.0, 100), (35.0, 73), (38.0, 65), (45.0, 65)
     ])
     func outdoorComfort(tmax: Double, expected: Int) {
-        #expect(score(.outdoorSightseeing, with(Self.perfectOutdoor) { $0.temperatureMax = tmax }) == expected)
+        #expect(score(.outdoorSightseeing, with(Self.perfectOutdoor) { $0.temperatureMax = .celsius(tmax) }) == expected)
     }
 
     @Test("outdoor dry factor: 1 − max(min(precip/10, 1), probability/100 × 0.5), weight 35", arguments: [
@@ -166,7 +166,7 @@ struct ActivityScorerTests {
     ])
     func outdoorDry(precipitation: Double, probability: Double, expected: Int) {
         let weather = with(Self.perfectOutdoor) {
-            $0.precipitation = precipitation; $0.precipitationProbability = probability
+            $0.precipitation = .millimetres(precipitation); $0.precipitationProbability = probability
         }
         #expect(score(.outdoorSightseeing, weather) == expected)
     }
@@ -175,21 +175,21 @@ struct ActivityScorerTests {
         (0.0, 100), (20.0, 100), (30.0, 95), (50.0, 85), (80.0, 85)
     ])
     func outdoorCalm(wind: Double, expected: Int) {
-        #expect(score(.outdoorSightseeing, with(Self.perfectOutdoor) { $0.windSpeedMax = wind }) == expected)
+        #expect(score(.outdoorSightseeing, with(Self.perfectOutdoor) { $0.windSpeedMax = .kilometresPerHour(wind) }) == expected)
     }
 
     @Test("outdoor sun factor: min(sunshine hours / 8, 1), weight 15", arguments: [
         (0.0, 85), (2.0, 89), (8.0, 100), (12.0, 100)
     ])
     func outdoorSun(hours: Double, expected: Int) {
-        #expect(score(.outdoorSightseeing, with(Self.perfectOutdoor) { $0.sunshine = hours }) == expected)
+        #expect(score(.outdoorSightseeing, with(Self.perfectOutdoor) { $0.sunshine = .hours(hours) }) == expected)
     }
 
     @Test("outdoor cap: thunderstorm or snowfall ≥ 2 cm → at most 20", arguments: [
         (1, 0.0, 100), (95, 0.0, 20), (99, 0.0, 20), (1, 1.9, 100), (1, 2.0, 20), (71, 15.0, 20)
     ])
     func outdoorCap(code: Int, snowfall: Double, expected: Int) {
-        let weather = with(Self.perfectOutdoor) { $0.weatherCode = code; $0.snowfall = snowfall }
+        let weather = with(Self.perfectOutdoor) { $0.weatherCode = code; $0.snowfall = .centimetres(snowfall) }
         let result = ActivityScorer.suitability(for: .outdoorSightseeing, on: weather)
         #expect(result.score == expected)
         if expected == 20, case let .scored(_, _, reasons) = result.result {
@@ -203,11 +203,11 @@ struct ActivityScorerTests {
         perfectOutdoor,                                                     // outdoor 100 → indoor 30
         perfectSkiing,                                                      // outdoor capped 20 → 78
         perfectSurfing,
-        DailyWeather(date: date, weatherCode: 63, temperatureMax: 40, temperatureMin: 30,
+        DailyWeather.metric(date: date, weatherCode: 63, temperatureMax: 40, temperatureMin: 30,
                      precipitation: 20, rain: 20, snowfall: 0, snowDepth: 0,
                      precipitationProbability: 100, windSpeedMax: 80, windGustsMax: 100,
                      sunshine: 0),                                          // outdoor 0 → indoor 90
-        DailyWeather(date: date, weatherCode: 61, temperatureMax: 11, temperatureMin: 6,
+        DailyWeather.metric(date: date, weatherCode: 61, temperatureMax: 11, temperatureMin: 6,
                      precipitation: 12, rain: 12, snowfall: 0, snowDepth: 0,
                      precipitationProbability: 90, windSpeedMax: 20, windGustsMax: 35,
                      sunshine: 0)                                           // rainy city: outdoor 41 → 65
@@ -282,7 +282,7 @@ struct ActivityScorerTests {
 
     @Test("a day with no values at all is No data for every activity", arguments: Activity.allCases)
     func emptyDay(activity: Activity) {
-        #expect(ActivityScorer.suitability(for: activity, on: DailyWeather(date: Self.date)).result == .noData)
+        #expect(ActivityScorer.suitability(for: activity, on: DailyWeather.metric(date: Self.date)).result == .noData)
     }
 
     // MARK: - Determinism (FR-009)

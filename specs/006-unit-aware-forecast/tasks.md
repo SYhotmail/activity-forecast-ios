@@ -6,7 +6,7 @@ Gates: `swiftlint lint --strict`, `swift test --package-path Packages/ForecastKi
 
 ## Phase 1: Setup
 
-- [ ] T001 Commit the 006 spec artifacts.
+- [X] T001 Commit the 006 spec artifacts.
 
 ## Phase 2: US1 + US2 (P1, P2) — measurements end to end
 
