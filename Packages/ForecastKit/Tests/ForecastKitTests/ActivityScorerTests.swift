@@ -59,10 +59,11 @@ struct ActivityScorerTests {
     // MARK: - Skiing
 
     @Test("skiing snow factor: min(1, snowfall/10 + depth/100), weight 50", arguments: [
-        (0.0, 0.0, 10), (5.0, 0.0, 75), (0.0, 50.0, 75), (10.0, 0.0, 100), (0.0, 100.0, 100), (30.0, 200.0, 100)
+        (0.0, 0.0, 0), (1.9, 9.9, 0), (2.0, 0.0, 60), (0.0, 10.0, 55),
+        (5.0, 0.0, 75), (0.0, 50.0, 75), (10.0, 0.0, 100), (0.0, 100.0, 100), (30.0, 200.0, 100)
     ])
     func skiingSnow(snowfall: Double, depth: Double, expected: Int) {
-        // Zero snow hits the no-snow cap (raw 50 → 10); any snow lifts it.
+        // Below 10 cm depth and 2 cm snowfall the day is not skiable: capped at 0 (specs/009).
         let weather = with(Self.perfectSkiing) {
             $0.snowfall = .centimetres(snowfall); $0.snowDepth = .centimetres(depth)
         }
@@ -90,7 +91,7 @@ struct ActivityScorerTests {
         #expect(score(.skiing, with(Self.perfectSkiing) { $0.rain = .millimetres(rain) }) == expected)
     }
 
-    @Test("skiing cap: no snowfall and no snow depth → at most 10, whatever the temperature")
+    @Test("skiing cap: not skiable (depth < 10 cm and snowfall < 2 cm) → 0, whatever the weather (specs/009)")
     func skiingCap() {
         // Raw: snow 0 + cold 0.6×25 + wind 15 + rain 10 = 40.
         let mild = with(Self.perfectSkiing) {
@@ -98,22 +99,31 @@ struct ActivityScorerTests {
             $0.temperatureMax = .celsius(2); $0.temperatureMin = .celsius(1)
         }
         let capped = ActivityScorer.suitability(for: .skiing, on: mild)
-        #expect(capped.score == 10)
+        #expect(capped.score == 0)
         if case let .scored(_, label, reasons) = capped.result {
             #expect(label == .poor)
-            #expect(reasons.first?.kind == .cap)
+            #expect(reasons.first == Reason(kind: .cap, detail: .noSnowOnGround))
         }
 
         // Found in a live check (Chamonix, 0 cm snow, tmin −3.9 °C scored Fair 25 with a ★ best day):
         // you cannot ski without snow, so a freezing night must not lift the cap.
-        #expect(score(.skiing, with(mild) { $0.temperatureMin = .celsius(-4) }) == 10)
-        #expect(score(.skiing, with(mild) { $0.temperatureMax = .celsius(-2); $0.temperatureMin = .celsius(-8) }) == 10)
+        #expect(score(.skiing, with(mild) { $0.temperatureMin = .celsius(-4) }) == 0)
+        #expect(score(.skiing, with(mild) { $0.temperatureMax = .celsius(-2); $0.temperatureMin = .celsius(-8) }) == 0)
         // The skiing score does not read tmin, so a missing tmin is not "No data".
-        #expect(score(.skiing, with(mild) { $0.temperatureMin = nil }) == 10)
+        #expect(score(.skiing, with(mild) { $0.temperatureMin = nil }) == 0)
 
-        // Any snow on its own lifts the cap.
+        // A dusting is not skiable either (live Minsk, 2026-11-05: 0.21 cm falling, 1 cm lying scored ≈32).
+        let dusting = with(mild) { $0.snowfall = .centimetres(0.21); $0.snowDepth = .centimetres(1) }
+        let dusted = ActivityScorer.suitability(for: .skiing, on: dusting)
+        #expect(dusted.score == 0)
+        if case let .scored(_, _, reasons) = dusted.result {
+            #expect(reasons.first == Reason(kind: .cap, detail: .tooLittleSnow(.centimetres(1))))
+        }
+        #expect(score(.skiing, with(mild) { $0.snowDepth = .centimetres(9.9); $0.snowfall = .centimetres(1.9) }) == 0)
+
+        // Either threshold on its own makes the day skiable.
         #expect(score(.skiing, with(mild) { $0.snowDepth = .centimetres(10) }) == 45)
-        #expect(score(.skiing, with(mild) { $0.snowfall = .centimetres(1) }) == 45)
+        #expect(score(.skiing, with(mild) { $0.snowfall = .centimetres(2) }) == 50)
 
         // A raw score already below the cap is kept.
         let awful = with(mild) {

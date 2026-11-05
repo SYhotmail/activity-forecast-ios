@@ -56,6 +56,22 @@ struct UnitIndependenceTests {
         #expect(ActivityScorer.suitability(for: .skiing, on: metres).score == expected)
     }
 
+    @Test("skiing's 10 cm depth threshold holds in metres and feet (specs/009)")
+    func skiableDepthInOtherUnits() {
+        let thin = DailyWeather.metric(date: ActivityScorerTests.date, weatherCode: 3,
+                                       temperatureMax: -2, precipitation: 0, rain: 0,
+                                       snowfall: 0, snowDepth: 0, windGustsMax: 20)
+        var under = thin
+        under.snowDepth = .feet(0.32)    // 9.75 cm
+        var atMetres = thin
+        atMetres.snowDepth = .metres(0.1)
+        var overFeet = thin
+        overFeet.snowDepth = .feet(0.33) // 10.06 cm
+        #expect(ActivityScorer.suitability(for: .skiing, on: under).score == 0)
+        #expect(ActivityScorer.suitability(for: .skiing, on: atMetres).score == 55)
+        #expect(ActivityScorer.suitability(for: .skiing, on: overFeet).score == 55)
+    }
+
     @Test("caps hold at their converted thresholds: 2 cm snowfall stops outdoor sightseeing")
     func capInOtherUnits() {
         let snowy = DailyWeather.metric(date: ActivityScorerTests.date, weatherCode: 1,
