@@ -19,9 +19,12 @@ final class SearchViewModel {
     private var lastQuery: String?
 
     private let service: any WeatherService
+    private let language: QueryLanguage
 
-    init(service: any WeatherService) {
+    /// - Parameter language: picks the language each query is searched in (specs/007).
+    init(service: any WeatherService, language: QueryLanguage = .user) {
         self.service = service
+        self.language = language
     }
 
     /// Searches for the current query, or returns to `.idle` when it is too short.
@@ -40,7 +43,7 @@ final class SearchViewModel {
         state = .loading
         let outcome: LoadState<[Place]>
         do {
-            let places = try await service.searchPlaces(matching: trimmed)
+            let places = try await service.searchPlaces(matching: trimmed, language: language.code(for: trimmed))
             outcome = places.isEmpty ? .empty : .loaded(places)
         } catch is CancellationError {
             return

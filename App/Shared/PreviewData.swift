@@ -26,22 +26,22 @@ nonisolated enum PreviewData {
 
     /// Answers instantly with the canned data.
     static let service = StubWeatherService(
-        search: { _ in [paris, parisTexas] },
+        search: { _, _ in [paris, parisTexas] },
         forecast: { _ in week }
     )
 
     /// Never answers, to preview loading states.
     static let hangingService = StubWeatherService(
-        search: { _ in try await Task.sleep(for: .seconds(3600)); return [] },
+        search: { _, _ in try await Task.sleep(for: .seconds(3600)); return [] },
         forecast: { _ in try await Task.sleep(for: .seconds(3600)); return [] }
     )
 
     /// Finds nothing.
-    static let emptyService = StubWeatherService(search: { _ in [] })
+    static let emptyService = StubWeatherService(search: { _, _ in [] })
 
     /// Fails as if the device were offline.
     static let offlineService = StubWeatherService(
-        search: { _ in throw UserFacingError.offline },
+        search: { _, _ in throw UserFacingError.offline },
         forecast: { _ in throw UserFacingError.offline }
     )
 
