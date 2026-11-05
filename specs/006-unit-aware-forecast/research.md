@@ -10,9 +10,9 @@
 
 ## R2 — Units from the locale
 
-**Decision**: `ForecastUnits(locale:)`: temperature from `Locale.temperatureUnit` (honours the iOS Temperature setting); precipitation `inch` when `measurementSystem == .us`, else `mm`; wind `kmh` when `measurementSystem == .metric`, else `mph`. Built once in `ActivityForecastApp`.
+**Decision**: `ForecastUnits(locale:)`: temperature from `UnitTemperature(forLocale:usage: .weather)`, the lookup the display formatter uses, so it honours the iOS Temperature setting (ICU `mu` keyword: `celsius` / `fahrenhe`); precipitation `inch` when `measurementSystem == .us`, else `mm`; wind `kmh` when `measurementSystem == .metric`, else `mph`. Built once in `ActivityForecastApp`.
 
-**Rationale**: matches what `MeasurementFormatter` usages show, so the fetched units are usually already the displayed ones. A later locale change only affects display formatting, which converts anyway; scores are unit-independent (R1).
+**Rationale**: `Locale.temperatureUnit` is not available in this SDK. The `forLocale:` lookups for wind and rainfall return base units (m/s, m) for some keyword locales such as `en_US@temperature=celsius`, so wind and precipitation use `measurementSystem`. This matches what the formatter usages show so the fetched units are usually already the displayed ones. A later locale change only affects display formatting, which converts anyway; scores are unit-independent (R1).
 
 ## R3 — Trust response units
 
