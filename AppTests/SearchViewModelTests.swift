@@ -67,8 +67,7 @@ struct SearchViewModelTests {
 
     @Test("Sends the language detected for the query with it (specs/007 FR-006)", arguments: [
         ("Мінск", ["en", "be"], "be"),
-        ("Paris", ["de", "en"], "de"),
-        ("Paris", ["en", "be"], nil)
+        ("Paris", ["de", "en"], nil)
     ] as [(String, [String], String?)])
     func sendsQueryLanguage(query: String, candidates: [String], expected: String?) async {
         let received = Recorder<String?>()

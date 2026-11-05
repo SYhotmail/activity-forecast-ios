@@ -1,12 +1,13 @@
 import Testing
 @testable import ActivityForecast
 
-/// The geocoding language picked for a query (specs/007 FR-003…FR-005). Candidates are fixed
+/// The geocoding language picked for a query (specs/007 FR-003…FR-005): English unless the
+/// query is in another script. Candidates are fixed
 /// here; in the app they are the user's preferred languages, then their keyboards.
 @MainActor
 @Suite("QueryLanguage: geocoding language from the query")
 struct QueryLanguageTests {
-    @Test("a non-Latin query uses the language recognised in it, hinted by the user's languages",
+    @Test("a non-Latin query uses the recognised language if it is the user's, else the user's in that script",
           arguments: [
               ("Мінск", ["en", "be"], "be"),
               ("Минск", ["en", "ru"], "ru"),
@@ -25,22 +26,20 @@ struct QueryLanguageTests {
         #expect(QueryLanguage.fixed(["en"]).code(for: query) == expected)
     }
 
-    @Test("a Latin query uses the first preferred language; English is the API default, so nil",
+    @Test("a Latin query is searched in English, the API default, whatever the user's languages",
           arguments: [
-              ("Paris", ["de", "en"], "de"),
-              ("Wien", ["de"], "de"),
-              ("Paris", ["en", "be"], nil),
-              ("München", ["en"], nil),
-              ("Paris", [], nil)
-          ] as [(String, [String], String?)])
-    func latinQuery(query: String, candidates: [String], expected: String?) {
-        #expect(QueryLanguage.fixed(candidates).code(for: query) == expected)
+              ("Paris", ["de", "en"]),
+              ("Wien", ["de"]),
+              ("München", ["en"]),
+              ("Paris", [])
+          ] as [(String, [String])])
+    func latinQuery(query: String, candidates: [String]) {
+        #expect(QueryLanguage.fixed(candidates).code(for: query) == nil)
     }
 
-    @Test("a query with no recognisable language falls back to the first preferred language")
+    @Test("a query with no recognisable script is searched in English")
     func unrecognised() {
-        #expect(QueryLanguage.fixed(["fr", "en"]).code(for: "12345") == "fr")
-        #expect(QueryLanguage.fixed(["en"]).code(for: "12345") == nil)
+        #expect(QueryLanguage.fixed(["fr", "en"]).code(for: "12345") == nil)
     }
 
     @Test("candidates are language codes only, preferred first, without duplicates (FR-005)")
