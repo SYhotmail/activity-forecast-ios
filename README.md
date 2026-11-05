@@ -8,7 +8,13 @@ Weather comes from Open-Meteo's [Geocoding](https://open-meteo.com/en/docs/geoco
 
 ## Run it
 
-Requirements: Xcode 27+ (Swift 6.4 toolchain), iOS 18+ simulator. The app is universal: iPhone, iPhone Duo (both displays) and iPad at every window size. Nothing to install: no third-party dependencies, native `.xcodeproj`. [SwiftLint](https://github.com/realm/SwiftLint) is only needed for the lint gate.
+Requirements: Xcode 27+ (Swift 6.4 toolchain), iOS 18+ simulator. The app is universal: iPhone, iPhone Duo (both displays) and iPad at every window size.
+
+Dependencies:
+
+- **App and tests**: none. No third-party packages, native `.xcodeproj`; the only package is the local `Packages/ForecastKit`, so a fresh clone builds and tests with Xcode alone.
+- **Lint (optional)**: [SwiftLint](https://github.com/realm/SwiftLint), a development tool that is not linked into the app and not run by the Xcode build. It is needed only for the `swiftlint lint --strict` PR gate (config in `.swiftlint.yml`; checked with 0.65). Install with `brew install swiftlint`.
+- **Signing**: the project sets no development team. Simulator builds need none; to run on a device, pick your own team under *Signing & Capabilities*.
 
 ```bash
 open ActivityForecast.xcodeproj      # scheme "ActivityForecast", any iPhone, iPhone Duo or iPad simulator, ⌘R
