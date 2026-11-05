@@ -233,10 +233,11 @@ struct WeeklyRankerTests {
     ]
     // swiftlint:enable line_length
 
-    @Test("a snowless week with a dusting scores 0 for skiing, with no best day (specs/009)")
+    @Test("a snowless week with a dusting scores near 0 for skiing, with no best day (specs/009)")
     func minskWeek() throws {
         let skiing = try ranking(WeeklyRanker.rank(Self.minsk, for: Self.place), of: .skiing)
-        #expect(skiing.weeklyScore == 0)
+        // Six snowless days at 0 and the dusting capped at 10: round(10 / 7) = 1.
+        #expect(skiing.weeklyScore == 1)
         #expect(skiing.bestDay == nil)
     }
 

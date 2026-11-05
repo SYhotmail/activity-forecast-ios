@@ -67,7 +67,8 @@ struct UnitIndependenceTests {
         atMetres.snowDepth = .metres(0.1)
         var overFeet = thin
         overFeet.snowDepth = .feet(0.33) // 10.06 cm
-        #expect(ActivityScorer.suitability(for: .skiing, on: under).score == 0)
+        // Thin cover, not skiable: capped at 10 (specs/009 FR-002).
+        #expect(ActivityScorer.suitability(for: .skiing, on: under).score == 10)
         #expect(ActivityScorer.suitability(for: .skiing, on: atMetres).score == 55)
         #expect(ActivityScorer.suitability(for: .skiing, on: overFeet).score == 55)
     }
