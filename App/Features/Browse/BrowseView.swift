@@ -35,12 +35,16 @@ struct BrowseView: View {
     }
 }
 
+private func browseVM() -> BrowseViewModel {
+    BrowseViewModel(service: PreviewData.service)
+}
+
 #Preview("Nothing selected") {
-    BrowseView(browse: BrowseViewModel(service: PreviewData.service))
+    BrowseView(browse: browseVM())
 }
 
 #Preview("Place selected") {
-    let browse = BrowseViewModel(service: PreviewData.service)
+    let browse = browseVM()
     browse.search.query = "Paris"
     browse.select(PreviewData.paris)
     return BrowseView(browse: browse)

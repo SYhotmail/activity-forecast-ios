@@ -10,7 +10,8 @@ struct ActivityForecastApp: App {
     @State private var browse = BrowseViewModel(
         service: OpenMeteoClient(
             units: ForecastUnits(locale: .autoupdatingCurrent),
-            logger: Logger(subsystem: Bundle.main.bundleIdentifier ?? "ActivityForecast", category: "network")))
+            logger: .init(category: "Network")),
+        logger: .init(category: "BrowseViewModel"))
 
     var body: some Scene {
         WindowGroup {

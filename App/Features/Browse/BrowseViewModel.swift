@@ -1,5 +1,6 @@
 import ForecastKit
 import Observation
+import os
 
 /// Navigation state shared by the narrow (stack) and wide (side-by-side) layouts
 /// (specs/003 contracts/ui.md, data-model.md › BrowseModel; renamed in specs/005 data-model.md).
@@ -25,9 +26,11 @@ final class BrowseViewModel {
     }
 
     private let service: any WeatherService
-
-    init(service: any WeatherService) {
+    private let logger: Logger
+    
+    init(service: any WeatherService, logger: Logger = .disabled) {
         self.service = service
+        self.logger = logger
         search = SearchViewModel(service: service)
     }
 
@@ -39,5 +42,13 @@ final class BrowseViewModel {
         forecast?.cancel()
         selectedPlace = place
         forecast = place.map { ForecastViewModel(place: $0, service: service) }
+    }
+    
+    func onAppear() {
+        logger.info("BrowseVM will appear")
+    }
+    
+    func onDisappear() {
+        logger.info("BrowseVM will disappear")
     }
 }
