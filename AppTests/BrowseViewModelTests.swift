@@ -12,7 +12,7 @@ struct BrowseViewModelTests {
     @Test("Starts with nothing selected and a search model using the same service")
     func startsEmpty() async {
         let calls = Recorder<String>()
-        let model = BrowseViewModel(service: StubWeatherService(search: { query in
+        let model = BrowseViewModel(service: StubWeatherService(search: { query, _ in
             await calls.append(query)
             return [Self.paris]
         }))

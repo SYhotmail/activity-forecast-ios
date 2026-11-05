@@ -37,12 +37,12 @@ struct DisplayTextTests {
 
     @Test("reasons read as a phrase plus the value in the user's units (FR-008, FR-016)")
     func measuredReasons() {
-        #expect(Reason.Detail.heavyRain(millimetres: 12).text == "Heavy rain \(Formatting.rainfall(12))")
-        #expect(Reason.Detail.freshSnow(centimetres: 20).text == "Fresh snow \(Formatting.snow(20))")
-        #expect(Reason.Detail.strongGusts(kilometresPerHour: 65).text
-                == "Strong gusts \(Formatting.windSpeed(65))")
-        #expect(Reason.Detail.comfortable(celsius: 20).text == "Comfortable \(Formatting.temperature(20))")
-        #expect(Reason.Detail.sunny(hours: 6).text == "Sunny \(Formatting.hours(6))")
+        #expect(Reason.Detail.heavyRain(.millimetres(12)).text == "Heavy rain \(Formatting.rainfall(.millimetres(12)))")
+        #expect(Reason.Detail.freshSnow(.centimetres(20)).text == "Fresh snow \(Formatting.snow(.centimetres(20)))")
+        #expect(Reason.Detail.strongGusts(.kilometresPerHour(65)).text
+                == "Strong gusts \(Formatting.windSpeed(.kilometresPerHour(65)))")
+        #expect(Reason.Detail.comfortable(.celsius(20)).text == "Comfortable \(Formatting.temperature(.celsius(20)))")
+        #expect(Reason.Detail.sunny(.hours(6)).text == "Sunny \(Formatting.hours(.hours(6)))")
         #expect(Reason.Detail.rainLikely(percent: 80).text == "Rain likely \(Formatting.percent(80))")
     }
 
@@ -51,29 +51,44 @@ struct DisplayTextTests {
 
     @Test("values convert to the locale's units: °F, in and mph in the US (FR-016)")
     func imperialLocale() {
-        #expect(Formatting.temperature(20, locale: Self.unitedStates) == "68°F")
-        #expect(Formatting.rainfall(12, locale: Self.unitedStates) == "0.47 in")
-        #expect(Formatting.snow(20, locale: Self.unitedStates) == "7.87 in")
-        #expect(Formatting.windSpeed(65, locale: Self.unitedStates) == "40.4 mph")
+        #expect(Formatting.temperature(.celsius(20), locale: Self.unitedStates) == "68°F")
+        #expect(Formatting.rainfall(.millimetres(12), locale: Self.unitedStates) == "0.47 in")
+        #expect(Formatting.snow(.centimetres(20), locale: Self.unitedStates) == "7.87 in")
+        #expect(Formatting.windSpeed(.kilometresPerHour(65), locale: Self.unitedStates) == "40.4 mph")
     }
 
     @Test("metric locales keep °C, mm, cm and km/h with local number formatting (FR-016)")
     func metricLocale() {
-        #expect(Formatting.temperature(20.46, locale: Self.germany) == "20,5 °C")
-        #expect(Formatting.rainfall(12, locale: Self.germany) == "12 mm")
-        #expect(Formatting.snow(20, locale: Self.germany) == "20 cm")
-        #expect(Formatting.windSpeed(65, locale: Self.germany) == "65 km/h")
+        #expect(Formatting.temperature(.celsius(20.46), locale: Self.germany) == "20,5 °C")
+        #expect(Formatting.rainfall(.millimetres(12), locale: Self.germany) == "12 mm")
+        #expect(Formatting.snow(.centimetres(20), locale: Self.germany) == "20 cm")
+        #expect(Formatting.windSpeed(.kilometresPerHour(65), locale: Self.germany) == "65 km/h")
+    }
+
+    @Test("values received in US units show in metric for a metric locale (specs/006)")
+    func imperialInputMetricLocale() {
+        #expect(Formatting.temperature(.fahrenheit(68), locale: Self.germany) == "20 °C")
+        #expect(Formatting.rainfall(.inches(0.5), locale: Self.germany) == "12,7 mm")
+        #expect(Formatting.snow(.feet(1), locale: Self.germany) == "30,48 cm")
+        #expect(Formatting.windSpeed(.milesPerHour(10), locale: Self.germany) == "16,1 km/h")
+    }
+
+    @Test("sunshine arrives in seconds and reads in hours")
+    func sunshineHours() {
+        #expect(Formatting.hours(.seconds(21_600), locale: Self.unitedStates)
+                == Formatting.hours(.hours(6), locale: Self.unitedStates))
+        #expect(Formatting.hours(.seconds(21_600), locale: Self.unitedStates).contains("6"))
     }
 
     @Test("the user's temperature setting overrides the region default")
     func temperaturePreference() {
-        #expect(Formatting.temperature(20, locale: Locale(identifier: "en_US@temperature=celsius")) == "20°C")
+        #expect(Formatting.temperature(.celsius(20), locale: Locale(identifier: "en_US@temperature=celsius")) == "20°C")
     }
 
     @Test("light rain in inches stays visible instead of rounding to 0")
     func smallPrecipitation() {
-        #expect(Formatting.rainfall(1, locale: Self.unitedStates) == "0.04 in")
-        #expect(Formatting.rainfall(0, locale: Self.unitedStates) == "0 in")
+        #expect(Formatting.rainfall(.millimetres(1), locale: Self.unitedStates) == "0.04 in")
+        #expect(Formatting.rainfall(.millimetres(0), locale: Self.unitedStates) == "0 in")
     }
 
     @Test("missing values show a dash (FR-013)")

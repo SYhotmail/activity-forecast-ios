@@ -4,20 +4,24 @@ import Foundation
 /// No API key is needed. Failures are thrown as `UserFacingError`; cancellation as `CancellationError`.
 public struct OpenMeteoClient: WeatherService {
     private let session: URLSession
+    private let units: ForecastUnits
 
-    public init(session: URLSession = .shared) {
+    /// - Parameter units: what the forecast is requested in. Values are decoded in the units the
+    ///   response states, whatever was asked (specs/006 FR-001, FR-004).
+    public init(session: URLSession = .shared, units: ForecastUnits = .metric) {
         self.session = session
+        self.units = units
     }
 
-    public func searchPlaces(matching query: String) async throws -> [Place] {
+    public func searchPlaces(matching query: String, language: String?) async throws -> [Place] {
         let request = Self.searchRequest(
-            name: query.trimmingCharacters(in: .whitespacesAndNewlines))
+            name: query.trimmingCharacters(in: .whitespacesAndNewlines), language: language)
         let response: GeocodingResponseDTO = try await fetch(request)
         return response.places
     }
 
     public func forecast(for place: Place) async throws -> [DailyWeather] {
-        let request = Self.forecastRequest(latitude: place.latitude, longitude: place.longitude)
+        let request = Self.forecastRequest(latitude: place.latitude, longitude: place.longitude, units: units)
         let response: ForecastResponseDTO = try await fetch(request)
         return try response.dailyWeather()
     }
@@ -30,22 +34,50 @@ public struct OpenMeteoClient: WeatherService {
         "wind_speed_10m_max", "wind_gusts_10m_max", "sunshine_duration"
     ].joined(separator: ",")
 
-    static func searchRequest(name: String) -> URLRequest {
-        request(host: "geocoding-api.open-meteo.com", path: "/v1/search", query: [
-            ("name", name), ("count", "10"), ("language", "en"), ("format", "json")
-        ])
+    /// `language` decides which names the query is matched against, not only the language of
+    /// the results: "Мінск" finds Minsk with `be` and nothing with `en` (specs/007). It is left
+    /// out when absent or `en`, the API default.
+    static func searchRequest(name: String, language: String?) -> URLRequest {
+        let languageParameter = language.flatMap { $0 == "en" ? nil : ("language", $0) }
+        return request(host: "geocoding-api.open-meteo.com", path: "/v1/search", query: [
+            ("name", name), ("count", "10"), ("format", "json")
+        ] + [languageParameter].compactMap { $0 })
     }
 
-    static func forecastRequest(latitude: Double, longitude: Double) -> URLRequest {
+    static func forecastRequest(latitude: Double, longitude: Double, units: ForecastUnits) -> URLRequest {
         request(host: "api.open-meteo.com", path: "/v1/forecast", query: [
             ("latitude", String(latitude)),
             ("longitude", String(longitude)),
             ("daily", dailyVariables),
             ("hourly", "snow_depth"),
+            // Not defaults, so always sent: `timezone` defaults to GMT, which would cut days and
+            // daily maxima at UTC midnight; `auto` uses the place's zone (FR-003). `timeformat`
+            // defaults to ISO 8601 strings; Unix seconds are dated with that zone, DST-safe.
             ("timezone", "auto"),
-            ("timeformat", "unixtime"),
-            ("forecast_days", "7")
-        ])
+            ("timeformat", "unixtime")
+            // `forecast_days` is left out: the default is 7, today + 6 (FR-003, verified live).
+        ] + unitParameters(units))
+    }
+
+    /// Only the unit parameters that differ from Open-Meteo's defaults (specs/006 FR-001).
+    /// A default unit is left out instead of sent, so a metric request stays the plain contract URL:
+    /// - `temperature_unit` defaults to `celsius`;
+    /// - `wind_speed_unit` defaults to `kmh`;
+    /// - `precipitation_unit` defaults to `mm` (snowfall then in cm, snow depth in m).
+    /// The response states its units either way, and decoding reads those (FR-004).
+    static func unitParameters(_ units: ForecastUnits) -> [(String, String)] {
+        let defaults = ForecastUnits.metric
+        var parameters: [(String, String)] = []
+        if units.temperature != defaults.temperature {
+            parameters.append(("temperature_unit", units.temperature.rawValue))
+        }
+        if units.windSpeed != defaults.windSpeed {
+            parameters.append(("wind_speed_unit", units.windSpeed.rawValue))
+        }
+        if units.precipitation != defaults.precipitation {
+            parameters.append(("precipitation_unit", units.precipitation.rawValue))
+        }
+        return parameters
     }
 
     private static func request(host: String, path: String, query: [(String, String)]) -> URLRequest {

@@ -26,35 +26,36 @@ nonisolated enum PreviewData {
 
     /// Answers instantly with the canned data.
     static let service = StubWeatherService(
-        search: { _ in [paris, parisTexas] },
+        search: { _, _ in [paris, parisTexas] },
         forecast: { _ in week }
     )
 
     /// Never answers, to preview loading states.
     static let hangingService = StubWeatherService(
-        search: { _ in try await Task.sleep(for: .seconds(3600)); return [] },
+        search: { _, _ in try await Task.sleep(for: .seconds(3600)); return [] },
         forecast: { _ in try await Task.sleep(for: .seconds(3600)); return [] }
     )
 
     /// Finds nothing.
-    static let emptyService = StubWeatherService(search: { _ in [] })
+    static let emptyService = StubWeatherService(search: { _, _ in [] })
 
     /// Fails as if the device were offline.
     static let offlineService = StubWeatherService(
-        search: { _ in throw UserFacingError.offline },
+        search: { _, _ in throw UserFacingError.offline },
         forecast: { _ in throw UserFacingError.offline }
     )
 
-    // Mirrors DailyWeather's fields so each preview day reads as one labelled row.
+    // Mirrors DailyWeather's fields so each preview day reads as one labelled row (°C, mm, km/h, hours).
     // swiftlint:disable function_parameter_count
     private static func day(_ day: Int, code: Int, tmax: Double, tmin: Double,
                             precipitation: Double, probability: Double,
                             wind: Double, gusts: Double, sunshine: Double?) -> DailyWeather {
         DailyWeather(date: LocalDate(year: 2026, month: 11, day: day)!, weatherCode: code,
-                     temperatureMax: tmax, temperatureMin: tmin,
-                     precipitation: precipitation, rain: precipitation,
-                     snowfall: 0, snowDepth: 0, precipitationProbability: probability,
-                     windSpeedMax: wind, windGustsMax: gusts, sunshine: sunshine)
+                     temperatureMax: .celsius(tmax), temperatureMin: .celsius(tmin),
+                     precipitation: .millimetres(precipitation), rain: .millimetres(precipitation),
+                     snowfall: .centimetres(0), snowDepth: .centimetres(0), precipitationProbability: probability,
+                     windSpeedMax: .kilometresPerHour(wind), windGustsMax: .kilometresPerHour(gusts),
+                     sunshine: sunshine.map { .hours($0) })
     }
     // swiftlint:enable function_parameter_count
 }

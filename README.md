@@ -41,7 +41,7 @@ Process first, code second. Every step left an artifact in the repo:
 
 AI wrote most of the code. These checks were the guard against unverified output:
 
-- **API shapes were checked live** before the contract was written (e.g. a geocoding search with no matches *omits* `results`; snow depth only exists hourly, in metres). The test fixtures are recorded live responses.
+- **API shapes were checked live** before the contract was written (e.g. a geocoding search with no matches *omits* `results`; snow depth only exists hourly, in metres or feet). The test fixtures are recorded live responses.
 - **Scoring weights were worked through by hand** against four reference weeks before any code. The first draft **failed**: the rainy city ranked Surfing above Indoor. The weights were corrected and the reference weeks became tests (`WeeklyRankerTests`).
 - **A live end-to-end run** (real client → ranker, for Paris, Chamonix, London and Nazaré) found a real bug: Chamonix with **0 cm of snow scored Skiing "Fair" with a ★**, because the no-snow cap only applied above freezing. It was fixed test-first (T034, issue #45).
 - **Not verified by me**: driving the UI in the simulator (no UI automation was available in this environment). Screens are covered by SwiftUI previews for every state and by the manual checklist in `quickstart.md`. The view models behind them are unit-tested.
