@@ -18,8 +18,8 @@ extension OpenMeteoClientTests {
         #expect(try Self.queryItems(of: StubURLProtocol.requests.first)["language"] == expected)
     }
 
-    @Test("A value that is not a language code is not sent (specs/008 FR-005)",
-          arguments: ["", "klingon", "1", "b", "be by", "бе", "-BY"])
+    @Test("A value that is not a known ISO 639 code is not sent (specs/008 FR-005)",
+          arguments: ["", "klingon", "1", "b", "be by", "бе", "-BY", "xx", "qq-QQ", "zzz"])
     func searchRequestDropsBadLanguage(language: String) async throws {
         try Self.serve("geocoding-empty")
 
