@@ -17,7 +17,9 @@ struct QueryLanguage {
     let candidates: () -> [String]
 
     /// The device's preferred languages, then its enabled keyboards (FR-005). Read on each search,
-    /// so a keyboard added while the app runs counts.
+    /// so a keyboard added while the app runs counts. `activeInputModes` is a required-reason API
+    /// (active keyboards), declared in `App/PrivacyInfo.xcprivacy` with reason 54BD.1: the search
+    /// field's language, and so its results, follow the user's keyboards.
     static let user = QueryLanguage {
         languageCodes(from: Locale.preferredLanguages
                       + UITextInputMode.activeInputModes.compactMap(\.primaryLanguage))
