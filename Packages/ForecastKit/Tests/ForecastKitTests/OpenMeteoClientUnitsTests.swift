@@ -5,13 +5,15 @@ import Testing
 /// Units of the forecast request and response (specs/006). An extension of the serialized
 /// `OpenMeteoClientTests` suite, because `StubURLProtocol` holds a process-wide handler.
 extension OpenMeteoClientTests {
-    @Test("Forecast request asks for the client's units (specs/006 FR-001)", arguments: [
-        (ForecastUnits.imperial, "fahrenheit", "mph", "inch"),
-        (ForecastUnits(temperature: .celsius, windSpeed: .metresPerSecond, precipitation: .millimetres),
-         "celsius", "ms", "mm"),
-        (ForecastUnits(temperature: .celsius, windSpeed: .knots, precipitation: .inches), "celsius", "kn", "inch")
-    ])
-    func forecastRequestUnits(units: ForecastUnits, temperature: String, wind: String, precipitation: String)
+    @Test("Forecast request sends only the units that differ from Open-Meteo's defaults (specs/006 FR-001)",
+          arguments: [
+              (ForecastUnits.imperial, "fahrenheit", "mph", "inch"),
+              (ForecastUnits(temperature: .celsius, windSpeed: .metresPerSecond, precipitation: .millimetres),
+               nil, "ms", nil),
+              (ForecastUnits(temperature: .celsius, windSpeed: .knots, precipitation: .inches), nil, "kn", "inch"),
+              (ForecastUnits.metric, nil, nil, nil)
+          ] as [(ForecastUnits, String?, String?, String?)])
+    func forecastRequestUnits(units: ForecastUnits, temperature: String?, wind: String?, precipitation: String?)
         async throws {
         try Self.serve("forecast-chamonix-pair-imperial")
         let client = OpenMeteoClient(session: StubURLProtocol.makeSession(), units: units)
