@@ -78,7 +78,7 @@ func search(_ query: String) async {
 }
 ```
 
-Architecture equivalents: MVI/TCA carry the ID in the response action and compare it in the reducer; TCA can also use `.cancellable(id:cancelInFlight:)`; Combine/RxSwift use `switchToLatest`/`flatMapLatest`.
+Combine equivalent (for `ObservableObject` ViewModels driven by publishers): `switchToLatest`.
 
 ## User-Facing Error Mapping
 

@@ -499,7 +499,7 @@ Use these only when the baseline stops fitting:
 
 - From MVC: extract async loading and mapping from controllers into a ViewModel first, then move navigation behind closures/protocols.
 - From MVP: convert presenter output commands into explicit `State` updates and bind the view to that state.
-- From MVVM to MVI/TCA: keep domain contracts unchanged, then move intent handling into reducer/store only for features that need stronger determinism.
+- From `ObservableObject` to `@Observable`: migrate one ViewModel at a time (see `references/observation.md`), switching `@StateObject` to `@State` and `@ObservedObject` to `@Bindable` at its call sites.
 
 ## Anti-Patterns and Fixes
 
@@ -686,14 +686,12 @@ Use MVVM when:
 - the team wants explicit View/ViewModel boundaries without a full reducer/store framework
 - feature complexity is moderate and does not require strict unidirectional flow
 
-MVVM is lower ceremony than TCA/VIPER, but not "no ceremony": scale file splitting (`State`, `ViewData`, assembly/router types) to actual complexity instead of applying every type up front.
+MVVM is lower ceremony than reducer/store or strict-layer architectures, but not "no ceremony": scale file splitting (`State`, `ViewData`, assembly/router types) to actual complexity instead of applying every type up front.
 
 Switch or pair when:
-- the feature feels too heavy: trim to the Default Path rather than switching patterns; consider `references/mvp.md` only for UIKit screens that need a strictly passive view
-- deterministic state machines or complex effect orchestration become primary: evolve to `references/mvi.md` or `references/tca.md`
-- strict layer boundaries matter more than presentation simplicity: pair with `references/clean-architecture.md`
-
-For cross-architecture disqualifiers and migration triggers, see `references/selection-guide.md`.
+- the feature feels too heavy: trim to the Default Path rather than switching patterns
+- navigation spans multiple screens, reusable flows, or deep links: pair with `references/coordinator.md`
+- deterministic state machines or complex effect orchestration become primary: this playbook no longer fits; say so and recommend a reducer/store pattern instead of stretching MVVM
 
 ## PR Review Checklist
 
