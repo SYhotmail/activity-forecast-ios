@@ -27,7 +27,7 @@ final class SearchViewModel {
         self.language = language
     }
 
-    var trimmedQuery: String {
+    private var trimmedQuery: String {
         Self.trimmed(query)
     }
 

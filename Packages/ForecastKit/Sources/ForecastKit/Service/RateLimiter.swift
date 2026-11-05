@@ -26,8 +26,10 @@ actor RateLimiter {
     /// Reserves and returns the earliest start at or after `now` that keeps at most `limit` starts
     /// in any window. Starts never decrease, so `starts` stays sorted.
     func reserve(at now: ContinuousClock.Instant) -> ContinuousClock.Instant {
-        starts.removeAll { $0 <= now - window }
-        let start = starts.count < limit ? now : max(now, starts[starts.count - limit] + window)
+        let windowStart = now - window
+        starts.removeAll { $0 <= windowStart }
+        let oldestCounted = starts.count - limit
+        let start = oldestCounted < 0 ? now : max(now, starts[oldestCounted] + window)
         starts.append(start)
         return start
     }
