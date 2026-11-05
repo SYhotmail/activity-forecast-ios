@@ -31,5 +31,5 @@ A developer running the app sees, for each Open-Meteo request, a `curl` command 
 
 ## Success Criteria *(mandatory)*
 
-- **SC-001**: `curl` command building is covered by tests; client tests run with a disabled logger.
+- **SC-001**: Client tests run with a disabled logger. The `curl` command is debug output only and is checked by reading the console, not by tests.
 - **SC-002**: All quality gates pass.
