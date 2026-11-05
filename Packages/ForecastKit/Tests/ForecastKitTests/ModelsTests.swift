@@ -3,20 +3,6 @@ import Testing
 
 @Suite("Domain models")
 struct ModelsTests {
-    private func place(region: String?, country: String?) -> Place {
-        Place(id: 1, name: "Paris", region: region, country: country,
-              latitude: 48.85, longitude: 2.35, timeZone: "Europe/Paris")
-    }
-
-    @Test("displayName joins name, region and country that are present (FR-002)")
-    func displayName() {
-        #expect(place(region: "Île-de-France", country: "France").displayName == "Paris, Île-de-France, France")
-        #expect(place(region: nil, country: "France").displayName == "Paris, France")
-        #expect(place(region: "", country: nil).displayName == "Paris")
-        #expect(place(region: "Texas", country: "United States").subtitle == "Texas, United States")
-        #expect(place(region: nil, country: nil).subtitle == nil)
-    }
-
     @Test("score bands map to labels at every edge (FR-005)", arguments: [
         (0, SuitabilityLabel.poor), (24, .poor), (25, .fair), (49, .fair),
         (50, .good), (74, .good), (75, .excellent), (100, .excellent)

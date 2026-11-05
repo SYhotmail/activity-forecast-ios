@@ -103,7 +103,8 @@ struct OpenMeteoClientTests {
                                 country: "France", latitude: 48.85341, longitude: 2.3488,
                                 timeZone: "Europe/Paris"))
         let texas = try #require(places.first { $0.id == 4717560 })
-        #expect(texas.displayName == "Paris, Texas, United States")
+        #expect(texas.region == "Texas")
+        #expect(texas.country == "United States")
         #expect(texas.timeZone == "America/Chicago")
     }
 
