@@ -126,7 +126,7 @@ extension OpenMeteoClientTests {
     func rateLimitedPerAPI() async throws {
         try Self.serve("geocoding-empty")
         let client = OpenMeteoClient(session: StubURLProtocol.makeSession(),
-                                     rateLimit: (requests: 1, per: .seconds(60)))
+                                     rateLimit: (requests: 1, per: .seconds(60)), logger: .disabled)
         _ = try await client.searchPlaces(matching: "Paris", language: nil)
 
         let waiting = Task { try await client.searchPlaces(matching: "Lyon", language: nil) }
