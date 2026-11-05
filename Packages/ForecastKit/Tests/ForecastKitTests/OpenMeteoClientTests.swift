@@ -85,6 +85,7 @@ struct OpenMeteoClientTests {
                 + "sunshine_duration",
             "hourly": "snow_depth",
             "timezone": "auto",
+            "timeformat": "unixtime",
             "forecast_days": "7"
         ])
     }
@@ -190,23 +191,39 @@ struct OpenMeteoClientTests {
         #expect(third.sunshine == 0)
     }
 
-    @Test("Days with an unparsable date are dropped")
-    func forecastDropsBadDates() async throws {
+    @Test("Epoch days map to the place's calendar days across a DST change (FR-003)")
+    func forecastAcrossDaylightSaving() async throws {
+        // Paris local midnights of 28–30 March 2026; clocks go forward on the 29th, so the
+        // response's single utc_offset_seconds (3600) is an hour short for the 30th.
         Self.serve(json: """
-        {"daily":{"time":["2026-11-03","not-a-date"],"weather_code":[1,2]},
-         "hourly":{"time":[],"snow_depth":[]}}
+        {"timezone":"Europe/Paris","utc_offset_seconds":3600,
+         "daily":{"time":[1774652400,1774738800,1774821600],"weather_code":[1,2,3]},
+         "hourly":{"time":[1774864800],"snow_depth":[0.5]}}
         """)
 
         let days = try await client.forecast(for: chamonix)
 
-        #expect(days.map(\.date).first == LocalDate(year: 2026, month: 11, day: 3))
-        #expect(days.first?.weatherCode == 1)
-        #expect(days.first?.snowDepth == nil)
+        #expect(days.map(\.date) == (28...30).compactMap { LocalDate(year: 2026, month: 3, day: $0) })
+        #expect(days.map(\.weatherCode) == [1, 2, 3])
+        #expect(days.map(\.snowDepth) == [nil, nil, 50])
+    }
+
+    @Test("An unknown time zone identifier falls back to utc_offset_seconds")
+    func forecastOffsetFallback() async throws {
+        // 2026-11-04T23:00Z is 5 November at UTC+1.
+        Self.serve(json: """
+        {"timezone":"Not/AZone","utc_offset_seconds":3600,
+         "daily":{"time":[1793833200],"weather_code":[1]},"hourly":{"time":[],"snow_depth":[]}}
+        """)
+
+        let days = try await client.forecast(for: chamonix)
+
+        #expect(days.map(\.date) == [LocalDate(year: 2026, month: 11, day: 5)])
     }
 
     @Test("A forecast with zero days is unexpected")
     func forecastZeroDays() async throws {
-        Self.serve(json: #"{"daily":{"time":[]},"hourly":{"time":[],"snow_depth":[]}}"#)
+        Self.serve(json: #"{"timezone":"GMT","utc_offset_seconds":0,"daily":{"time":[]},"hourly":{"time":[],"snow_depth":[]}}"#)
 
         await #expect(throws: UserFacingError.unexpected) {
             try await client.forecast(for: chamonix)

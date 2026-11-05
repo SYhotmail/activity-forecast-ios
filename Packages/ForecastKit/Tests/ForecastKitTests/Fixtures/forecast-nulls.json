@@ -1,13 +1,13 @@
 {
   "latitude": 45.92,
   "longitude": 6.87,
-  "timezone": "Europe/Paris",
-  "hourly_units": { "time": "iso8601", "snow_depth": "m" },
+  "utc_offset_seconds": 3600, "timezone": "Europe/Paris",
+  "hourly_units": { "time": "unixtime", "snow_depth": "m" },
   "hourly": {
     "time": [
-      "2026-01-10T00:00", "2026-01-10T06:00", "2026-01-10T12:00", "2026-01-10T18:00",
-      "2026-01-11T00:00", "2026-01-11T06:00", "2026-01-11T12:00", "2026-01-11T18:00",
-      "2026-01-12T00:00", "2026-01-12T06:00", "2026-01-12T12:00", "2026-01-12T18:00"
+      1767999600, 1768021200, 1768042800, 1768064400,
+      1768086000, 1768107600, 1768129200, 1768150800,
+      1768172400, 1768194000, 1768215600, 1768237200
     ],
     "snow_depth": [
       0.50, 0.55, null, 0.52,
@@ -16,7 +16,7 @@
     ]
   },
   "daily_units": {
-    "time": "iso8601", "weather_code": "wmo code",
+    "time": "unixtime", "weather_code": "wmo code",
     "temperature_2m_max": "°C", "temperature_2m_min": "°C",
     "precipitation_sum": "mm", "rain_sum": "mm", "snowfall_sum": "cm",
     "precipitation_probability_max": "%",
@@ -24,7 +24,7 @@
     "sunshine_duration": "s"
   },
   "daily": {
-    "time": ["2026-01-10", "2026-01-11", "2026-01-12"],
+    "time": [1767999600, 1768086000, 1768172400],
     "weather_code": [71, null, 73],
     "temperature_2m_max": [-2.5, null, -4.0],
     "temperature_2m_min": [-9.1, -6.0, null],
