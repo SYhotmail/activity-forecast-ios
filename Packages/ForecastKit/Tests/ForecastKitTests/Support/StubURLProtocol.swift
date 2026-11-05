@@ -7,7 +7,7 @@ import Synchronization
 /// so suites that use it must be `.serialized`.
 final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     enum Reply: Sendable {
-        case response(status: Int, body: Data)
+        case response(status: Int, body: Data, headers: [String: String] = [:])
         case failure(any Error & Sendable)
     }
 
@@ -42,10 +42,10 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
             return
         }
         switch handler(request) {
-        case let .response(status, body):
+        case let .response(status, body, headers):
             let response = HTTPURLResponse(url: request.url!, statusCode: status,
                                            httpVersion: "HTTP/1.1",
-                                           headerFields: ["Content-Type": "application/json"])!
+                                           headerFields: headers.merging(["Content-Type": "application/json"]) { $1 })!
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             client?.urlProtocol(self, didLoad: body)
             client?.urlProtocolDidFinishLoading(self)

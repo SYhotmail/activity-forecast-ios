@@ -14,7 +14,7 @@ struct OpenMeteoClientTests {
 
     // MARK: - Helpers
 
-    private static func fixture(_ name: String) throws -> Data {
+    static func fixture(_ name: String) throws -> Data {
         let url = try #require(Bundle.module.url(forResource: name, withExtension: "json",
                                                  subdirectory: "Fixtures"))
         return try Data(contentsOf: url)
@@ -25,9 +25,9 @@ struct OpenMeteoClientTests {
         StubURLProtocol.stub { _ in .response(status: 200, body: body) }
     }
 
-    static func serve(json: String, status: Int = 200) {
+    static func serve(json: String, status: Int = 200, headers: [String: String] = [:]) {
         let body = Data(json.utf8)
-        StubURLProtocol.stub { _ in .response(status: status, body: body) }
+        StubURLProtocol.stub { _ in .response(status: status, body: body, headers: headers) }
     }
 
     static func queryItems(of request: URLRequest?) throws -> [String: String] {
@@ -247,7 +247,7 @@ struct OpenMeteoClientTests {
 
     // MARK: - Error mapping (FR-011)
 
-    @Test("HTTP errors map to serviceUnavailable", arguments: [400, 404, 429, 500, 503])
+    @Test("HTTP errors map to serviceUnavailable", arguments: [400, 404, 500, 503])
     func httpError(status: Int) async throws {
         Self.serve(json: #"{"error":true,"reason":"Boom"}"#, status: status)
 
