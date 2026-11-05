@@ -28,7 +28,7 @@ public struct OpenMeteoClient: WeatherService {
         "weather_code", "temperature_2m_max", "temperature_2m_min",
         "precipitation_sum", "rain_sum", "snowfall_sum", "precipitation_probability_max",
         "wind_speed_10m_max", "wind_gusts_10m_max", "sunshine_duration"
-    ]
+    ].joined(separator: ",")
 
     static func searchRequest(name: String) -> URLRequest {
         request(host: "geocoding-api.open-meteo.com", path: "/v1/search", query: [
@@ -40,7 +40,7 @@ public struct OpenMeteoClient: WeatherService {
         request(host: "api.open-meteo.com", path: "/v1/forecast", query: [
             ("latitude", String(latitude)),
             ("longitude", String(longitude)),
-            ("daily", dailyVariables.joined(separator: ",")),
+            ("daily", dailyVariables),
             ("hourly", "snow_depth"),
             ("timezone", "auto"),
             ("forecast_days", "7")
