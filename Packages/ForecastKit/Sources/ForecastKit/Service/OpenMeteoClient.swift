@@ -51,11 +51,29 @@ public struct OpenMeteoClient: WeatherService {
             ("hourly", "snow_depth"),
             ("timezone", "auto"),
             ("timeformat", "unixtime"),
-            ("forecast_days", "7"),
-            ("temperature_unit", units.temperature.rawValue),
-            ("wind_speed_unit", units.windSpeed.rawValue),
-            ("precipitation_unit", units.precipitation.rawValue)
-        ])
+            ("forecast_days", "7")
+        ] + unitParameters(units))
+    }
+
+    /// Only the unit parameters that differ from Open-Meteo's defaults (specs/006 FR-001).
+    /// A default unit is left out instead of sent, so a metric request stays the plain contract URL:
+    /// - `temperature_unit` defaults to `celsius`;
+    /// - `wind_speed_unit` defaults to `kmh`;
+    /// - `precipitation_unit` defaults to `mm` (snowfall then in cm, snow depth in m).
+    /// The response states its units either way, and decoding reads those (FR-004).
+    static func unitParameters(_ units: ForecastUnits) -> [(String, String)] {
+        let defaults = ForecastUnits.metric
+        var parameters: [(String, String)] = []
+        if units.temperature != defaults.temperature {
+            parameters.append(("temperature_unit", units.temperature.rawValue))
+        }
+        if units.windSpeed != defaults.windSpeed {
+            parameters.append(("wind_speed_unit", units.windSpeed.rawValue))
+        }
+        if units.precipitation != defaults.precipitation {
+            parameters.append(("precipitation_unit", units.precipitation.rawValue))
+        }
+        return parameters
     }
 
     private static func request(host: String, path: String, query: [(String, String)]) -> URLRequest {

@@ -22,7 +22,7 @@ public struct ForecastUnits: Sendable, Hashable {
         self.precipitation = precipitation
     }
 
-    /// °C, km/h, mm: Open-Meteo's defaults.
+    /// °C, km/h, mm: Open-Meteo's defaults, which the client does not send (specs/006 FR-001).
     public static let metric = Self(temperature: .celsius, windSpeed: .kilometresPerHour, precipitation: .millimetres)
     /// °F, mph, inches.
     public static let imperial = Self(temperature: .fahrenheit, windSpeed: .milesPerHour, precipitation: .inches)

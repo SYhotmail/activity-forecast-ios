@@ -43,7 +43,7 @@ The forecast request asks Open-Meteo for the user's units, and values are decode
 
 **Acceptance Scenarios**:
 
-1. **Given** US units, **When** the forecast is requested, **Then** the request has `temperature_unit=fahrenheit`, `wind_speed_unit=mph` and `precipitation_unit=inch`.
+1. **Given** US units, **When** the forecast is requested, **Then** the request has `temperature_unit=fahrenheit`, `wind_speed_unit=mph` and `precipitation_unit=inch`; with metric units it has none of them.
 2. **Given** a response whose `daily_units` say `°F`, **When** it is decoded, **Then** temperatures are Fahrenheit measurements with the response's values.
 3. **Given** a response with a unit the app does not know, **When** it is decoded, **Then** the forecast fails with the retryable "unexpected" error.
 
@@ -55,7 +55,7 @@ The forecast request asks Open-Meteo for the user's units, and values are decode
 
 ## Requirements *(mandatory)*
 
-- **FR-001**: The forecast request MUST include `temperature_unit`, `wind_speed_unit` and `precipitation_unit`, chosen by `ForecastUnits`.
+- **FR-001**: The forecast request MUST include `temperature_unit`, `wind_speed_unit` and `precipitation_unit`, chosen by `ForecastUnits`, only when they differ from Open-Meteo's defaults (`celsius`, `kmh`, `mm`); a default is left out, not sent.
 - **FR-002**: The app MUST choose `ForecastUnits` from the user's locale (R2) in the composition root; the client defaults to metric.
 - **FR-003**: Every weather quantity in `DailyWeather` and in `Reason.Detail` MUST be a `Measurement` of the matching dimension (temperature, length, speed, duration). Probability and weather code stay plain numbers.
 - **FR-004**: Decoding MUST use the units stated in the response, and MUST fail with `UserFacingError.unexpected` for a present series whose unit is missing or unknown.

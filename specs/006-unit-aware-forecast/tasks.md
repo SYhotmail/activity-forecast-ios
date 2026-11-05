@@ -14,6 +14,8 @@ Gates: `swiftlint lint --strict`, `swift test --package-path Packages/ForecastKi
 - [X] T003 [green] `ForecastUnits`; `DailyWeather` / `Reason.Detail` measurements; DTO unit decoding; request unit parameters; scorer conversion; app `Formatting`, `Reason+Display`, `DayDetailView`, previews, composition root.
 - [X] T004 Docs: specs/001 FR-016 and contracts/open-meteo.md note units from the response; CLAUDE.md quirks line.
 
+- [X] T006 Send only non-default unit parameters (red, then green); FR-001 amended.
+
 ## Phase 3: Polish
 
 - [X] T005 All gates; Release binary has no `StubWeatherService`/`PreviewData` symbols.

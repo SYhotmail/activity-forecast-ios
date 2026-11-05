@@ -69,7 +69,7 @@ struct OpenMeteoClientTests {
         ])
     }
 
-    @Test("Forecast request asks for the daily and hourly variables of the contract, in metric by default, so no unit parameters")
+    @Test("Forecast request asks for the contract's variables; metric by default, so no unit parameters")
     func forecastRequest() async throws {
         try Self.serve("forecast-chamonix")
 

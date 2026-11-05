@@ -5,25 +5,34 @@ import Testing
 /// Units of the forecast request and response (specs/006). An extension of the serialized
 /// `OpenMeteoClientTests` suite, because `StubURLProtocol` holds a process-wide handler.
 extension OpenMeteoClientTests {
+    /// The unit parameters a request should carry; `nil` means left out (the API default).
+    struct ExpectedUnitQuery: Sendable {
+        let units: ForecastUnits
+        let temperature: String?
+        let wind: String?
+        let precipitation: String?
+    }
+
     @Test("Forecast request sends only the units that differ from Open-Meteo's defaults (specs/006 FR-001)",
           arguments: [
-              (ForecastUnits.imperial, "fahrenheit", "mph", "inch"),
-              (ForecastUnits(temperature: .celsius, windSpeed: .metresPerSecond, precipitation: .millimetres),
-               nil, "ms", nil),
-              (ForecastUnits(temperature: .celsius, windSpeed: .knots, precipitation: .inches), nil, "kn", "inch"),
-              (ForecastUnits.metric, nil, nil, nil)
-          ] as [(ForecastUnits, String?, String?, String?)])
-    func forecastRequestUnits(units: ForecastUnits, temperature: String?, wind: String?, precipitation: String?)
-        async throws {
+              ExpectedUnitQuery(units: .imperial, temperature: "fahrenheit", wind: "mph", precipitation: "inch"),
+              ExpectedUnitQuery(units: ForecastUnits(temperature: .celsius, windSpeed: .metresPerSecond,
+                                                     precipitation: .millimetres),
+                                temperature: nil, wind: "ms", precipitation: nil),
+              ExpectedUnitQuery(units: ForecastUnits(temperature: .celsius, windSpeed: .knots, precipitation: .inches),
+                                temperature: nil, wind: "kn", precipitation: "inch"),
+              ExpectedUnitQuery(units: .metric, temperature: nil, wind: nil, precipitation: nil)
+          ])
+    func forecastRequestUnits(expected: ExpectedUnitQuery) async throws {
         try Self.serve("forecast-chamonix-pair-imperial")
-        let client = OpenMeteoClient(session: StubURLProtocol.makeSession(), units: units)
+        let client = OpenMeteoClient(session: StubURLProtocol.makeSession(), units: expected.units)
 
         _ = try await client.forecast(for: chamonix)
 
         let query = try Self.queryItems(of: StubURLProtocol.requests.first)
-        #expect(query["temperature_unit"] == temperature)
-        #expect(query["wind_speed_unit"] == wind)
-        #expect(query["precipitation_unit"] == precipitation)
+        #expect(query["temperature_unit"] == expected.temperature)
+        #expect(query["wind_speed_unit"] == expected.wind)
+        #expect(query["precipitation_unit"] == expected.precipitation)
     }
 
     @Test("An imperial response decodes as °F, inches, feet and mph (specs/006 FR-004)")

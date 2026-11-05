@@ -25,7 +25,7 @@ Response 200:
 
 `GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,snowfall_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,sunshine_duration&hourly=snow_depth&timezone=auto&timeformat=unixtime&forecast_days=7&temperature_unit={celsius|fahrenheit}&wind_speed_unit={kmh|ms|mph|kn}&precipitation_unit={mm|inch}`
 
-The unit parameters come from `ForecastUnits` (specs/006 FR-001; metric by default).
+The unit parameters come from `ForecastUnits` and are sent only when they differ from the defaults `celsius`, `kmh`, `mm` (specs/006 FR-001).
 
 Response 200 (abridged):
 ```json
