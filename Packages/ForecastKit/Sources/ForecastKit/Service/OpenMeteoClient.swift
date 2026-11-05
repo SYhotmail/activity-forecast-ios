@@ -62,19 +62,20 @@ public struct OpenMeteoClient: WeatherService {
     }
 
     /// The ISO 639 code to send for `language`, or `nil` to leave the parameter out (specs/008
-    /// FR-005): the lower-cased primary subtag (`be-BY`, `BE`, `be_BY` → `be`) when it is 2–3 ASCII
-    /// letters and not `en`. The service accepts any value and matches unknown ones like English,
-    /// so a malformed value is dropped here rather than sent (research R2).
+    /// FR-005): the lower-cased primary subtag (`be-BY`, `BE`, `be_BY` → `be`) when it is a known
+    /// ISO 639 code and not `en`. The service accepts any value and matches unknown ones (`xx`)
+    /// like English, so they are dropped here rather than sent (research R2).
     static func languageCode(_ language: String?) -> String? {
         guard let primary = language?
             .split(omittingEmptySubsequences: false, whereSeparator: { $0 == "-" || $0 == "_" })
             .first?.lowercased(),
-              (2...3).contains(primary.count),
-              primary.allSatisfy({ $0.isASCII && $0.isLetter }),
-              primary != "en"
+              primary != "en", isoLanguageCodes.contains(primary)
         else { return nil }
         return primary
     }
+
+    /// Lower-case ISO 639 codes Foundation knows (`be`, `yue`, …).
+    private static let isoLanguageCodes = Set(Locale.LanguageCode.isoLanguageCodes.map(\.identifier))
 
     static func forecastRequest(latitude: Double, longitude: Double, units: ForecastUnits) -> URLRequest {
         request(host: "api.open-meteo.com", path: "/v1/forecast", query: [

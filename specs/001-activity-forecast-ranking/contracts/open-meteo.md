@@ -6,7 +6,7 @@ These are the only external interfaces. Shapes were verified against the live en
 
 `GET https://geocoding-api.open-meteo.com/v1/search?name={query}&count=10&format=json[&language={code}]`
 
-`language` decides which names the query matches, not only the result language (Мінск finds nothing with `en`). It comes from `QueryLanguage` and is left out when it is `en`, the default (specs/007). The client sends only the lower-case primary subtag when it is 2–3 ASCII letters (`be-BY` → `be`), else leaves it out: the service accepts any value with 200 and matches unknown ones like English. A search rejected with 400 while sending `language` is retried once without it (specs/008 FR-005, FR-006).
+`language` decides which names the query matches, not only the result language (Мінск finds nothing with `en`). It comes from `QueryLanguage` and is left out when it is `en`, the default (specs/007). The client sends only the lower-case primary subtag when it is a known ISO 639 code (`be-BY` → `be`; `xx` dropped), else leaves it out: the service accepts any value with 200 and matches unknown ones like English. A search rejected with 400 while sending `language` is retried once without it (specs/008 FR-005, FR-006).
 
 `{query}` is percent-encoded and trimmed, and has at least 2 characters.
 

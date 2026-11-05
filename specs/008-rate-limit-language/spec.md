@@ -29,12 +29,12 @@ Bursts of searches or forecast loads are spread out instead of being rejected; i
 **Acceptance Scenarios**:
 
 1. **Given** a language like `be-BY`, `BE` or `be_BY`, **When** searching, **Then** `language=be` is sent.
-2. **Given** a value that is not an ISO 639 code (`klingon`, `1`, empty), **When** searching, **Then** no `language` is sent (the API default, English).
+2. **Given** a value that is not a known ISO 639 code (`klingon`, `1`, empty, `xx`), **When** searching, **Then** no `language` is sent (the API default, English).
 3. **Given** the service rejects a search with 400 while a language was sent, **When** searching, **Then** the search is retried once without the language and its results are returned.
 
 ### Edge Cases
 
-- A well-formed code Open-Meteo does not know (`xx`) is accepted by the service (200) and matched like English; it is not retried (research R2).
+- A well-formed but unknown code (`xx`) would be accepted by the service (200) and matched like English, so it is not sent at all (research R2).
 - A cancelled wait for a rate-limit slot still counts toward the window (the limit is never exceeded).
 
 ## Requirements *(mandatory)*
@@ -43,7 +43,7 @@ Bursts of searches or forecast loads are spread out instead of being rejected; i
 - **FR-002**: A request over the limit MUST wait for a slot; the wait MUST end with `CancellationError` when the task is cancelled.
 - **FR-003**: HTTP 429 MUST map to `UserFacingError.rateLimited`; other 4xx/5xx stay `serviceUnavailable`.
 - **FR-004**: The app MUST show a distinct message for `rateLimited`, with retry (specs/001 FR-011).
-- **FR-005**: The client MUST send `language` only as a lower-case 2–3 letter ISO 639 code, taking the primary subtag of a region form; anything else, and `en`, MUST be left out.
+- **FR-005**: The client MUST send `language` only as a lower-case ISO 639 code Foundation knows (`Locale.LanguageCode.isoLanguageCodes`), taking the primary subtag of a region form; anything else, and `en`, MUST be left out.
 - **FR-006**: A search rejected with HTTP 400 while sending `language` MUST be retried once without it.
 
 ## Success Criteria *(mandatory)*
