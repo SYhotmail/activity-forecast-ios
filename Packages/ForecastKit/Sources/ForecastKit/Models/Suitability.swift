@@ -31,6 +31,8 @@ public struct Reason: Sendable, Hashable {
 
         // Caps
         case noSnowOnGround, thunderstorms, snowfallExpected
+        /// Snow under the skiable threshold, with the snow depth (specs/009 FR-003).
+        case tooLittleSnow(Length)
         // Indoor sightseeing, from the outdoor score
         case poorWeatherOutside, greatWeatherOutside
         // Snow

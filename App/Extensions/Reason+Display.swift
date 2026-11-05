@@ -6,6 +6,7 @@ extension Reason.Detail {
     var text: String {
         switch self {
         case .noSnowOnGround: "No snow on the ground"
+        case let .tooLittleSnow(value): "Too little snow to ski \(Formatting.snow(value))"
         case .thunderstorms: "Thunderstorms expected"
         case .snowfallExpected: "Snowfall expected"
         case .poorWeatherOutside: "Poor weather outside — good day for museums"

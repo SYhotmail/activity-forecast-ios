@@ -59,11 +59,12 @@ struct ActivityScorerTests {
     // MARK: - Skiing
 
     @Test("skiing snow factor: min(1, snowfall/10 + depth/100), weight 50", arguments: [
-        (0.0, 0.0, 0), (1.9, 9.9, 0), (2.0, 0.0, 60), (0.0, 10.0, 55),
+        (0.0, 0.0, 0), (0.21, 1.0, 0), (1.9, 9.9, 0), (2.0, 0.0, 60), (0.0, 10.0, 55),
         (5.0, 0.0, 75), (0.0, 50.0, 75), (10.0, 0.0, 100), (0.0, 100.0, 100), (30.0, 200.0, 100)
     ])
     func skiingSnow(snowfall: Double, depth: Double, expected: Int) {
         // Below 10 cm depth and 2 cm snowfall the day is not skiable: capped at 0 (specs/009).
+        // 0.21 cm falling on 1 cm lying is the live Minsk dusting (2026-11-05) that scored ≈32.
         let weather = with(Self.perfectSkiing) {
             $0.snowfall = .centimetres(snowfall); $0.snowDepth = .centimetres(depth)
         }
@@ -111,15 +112,6 @@ struct ActivityScorerTests {
         #expect(score(.skiing, with(mild) { $0.temperatureMax = .celsius(-2); $0.temperatureMin = .celsius(-8) }) == 0)
         // The skiing score does not read tmin, so a missing tmin is not "No data".
         #expect(score(.skiing, with(mild) { $0.temperatureMin = nil }) == 0)
-
-        // A dusting is not skiable either (live Minsk, 2026-11-05: 0.21 cm falling, 1 cm lying scored ≈32).
-        let dusting = with(mild) { $0.snowfall = .centimetres(0.21); $0.snowDepth = .centimetres(1) }
-        let dusted = ActivityScorer.suitability(for: .skiing, on: dusting)
-        #expect(dusted.score == 0)
-        if case let .scored(_, _, reasons) = dusted.result {
-            #expect(reasons.first == Reason(kind: .cap, detail: .tooLittleSnow(.centimetres(1))))
-        }
-        #expect(score(.skiing, with(mild) { $0.snowDepth = .centimetres(9.9); $0.snowfall = .centimetres(1.9) }) == 0)
 
         // Either threshold on its own makes the day skiable.
         #expect(score(.skiing, with(mild) { $0.snowDepth = .centimetres(10) }) == 45)

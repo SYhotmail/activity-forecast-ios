@@ -175,10 +175,18 @@ public enum ActivityScorer {
             Factor(name: .noRain, weight: 10, value: dryness(rain.value(in: .millimeters)),
                    positive: dryReason(rain), negative: rainReason(rain))
         ]
-        // No snow at all means no skiing, however cold it is (live check: Chamonix, 0 cm, tmin −3.9 °C).
-        let noSnow = snowfallCm <= 0 && depthCm <= 0
-        let cap = noSnow ? Cap(maximum: 10, reason: .noSnowOnGround) : nil
-        return Breakdown(factors: factors, cap: cap)
+        // Without skiable snow there is no skiing, however good the rest of the weather
+        // (live checks: Chamonix 0 cm at −3.9 °C; Minsk, a 1 cm dusting, specs/009).
+        guard isSkiable(snowfallCm: snowfallCm, depthCm: depthCm) else {
+            let reason: Reason.Detail = snowfallCm <= 0 && depthCm <= 0 ? .noSnowOnGround : .tooLittleSnow(depth)
+            return Breakdown(factors: factors, cap: Cap(maximum: 0, reason: reason))
+        }
+        return Breakdown(factors: factors, cap: nil)
+    }
+
+    /// Enough snow to ski: at least 10 cm lying or 2 cm falling (specs/009 FR-001, research R1).
+    static func isSkiable(snowfallCm: Double, depthCm: Double) -> Bool {
+        depthCm >= 10 || snowfallCm >= 2
     }
 
     static func surfing(_ w: DailyWeather) -> Breakdown? {

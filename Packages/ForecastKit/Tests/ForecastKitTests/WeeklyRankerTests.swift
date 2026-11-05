@@ -218,6 +218,7 @@ struct WeeklyRankerTests {
         #expect(skiing.bestDay == nil)
     }
 
+    // swiftlint:disable line_length
     /// Live Minsk, 2026-11-05: six snowless days and a dusting (0.21 cm falling, 1 cm lying).
     /// Skiing was 13 for the week (six capped days at 10 and the dusting at ≈32).
     static let minsk = [
@@ -230,6 +231,7 @@ struct WeeklyRankerTests {
         day(6, code: 71, tmax: 3.5, tmin: -1, precipitation: 1.8, rain: 1.6, snowfall: 0.21, depth: 1,
             probability: 60, wind: 14, gusts: 28.1, sun: 1)
     ]
+    // swiftlint:enable line_length
 
     @Test("a snowless week with a dusting scores 0 for skiing, with no best day (specs/009)")
     func minskWeek() throws {
