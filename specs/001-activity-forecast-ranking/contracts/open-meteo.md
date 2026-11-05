@@ -57,14 +57,14 @@ Response 200 (abridged):
 
 ## Rate limits (specs/008)
 
-Free tier: 600 requests a minute, 5,000 an hour, 10,000 a day; the forecast API states the minutely limit in `X-RateLimit-Limit`/`-Remaining`/`-Window` headers, the geocoding API sends none. The client limits each API on device to 600 per 60 s (sliding window; a request over it waits, cancellably). Over-limit requests the service still refuses get HTTP 429.
+Free tier: 600 requests a minute, 5,000 an hour, 10,000 a day; the forecast API states the minutely limit in `X-RateLimit-Limit`/`-Remaining`/`-Window` headers, the geocoding API sends none. The client limits each API on device to 600 per 60 s (sliding window; a request over it waits, cancellably). Over-limit requests the service still refuses get HTTP 429; that API then cools down until `Retry-After` (seconds), else `X-RateLimit-Reset` (Unix seconds), else 60 s, and calls during the cooldown fail at once without a request (specs/008 FR-007, FR-008).
 
 ## Error mapping (FR-011)
 
 | Condition | UserFacingError |
 |---|---|
 | `URLError.notConnectedToInternet`, `.networkConnectionLost`, `.timedOut` | `.offline` |
-| HTTP 429 (rate limit) | `.rateLimited` (specs/008) |
+| HTTP 429 (rate limit), or a call during the cooldown after one | `.rateLimited(until:)`, the reset; the app shows the time left (specs/008) |
 | Other HTTP 4xx/5xx (Open-Meteo returns `{"error":true,"reason":"..."}`) | `.serviceUnavailable` |
 | Decoding failure, or forecast with zero days | `.unexpected` |
 | `CancellationError` / `URLError.cancelled` | not an error. Ignored (superseded request) |
