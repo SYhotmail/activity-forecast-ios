@@ -13,9 +13,9 @@ public struct OpenMeteoClient: WeatherService {
         self.units = units
     }
 
-    public func searchPlaces(matching query: String) async throws -> [Place] {
+    public func searchPlaces(matching query: String, language: String?) async throws -> [Place] {
         let request = Self.searchRequest(
-            name: query.trimmingCharacters(in: .whitespacesAndNewlines))
+            name: query.trimmingCharacters(in: .whitespacesAndNewlines), language: language)
         let response: GeocodingResponseDTO = try await fetch(request)
         return response.places
     }
@@ -34,14 +34,17 @@ public struct OpenMeteoClient: WeatherService {
         "wind_speed_10m_max", "wind_gusts_10m_max", "sunshine_duration"
     ].joined(separator: ",")
 
-    static func searchRequest(name: String) -> URLRequest {
-        request(host: "geocoding-api.open-meteo.com", path: "/v1/search", query: [
-            ("name", name), ("count", "10"), ("language", "en"), ("format", "json")
-        ])
+    /// `language` decides which names the query is matched against, not only the language of
+    /// the results: "Мінск" finds Minsk with `be` and nothing with `en` (specs/007). It is left
+    /// out when absent or `en`, the API default.
+    static func searchRequest(name: String, language: String?) -> URLRequest {
+        let languageParameter = language.flatMap { $0 == "en" ? nil : ("language", $0) }
+        return request(host: "geocoding-api.open-meteo.com", path: "/v1/search", query: [
+            ("name", name), ("count", "10"), ("format", "json")
+        ] + [languageParameter].compactMap { $0 })
     }
 
     //TODO: rate limit,
-    //TODO: search based on language code..
 
     static func forecastRequest(latitude: Double, longitude: Double, units: ForecastUnits) -> URLRequest {
         request(host: "api.open-meteo.com", path: "/v1/forecast", query: [

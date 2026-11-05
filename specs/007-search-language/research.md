@@ -12,4 +12,4 @@
 
 ## R3 — Limits
 
-Non-Latin queries need the exact language (Минск with `be`, Київ with `ru`, 東京 with `ja` find nothing). Hints from the user's keyboards resolve the common cases; a retry in a second language was not added (extra request, little evidence of need).
+Non-Latin queries need the exact language (Минск with `be`, Київ with `ru`, 東京 with `ja` find nothing). `NLLanguageRecognizer` has no Belarusian model and reads short Cyrillic names as Kazakh or Bulgarian even with hints ("Мінск" → `kk` 1.00, "Москва" → `bg` 0.44), and Open-Meteo finds nothing for Москва in `kk`. Its *script* is reliable, so the choice is script-first: the recognised language only when it is one of the user's (Київ → `uk`), else the user's language in that script (Мінск with a Belarusian keyboard → `be`), else CLDR's likely language for the script via `Locale.Language("und-Cyrl").maximalIdentifier` (→ `ru`; Hans → `zh`, Grek → `el`). All verified live. A retry in a second language was not added (extra request, little evidence of need).

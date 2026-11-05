@@ -4,7 +4,9 @@ These are the only external interfaces. Shapes were verified against the live en
 
 ## Geocoding — place search
 
-`GET https://geocoding-api.open-meteo.com/v1/search?name={query}&count=10&language=en&format=json`
+`GET https://geocoding-api.open-meteo.com/v1/search?name={query}&count=10&format=json[&language={code}]`
+
+`language` decides which names the query matches, not only the result language (Мінск finds nothing with `en`). It comes from `QueryLanguage` and is left out when it is `en`, the default (specs/007).
 
 `{query}` is percent-encoded and trimmed, and has at least 2 characters.
 

@@ -40,7 +40,7 @@ A user types a city name in Cyrillic or Chinese characters and the place is foun
 **Acceptance Scenarios**:
 
 1. **Given** keyboards English and Belarusian, **When** the user types "Мінск", **Then** the search request carries `language=be`.
-2. **Given** an English-only user, **When** they type "Минск", **Then** the request carries a Cyrillic language detected from the text, never `en`.
+2. **Given** an English-only user, **When** they type "Минск" or "Москва", **Then** the request carries `language=ru`.
 3. **Given** a German-preferring user, **When** they type "Paris", **Then** the request carries `language=de` and names come back in German.
 4. **Given** an English-preferring user, **When** they type "Paris", **Then** the request carries no `language` (the API default, English).
 
@@ -55,7 +55,7 @@ A user types a city name in Cyrillic or Chinese characters and the place is foun
 - **FR-001**: `WeatherService.searchPlaces` MUST take an optional language code (lower-case ISO 639); `nil` means the API default.
 - **FR-002**: The geocoding request MUST send `language` only when the code is present and not `en` (the default).
 - **FR-003**: Queries made only of Latin letters MUST use the user's first preferred language.
-- **FR-004**: Other queries MUST use the language `NLLanguageRecognizer` finds, hinted by the user's preferred languages and enabled keyboards, falling back to the first preferred language.
+- **FR-004**: Other queries MUST use, in order: the language `NLLanguageRecognizer` finds (hinted by the user's languages) when it is one of the user's languages; else the user's first language written in the query's script; else the script's most likely language (CLDR likely subtags, e.g. Cyrillic → `ru`); with no language recognised, the first preferred language.
 - **FR-005**: Candidates MUST be language codes only, preferred languages first, deduplicated.
 - **FR-006**: The search view model MUST pass the detected code with each search; debounce, cancellation and stale-result rules (specs/001 FR-012) are unchanged.
 

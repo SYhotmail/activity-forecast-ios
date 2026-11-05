@@ -6,19 +6,20 @@ import ForecastKit
 /// MUST never use it: only `ActivityForecastApp` chooses the service, and it uses `OpenMeteoClient`
 /// (constitution Principle V).
 nonisolated struct StubWeatherService: WeatherService {
-    var search: @Sendable (String) async throws -> [Place]
+    /// Receives the query and its language code.
+    var search: @Sendable (String, String?) async throws -> [Place]
     var forecast: @Sendable (Place) async throws -> [DailyWeather]
 
     init(
-        search: @escaping @Sendable (String) async throws -> [Place] = { _ in [] },
+        search: @escaping @Sendable (String, String?) async throws -> [Place] = { _, _ in [] },
         forecast: @escaping @Sendable (Place) async throws -> [DailyWeather] = { _ in [] }
     ) {
         self.search = search
         self.forecast = forecast
     }
 
-    func searchPlaces(matching query: String) async throws -> [Place] {
-        try await search(query)
+    func searchPlaces(matching query: String, language: String?) async throws -> [Place] {
+        try await search(query, language)
     }
 
     func forecast(for place: Place) async throws -> [DailyWeather] {

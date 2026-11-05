@@ -10,17 +10,19 @@ struct QueryLanguageTests {
           arguments: [
               ("Мінск", ["en", "be"], "be"),
               ("Минск", ["en", "ru"], "ru"),
-              ("Київ", ["en", "uk", "ru"], "uk"),
+              ("Київ", ["en", "ru", "uk"], "uk"),
+              ("Москва", ["de", "ru"], "ru"),
               ("北京", ["en", "zh"], "zh")
           ] as [(String, [String], String)])
     func nonLatinQuery(query: String, candidates: [String], expected: String) {
         #expect(QueryLanguage.fixed(candidates).code(for: query) == expected)
     }
 
-    @Test("a Cyrillic query from an English-only user is never searched in English")
-    func cyrillicWithoutHints() throws {
-        let code = try #require(QueryLanguage.fixed(["en"]).code(for: "Минск"))
-        #expect(code != "en")
+    @Test("with none of the user's languages in that script, the script's likely language is used",
+          arguments: [("Минск", "ru"), ("Москва", "ru"), ("Αθήνα", "el")])
+    func scriptWithoutCandidate(query: String, expected: String) {
+        // NaturalLanguage reads these as Kazakh or Bulgarian, where Open-Meteo finds nothing.
+        #expect(QueryLanguage.fixed(["en"]).code(for: query) == expected)
     }
 
     @Test("a Latin query uses the first preferred language; English is the API default, so nil",
