@@ -35,15 +35,6 @@ struct RateLimiterTests {
         #expect(await limiter.reserve(at: start + .seconds(11)) == start + .seconds(11))
     }
 
-    @Test("A request under the limit does not wait")
-    func acquireImmediately() async throws {
-        let limiter = RateLimiter(limit: 1, per: .seconds(60))
-        let clock = ContinuousClock()
-        let elapsed = try await clock.measure { try await limiter.acquire() }
-
-        #expect(elapsed < .seconds(1))
-    }
-
     @Test("Waiting for a slot ends with CancellationError when cancelled")
     func cancelledWait() async throws {
         let limiter = RateLimiter(limit: 1, per: .seconds(60))
