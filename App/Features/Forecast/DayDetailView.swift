@@ -20,7 +20,7 @@ struct DayDetailView: View {
                     switch day.result {
                     case let .scored(_, _, reasons):
                         ForEach(reasons, id: \.self) { reason in
-                            Label(reason.text, systemImage: icon(for: reason.kind))
+                            Label(reason.detail.text, systemImage: icon(for: reason.kind))
                         }
                     case .noData:
                         Text("A value this activity needs is missing from the forecast.")

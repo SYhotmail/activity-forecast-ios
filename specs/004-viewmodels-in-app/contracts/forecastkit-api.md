@@ -6,6 +6,8 @@ Domain and data only (constitution V):
 - Scoring: `Ramp`, `ActivityScorer`, `WeeklyRanker`
 - Data: `WeatherService` (protocol), `OpenMeteoClient`, `UserFacingError`
 
+No user-facing text: ForecastKit returns typed values only (`Reason` carries a `Reason.Detail` with the raw measured value, not a sentence). Titles, error messages, place names and reason sentences are app extensions in `App/Extensions/` (refactoring-sdk).
+
 MUST NOT be public here: `LoadState`, `SearchModel`, `ForecastModel`, `BrowseModel`, `StubWeatherService`.
 
 ## Test doubles (not package API)

@@ -34,7 +34,8 @@ extension ActivityScorerTests {
     @Test("a perfect day shows its biggest positive contributor, earliest factor on a tie")
     func perfectDayPositives() {
         #expect(reasons(.skiing, Self.perfectSkiing) == [Reason(kind: .positive, detail: .freshSnow(centimetres: 20))])
-        #expect(reasons(.surfing, Self.perfectSurfing) == [Reason(kind: .positive, detail: .goodBreeze(kilometresPerHour: 25))])
+        #expect(reasons(.surfing, Self.perfectSurfing)
+                == [Reason(kind: .positive, detail: .goodBreeze(kilometresPerHour: 25))])
         #expect(reasons(.outdoorSightseeing, Self.perfectOutdoor)
                 == [Reason(kind: .positive, detail: .comfortable(celsius: 20))])
     }

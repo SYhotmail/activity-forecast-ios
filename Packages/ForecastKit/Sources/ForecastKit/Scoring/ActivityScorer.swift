@@ -30,10 +30,10 @@ public enum ActivityScorer {
         let weight: Double
         /// 0…1
         let value: Double
-        /// Shown when this factor is the day's biggest strength, e.g. "Fresh snow 12 cm".
-        let positive: String
-        /// Shown when this factor is the day's biggest weakness, e.g. "Strong gusts 65 km/h".
-        let negative: String
+        /// Shown when this factor is the day's biggest strength, e.g. fresh snow 12 cm.
+        let positive: Reason.Detail
+        /// Shown when this factor is the day's biggest weakness, e.g. strong gusts 65 km/h.
+        let negative: Reason.Detail
 
         var contribution: Double { weight * value }
         /// Points lost to this factor: weight × (1 − value).
@@ -43,7 +43,7 @@ public enum ActivityScorer {
     /// A hard upper bound for a disqualifying condition.
     struct Cap: Sendable, Hashable {
         let maximum: Int
-        let reason: String
+        let reason: Reason.Detail
     }
 
     /// The factors and the cap (if any) behind an outdoor activity's score.
@@ -105,18 +105,18 @@ public enum ActivityScorer {
     static func reasons(for breakdown: Breakdown) -> [Reason] {
         var reasons: [Reason] = []
         if let cap = breakdown.cap {
-            reasons.append(Reason(kind: .cap, text: cap.reason))
+            reasons.append(Reason(kind: .cap, detail: cap.reason))
         }
         let weak = breakdown.factors.filter { $0.value < negativeThreshold }
         if let negative = first(maximising: \.loss, in: weak) {
-            reasons.append(Reason(kind: .negative, text: negative.negative))
+            reasons.append(Reason(kind: .negative, detail: negative.negative))
         }
         let strong = breakdown.factors.filter { $0.value >= positiveThreshold }
         if let positive = first(maximising: \.contribution, in: strong) {
-            reasons.append(Reason(kind: .positive, text: positive.positive))
+            reasons.append(Reason(kind: .positive, detail: positive.positive))
         }
         if reasons.isEmpty, let fallback = first(maximising: \.loss, in: breakdown.factors) {
-            reasons.append(Reason(kind: .negative, text: fallback.negative))
+            reasons.append(Reason(kind: .negative, detail: fallback.negative))
         }
         return Array(reasons.prefix(maximumReasons))
     }
@@ -125,8 +125,8 @@ public enum ActivityScorer {
     /// so its single reason describes the weather outside.
     static func indoorReason(outdoorScore: Int) -> Reason {
         outdoorScore < 50
-            ? Reason(kind: .positive, text: "Poor weather outside — good day for museums")
-            : Reason(kind: .negative, text: "Great weather outside — better spent outdoors")
+            ? Reason(kind: .positive, detail: .poorWeatherOutside)
+            : Reason(kind: .negative, detail: .greatWeatherOutside)
     }
 
     /// The earliest factor with the largest `key` (unlike `max(by:)`, which keeps the last).
@@ -137,18 +137,12 @@ public enum ActivityScorer {
         }
     }
 
-    /// "12", "7.5": one decimal at most, none for whole values.
-    static func format(_ value: Double) -> String {
-        let rounded = (value * 10).rounded() / 10
-        return rounded == rounded.rounded() ? String(Int(rounded)) : String(rounded)
+    private static func rainReason(_ millimetres: Double) -> Reason.Detail {
+        millimetres >= 10 ? .heavyRain(millimetres: millimetres) : .rain(millimetres: millimetres)
     }
 
-    private static func rainText(_ millimetres: Double) -> String {
-        millimetres >= 10 ? "Heavy rain \(format(millimetres)) mm" : "Rain \(format(millimetres)) mm"
-    }
-
-    private static func dryText(_ millimetres: Double) -> String {
-        millimetres <= 0 ? "Dry 0 mm" : "Little rain \(format(millimetres)) mm"
+    private static func dryReason(_ millimetres: Double) -> Reason.Detail {
+        millimetres <= 0 ? .dry : .littleRain(millimetres: millimetres)
     }
 
     static func skiing(_ w: DailyWeather) -> Breakdown? {
@@ -158,18 +152,18 @@ public enum ActivityScorer {
         else { return nil }
         let factors = [
             Factor(name: .snow, weight: 50, value: min(1, max(0, snowfall / 10 + depth / 100)),
-                   positive: snowfall > 0 ? "Fresh snow \(format(snowfall)) cm" : "Snow base \(format(depth)) cm",
-                   negative: "Thin snow cover \(format(depth)) cm"),
+                   positive: snowfall > 0 ? .freshSnow(centimetres: snowfall) : .snowBase(centimetres: depth),
+                   negative: .thinSnowCover(centimetres: depth)),
             Factor(name: .cold, weight: 25, value: skiingCold(tmax),
-                   positive: "Cold \(format(tmax)) °C", negative: "Too warm \(format(tmax)) °C"),
+                   positive: .cold(celsius: tmax), negative: .tooWarm(celsius: tmax)),
             Factor(name: .gusts, weight: 15, value: skiingGusts(gusts),
-                   positive: "Light gusts \(format(gusts)) km/h", negative: "Strong gusts \(format(gusts)) km/h"),
+                   positive: .lightGusts(kilometresPerHour: gusts), negative: .strongGusts(kilometresPerHour: gusts)),
             Factor(name: .noRain, weight: 10, value: dryness(rain),
-                   positive: dryText(rain), negative: rainText(rain))
+                   positive: dryReason(rain), negative: rainReason(rain))
         ]
         // No snow at all means no skiing, however cold it is (live check: Chamonix, 0 cm, tmin −3.9 °C).
         let noSnow = snowfall <= 0 && depth <= 0
-        let cap = noSnow ? Cap(maximum: 10, reason: "No snow on the ground") : nil
+        let cap = noSnow ? Cap(maximum: 10, reason: .noSnowOnGround) : nil
         return Breakdown(factors: factors, cap: cap)
     }
 
@@ -179,15 +173,15 @@ public enum ActivityScorer {
         else { return nil }
         let factors = [
             Factor(name: .wind, weight: 40, value: surfingWind(wind),
-                   positive: "Good breeze \(format(wind)) km/h",
-                   negative: wind < 15 ? "Too little wind \(format(wind)) km/h" : "Too windy \(format(wind)) km/h"),
+                   positive: .goodBreeze(kilometresPerHour: wind),
+                   negative: wind < 15 ? .tooLittleWind(kilometresPerHour: wind) : .tooWindy(kilometresPerHour: wind)),
             Factor(name: .warmth, weight: 30, value: surfingWarmth(tmax),
-                   positive: "Warm \(format(tmax)) °C",
-                   negative: tmax < 18 ? "Too cold \(format(tmax)) °C" : "Too hot \(format(tmax)) °C"),
+                   positive: .warm(celsius: tmax),
+                   negative: tmax < 18 ? .tooCold(celsius: tmax) : .tooHot(celsius: tmax)),
             Factor(name: .dry, weight: 30, value: dryness(precipitation),
-                   positive: dryText(precipitation), negative: rainText(precipitation))
+                   positive: dryReason(precipitation), negative: rainReason(precipitation))
         ]
-        let cap = w.isThunderstorm ? Cap(maximum: 10, reason: "Thunderstorms expected") : nil
+        let cap = w.isThunderstorm ? Cap(maximum: 10, reason: .thunderstorms) : nil
         return Breakdown(factors: factors, cap: cap)
     }
 
@@ -199,22 +193,22 @@ public enum ActivityScorer {
         let wetness = max(min(max(precipitation, 0) / 10, 1), min(max(probability, 0), 100) / 100 * 0.5)
         let factors = [
             Factor(name: .comfort, weight: 35, value: outdoorComfort(tmax),
-                   positive: "Comfortable \(format(tmax)) °C",
-                   negative: tmax < 15 ? "Cold \(format(tmax)) °C" : "Hot \(format(tmax)) °C"),
+                   positive: .comfortable(celsius: tmax),
+                   negative: tmax < 15 ? .cold(celsius: tmax) : .hot(celsius: tmax)),
             // Describe whichever of amount or probability set the wetness.
             Factor(name: .dry, weight: 35, value: 1 - wetness,
-                   positive: dryText(precipitation),
+                   positive: dryReason(precipitation),
                    negative: precipitation / 10 >= probability / 200
-                       ? rainText(precipitation) : "Rain likely \(format(probability))%"),
+                       ? rainReason(precipitation) : .rainLikely(percent: probability)),
             Factor(name: .calm, weight: 15, value: outdoorCalm(wind),
-                   positive: "Light wind \(format(wind)) km/h", negative: "Strong wind \(format(wind)) km/h"),
+                   positive: .lightWind(kilometresPerHour: wind), negative: .strongWind(kilometresPerHour: wind)),
             Factor(name: .sun, weight: 15, value: min(max(sunshine, 0) / 8, 1),
-                   positive: "Sunny \(format(sunshine)) h", negative: "Little sunshine \(format(sunshine)) h")
+                   positive: .sunny(hours: sunshine), negative: .littleSunshine(hours: sunshine))
         ]
         let cap: Cap? = if w.isThunderstorm {
-            Cap(maximum: 20, reason: "Thunderstorms expected")
+            Cap(maximum: 20, reason: .thunderstorms)
         } else if snowfall >= 2 {
-            Cap(maximum: 20, reason: "Snowfall expected")
+            Cap(maximum: 20, reason: .snowfallExpected)
         } else {
             nil
         }

@@ -4,6 +4,7 @@ import ForecastKit
 @testable import ActivityForecast
 
 /// Display text the app derives from ForecastKit's typed values (ForecastKit carries no UI strings).
+@MainActor
 @Suite("Display text for domain values")
 struct DisplayTextTests {
     private func place(region: String?, country: String?) -> Place {
@@ -49,8 +50,10 @@ struct DisplayTextTests {
 
     @Test("decimal values keep one decimal place at most")
     func decimals() {
-        #expect(Reason.Detail.rain(millimetres: 7.54).text.contains("7.5"))
-        #expect(!Reason.Detail.rain(millimetres: 12).text.contains("12.0"))
+        let rounded = Formatting.metric(7.5, UnitLength.millimeters)
+        #expect(Reason.Detail.rain(millimetres: 7.54).text == "Rain \(rounded)")
+        #expect(!Formatting.metric(12, UnitLength.millimeters).contains("12.0"))
+        #expect(!Formatting.metric(12, UnitLength.millimeters).contains("12,0"))
     }
 
     @Test("caps and indoor reasons are fixed phrases")

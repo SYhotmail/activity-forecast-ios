@@ -1,4 +1,4 @@
-import SwiftUI
+import Foundation
 import ForecastKit
 
 /// Display-only helpers shared by the views. No decisions are made here, only formatting.
@@ -58,29 +58,4 @@ enum Formatting {
     }
 
     static let surfingFootnote = "Based on weather only — wave conditions not included."
-}
-
-extension Activity {
-    /// SF Symbol shown next to the activity name (specs/002-app-icons research.md D4).
-    /// Presentation only, so it lives in the App target and `ForecastKit` stays UI-free.
-    var symbolName: String {
-        switch self {
-        case .skiing: "figure.skiing.downhill"
-        case .surfing: "figure.surfing"
-        case .outdoorSightseeing: "figure.hiking"
-        case .indoorSightseeing: "building.columns"
-        }
-    }
-}
-
-extension SuitabilityLabel {
-    /// Rating colour. Always shown next to the label text, never on its own (FR-015).
-    var color: Color {
-        switch self {
-        case .poor: .red
-        case .fair: .orange
-        case .good: .yellow
-        case .excellent: .green
-        }
-    }
 }
