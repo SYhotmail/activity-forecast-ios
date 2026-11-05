@@ -32,11 +32,13 @@ struct BrowseView: View {
             }
         }
         .navigationSplitViewStyle(.balanced)
+        .onAppear { browse.onAppear() }
+        .onDisappear { browse.onDisappear() }
     }
 }
 
 private func browseVM() -> BrowseViewModel {
-    BrowseViewModel(service: PreviewData.service)
+    BrowseViewModel(service: PreviewData.service, logger: .disabled)
 }
 
 #Preview("Nothing selected") {

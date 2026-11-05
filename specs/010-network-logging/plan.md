@@ -3,7 +3,7 @@
 **Branch**: `010-network-logging` | **Date**: 2026-11-05 | **Spec**: [spec.md](./spec.md)
 
 1. ForecastKit `OpenMeteoClient`: `logger: Logger` in both initialisers; `static func curlCommand(for:)`; log in `fetch` (curl before sending; status, duration, size, `X-RateLimit-Remaining` after; failures, cooldown, retry, decoding).
-2. App `ActivityForecastApp`: passes `Logger(subsystem:category: "network")`.
+2. App `ActivityForecastApp`: passes `Logger(category: "network")` to the client and `Logger(category: "browse")` to `BrowseViewModel` (FR-006), which `BrowseView` calls on appear and disappear. `App/Shared/Logger+Category.swift` holds `init(category:)` (subsystem = bundle id) and the app's `Logger.disabled` for previews and tests.
 3. Tests: `Logger.disabled` in test support; client constructions pass it. `curlCommand` is debug output only, so it has no tests of its own.
 4. Docs: CLAUDE.md.
 
@@ -15,7 +15,7 @@
 | II. Toolchain | ✅ OSLog `Logger` is available on iOS 14+, under the iOS 18 floor; no `#available` |
 | III. Adaptive layout | ✅ Not applicable: no UI change |
 | IV. Test-first | ✅ Logger injection is red → green (T002/T003): client tests build the client with `Logger.disabled`. Log text, level and the `curl` format are exempt (diagnostic logging, 2.3.0) and checked in [quickstart.md](./quickstart.md) |
-| V. Layered simplicity | ✅ OSLog is a system framework, so no new dependency. ForecastKit gets the logger from its creator and holds no bundle id; only the composition root picks subsystem/category. No protocol or wrapper around `Logger` |
+| V. Layered simplicity | ✅ OSLog is a system framework, so no new dependency. ForecastKit gets the logger from its creator and holds no bundle id; only the composition root picks categories (`init(category:)` fixes the subsystem). No protocol or wrapper around `Logger` |
 
 ## Complexity Tracking
 

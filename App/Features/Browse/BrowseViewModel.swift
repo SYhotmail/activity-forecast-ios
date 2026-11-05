@@ -27,8 +27,10 @@ final class BrowseViewModel {
 
     private let service: any WeatherService
     private let logger: Logger
-    
-    init(service: any WeatherService, logger: Logger = .disabled) {
+
+    /// - Parameter logger: where the screen's lifecycle is logged; the creator chooses it,
+    ///   previews and tests pass `.disabled` (specs/010 FR-006).
+    init(service: any WeatherService, logger: Logger) {
         self.service = service
         self.logger = logger
         search = SearchViewModel(service: service)
@@ -43,11 +45,13 @@ final class BrowseViewModel {
         selectedPlace = place
         forecast = place.map { ForecastViewModel(place: $0, service: service) }
     }
-    
+
+    /// Diagnostic only: logs that the browse screen appeared (specs/010 FR-006).
     func onAppear() {
         logger.info("BrowseVM will appear")
     }
-    
+
+    /// Diagnostic only: logs that the browse screen disappeared (specs/010 FR-006).
     func onDisappear() {
         logger.info("BrowseVM will disappear")
     }
