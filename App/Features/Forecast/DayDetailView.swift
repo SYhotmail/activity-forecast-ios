@@ -1,8 +1,8 @@
 import SwiftUI
 import ForecastKit
 
-/// Sheet for one activity on one day: rating, reasons, then every weather factor in metric
-/// units with "—" for missing values (contracts/ui.md › Day detail, FR-008, FR-016).
+/// Sheet for one activity on one day: rating, reasons, then every weather factor in the
+/// user's units with "—" for missing values (contracts/ui.md › Day detail, FR-008, FR-016).
 struct DayDetailView: View {
     let day: DaySuitability
     @Environment(\.dismiss) private var dismiss
@@ -20,7 +20,7 @@ struct DayDetailView: View {
                     switch day.result {
                     case let .scored(_, _, reasons):
                         ForEach(reasons, id: \.self) { reason in
-                            Label(reason.text, systemImage: icon(for: reason.kind))
+                            Label(reason.detail.text, systemImage: icon(for: reason.kind))
                         }
                     case .noData:
                         Text("A value this activity needs is missing from the forecast.")
@@ -29,18 +29,18 @@ struct DayDetailView: View {
 
                 Section("Weather") {
                     let weather = day.weather
-                    let minTemperature = Formatting.metric(weather.temperatureMin, UnitTemperature.celsius)
-                    let maxTemperature = Formatting.metric(weather.temperatureMax, UnitTemperature.celsius)
+                    let minTemperature = Formatting.temperature(weather.temperatureMin)
+                    let maxTemperature = Formatting.temperature(weather.temperatureMax)
                     LabeledContent("Min / max temperature", value: "\(minTemperature) / \(maxTemperature)")
-                    let precipitation = Formatting.metric(weather.precipitation, UnitLength.millimeters)
+                    let precipitation = Formatting.rainfall(weather.precipitation)
                     let probability = Formatting.percent(weather.precipitationProbability)
                     LabeledContent("Precipitation", value: "\(precipitation) (\(probability))")
-                    LabeledContent("Snowfall", value: Formatting.metric(weather.snowfall, UnitLength.centimeters))
-                    LabeledContent("Snow depth", value: Formatting.metric(weather.snowDepth, UnitLength.centimeters))
-                    let wind = Formatting.metric(weather.windSpeedMax, UnitSpeed.kilometersPerHour)
-                    let gusts = Formatting.metric(weather.windGustsMax, UnitSpeed.kilometersPerHour)
+                    LabeledContent("Snowfall", value: Formatting.snow(weather.snowfall))
+                    LabeledContent("Snow depth", value: Formatting.snow(weather.snowDepth))
+                    let wind = Formatting.windSpeed(weather.windSpeedMax)
+                    let gusts = Formatting.windSpeed(weather.windGustsMax)
                     LabeledContent("Wind / gusts", value: "\(wind) / \(gusts)")
-                    LabeledContent("Sunshine", value: Formatting.metric(weather.sunshine, UnitDuration.hours))
+                    LabeledContent("Sunshine", value: Formatting.hours(weather.sunshine))
                 }
 
                 if day.activity == .surfing {

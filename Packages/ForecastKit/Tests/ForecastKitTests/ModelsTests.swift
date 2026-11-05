@@ -1,22 +1,9 @@
+import Foundation
 import Testing
 @testable import ForecastKit
 
 @Suite("Domain models")
 struct ModelsTests {
-    private func place(region: String?, country: String?) -> Place {
-        Place(id: 1, name: "Paris", region: region, country: country,
-              latitude: 48.85, longitude: 2.35, timeZone: "Europe/Paris")
-    }
-
-    @Test("displayName joins name, region and country that are present (FR-002)")
-    func displayName() {
-        #expect(place(region: "Île-de-France", country: "France").displayName == "Paris, Île-de-France, France")
-        #expect(place(region: nil, country: "France").displayName == "Paris, France")
-        #expect(place(region: "", country: nil).displayName == "Paris")
-        #expect(place(region: "Texas", country: "United States").subtitle == "Texas, United States")
-        #expect(place(region: nil, country: nil).subtitle == nil)
-    }
-
     @Test("score bands map to labels at every edge (FR-005)", arguments: [
         (0, SuitabilityLabel.poor), (24, .poor), (25, .fair), (49, .fair),
         (50, .good), (74, .good), (75, .excellent), (100, .excellent)
@@ -25,14 +12,30 @@ struct ModelsTests {
         #expect(SuitabilityLabel(score: score) == expected)
     }
 
-    @Test("LocalDate parses yyyy-MM-dd and orders chronologically")
+    @Test("LocalDate rejects invalid days and orders chronologically")
     func localDate() throws {
-        let a = try #require(LocalDate(iso8601: "2026-11-03"))
-        let b = try #require(LocalDate(iso8601: "2026-11-10"))
-        #expect(a.year == 2026 && a.month == 11 && a.day == 3)
+        let a = try #require(LocalDate(year: 2026, month: 11, day: 3))
+        let b = try #require(LocalDate(year: 2026, month: 11, day: 10))
         #expect(a < b)
-        #expect(LocalDate(iso8601: "2026-13-01") == nil)
-        #expect(LocalDate(iso8601: "nonsense") == nil)
+        #expect(LocalDate(year: 2026, month: 13, day: 1) == nil)
+        #expect(LocalDate(year: 2026, month: 2, day: 30) == nil)
+    }
+
+    @Test("an instant becomes the calendar day of the given time zone, not the device's (FR-003)")
+    func localDateFromInstant() throws {
+        let instant = Date(timeIntervalSince1970: 1793833200) // 2026-11-04T23:00Z
+        let paris = try #require(TimeZone(identifier: "Europe/Paris"))
+        let newYork = try #require(TimeZone(identifier: "America/New_York"))
+        #expect(LocalDate(instant, in: paris) == LocalDate(year: 2026, month: 11, day: 5))
+        #expect(LocalDate(instant, in: .gmt) == LocalDate(year: 2026, month: 11, day: 4))
+        #expect(LocalDate(instant, in: newYork) == LocalDate(year: 2026, month: 11, day: 4))
+    }
+
+    @Test("date is GMT midnight whatever zone the day came from, so GMT formatting shows that day")
+    func dateIsGMTMidnight() throws {
+        let paris = try #require(TimeZone(identifier: "Europe/Paris"))
+        let day = LocalDate(Date(timeIntervalSince1970: 1793833200), in: paris) // 5 Nov in Paris
+        #expect(day.date == Date(timeIntervalSince1970: 1793836800))            // 2026-11-05T00:00Z
     }
 
     @Test("activities keep the fixed tie-break order")

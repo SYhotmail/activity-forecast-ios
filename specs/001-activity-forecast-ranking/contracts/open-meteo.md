@@ -23,16 +23,17 @@ Response 200:
 
 ## Forecast — 7 days
 
-`GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,snowfall_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,sunshine_duration&hourly=snow_depth&timezone=auto&forecast_days=7`
+`GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,snowfall_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,sunshine_duration&hourly=snow_depth&timezone=auto&timeformat=unixtime&forecast_days=7`
 
 Response 200 (abridged):
 ```json
 {
+  "utc_offset_seconds": 3600,
   "timezone": "Europe/Paris",
   "daily_units": { "temperature_2m_max": "°C", "precipitation_sum": "mm", "snowfall_sum": "cm",
                    "wind_speed_10m_max": "km/h", "sunshine_duration": "s", "precipitation_probability_max": "%" },
   "daily": {
-    "time": ["2026-11-03", "2026-11-04"],
+    "time": [1793660400, 1793746800],
     "weather_code": [45, 3],
     "temperature_2m_max": [8.7, 10.5], "temperature_2m_min": [-3.9, 1.5],
     "precipitation_sum": [0.0, 0.0], "rain_sum": [0.0, 0.0], "snowfall_sum": [0.0, 0.0],
@@ -41,12 +42,12 @@ Response 200 (abridged):
     "sunshine_duration": [34028.68, 33626.44]
   },
   "hourly_units": { "snow_depth": "m" },
-  "hourly": { "time": ["2026-11-03T00:00", "..."], "snow_depth": [0.0, "..."] }
+  "hourly": { "time": [1793660400, "..."], "snow_depth": [0.0, "..."] }
 }
 ```
 - The daily arrays are parallel and indexed by `time`. Any element can be `null`, so each one is decoded as `Double?` or `Int?`.
-- `time` is a local calendar date (because of `timezone=auto`). Parse it with a fixed `yyyy-MM-dd` format in the place's time zone.
-- `snow_depth` is hourly, in **metres**: group by the date prefix of `hourly.time`, take the max and multiply by 100 to get cm.
+- `time` is Unix seconds in GMT (`timeformat=unixtime`); `timezone=auto` still decides where each day starts, so a daily value is the place's local midnight. Convert it to a calendar day with the place's `TimeZone(identifier: timezone)`, which follows DST. `utc_offset_seconds` is only a fallback for an unknown identifier: it is the offset at request time, so adding it misdates days after a spring DST change. *(refactoring-sdk; originally local `yyyy-MM-dd` strings.)*
+- `snow_depth` is hourly, in **metres**: group by the place's calendar day of `hourly.time` (same conversion), take the max and multiply by 100 to get cm.
 - `sunshine_duration` is in seconds: divide by 3600 to get hours.
 
 ## Error mapping (FR-011)

@@ -13,20 +13,41 @@ public enum SuitabilityLabel: String, Sendable, Hashable, CaseIterable {
         default: self = .excellent
         }
     }
-
-    public var title: String { rawValue.capitalized }
 }
 
-/// One plain-language explanation of a score (FR-008).
+/// One explanation of a score (FR-008). Typed, not text: the app words it and formats the value.
 public struct Reason: Sendable, Hashable {
     public enum Kind: Sendable, Hashable { case cap, negative, positive }
 
-    public let kind: Kind
-    public let text: String
+    /// What the reason is about, with the measured value (metric units) where there is one.
+    public enum Detail: Sendable, Hashable {
+        // Caps
+        case noSnowOnGround, thunderstorms, snowfallExpected
+        // Indoor sightseeing, from the outdoor score
+        case poorWeatherOutside, greatWeatherOutside
+        // Snow
+        case freshSnow(centimetres: Double), snowBase(centimetres: Double), thinSnowCover(centimetres: Double)
+        // Temperature
+        case cold(celsius: Double), tooWarm(celsius: Double), warm(celsius: Double)
+        case tooCold(celsius: Double), tooHot(celsius: Double), comfortable(celsius: Double), hot(celsius: Double)
+        // Wind
+        case lightGusts(kilometresPerHour: Double), strongGusts(kilometresPerHour: Double)
+        case goodBreeze(kilometresPerHour: Double), tooLittleWind(kilometresPerHour: Double)
+        case tooWindy(kilometresPerHour: Double)
+        case lightWind(kilometresPerHour: Double), strongWind(kilometresPerHour: Double)
+        // Rain
+        case dry, littleRain(millimetres: Double), rain(millimetres: Double), heavyRain(millimetres: Double)
+        case rainLikely(percent: Double)
+        // Sun
+        case sunny(hours: Double), littleSunshine(hours: Double)
+    }
 
-    public init(kind: Kind, text: String) {
+    public let kind: Kind
+    public let detail: Detail
+
+    public init(kind: Kind, detail: Detail) {
         self.kind = kind
-        self.text = text
+        self.detail = detail
     }
 }
 

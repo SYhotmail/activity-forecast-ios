@@ -105,7 +105,7 @@ A user searching for a common name (e.g. "Paris" or "Springfield") needs to tell
 - **FR-013**: Missing days or missing weather values MUST be shown as "No data" and excluded from the weekly average rather than scored as zero.
 - **FR-014**: The app MUST NOT require an account and MUST NOT collect or store personal data; nothing persists after the app is closed.
 - **FR-015**: All text MUST support the device's larger text sizes, and ratings MUST be readable by screen readers (e.g. "Skiing, Tuesday, Excellent, 82").
-- **FR-016**: Values MUST be shown in metric units (°C, mm, cm, km/h).
+- **FR-016**: Values MUST be shown in the units of the user's locale and system settings (e.g. °C, mm, cm, km/h in Germany; °F, in, mph in the US). Forecast data and scoring stay metric; conversion is display-only. *(Amended in refactoring-sdk; originally fixed metric units.)*
 
 ### Key Entities
 
@@ -133,6 +133,6 @@ A user searching for a common name (e.g. "Paris" or "Springfield") needs to tell
 - Weather and place search come from Open-Meteo's place-search and forecast services, as the brief requires. They are free, need no key, and have no backend in between.
 - The forecast service provides no wave or swell data, and the brief limits data sources to those two services, so Surfing is a weather-only estimate and is labelled as such.
 - An internet connection is required. There is no offline mode, cache, favourites or search history (out of scope to keep the submission focused).
-- Single anonymous user, English only, metric units.
+- Single anonymous user, English only. Units follow the locale (FR-016); scoring is metric.
 - "Rank" means ordering the activities by weekly suitability while also showing per-day ratings, so both "which activity" and "which day" questions are answered.
 - Exact scoring weights and thresholds within the rules in FR-010 are tuned during planning and documented in the README, and the reference forecasts in SC-003 are used to verify them.

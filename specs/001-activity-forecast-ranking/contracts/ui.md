@@ -28,7 +28,7 @@ Each activity section has:
 | failed | Error message + **Retry** (search results stay on the previous screen) |
 
 ## 3. Day detail (sheet from a day cell)
-Activity, date, label + score, then reasons (cap/negative/positive), then the weather factors: min/max °C, precipitation mm (+ probability %), snowfall cm, snow depth cm, wind / gusts km/h, sunshine h (FR-008, FR-016). A missing value is shown as "—".
+Activity, date, label + score, then reasons (cap/negative/positive), then the weather factors: min/max temperature, precipitation (+ probability %), snowfall, snow depth, wind / gusts, sunshine hours, each in the user's locale units, e.g. °C/mm/cm/km/h or °F/in/mph (FR-008, FR-016). A missing value is shown as "—".
 
 ## Accessibility (FR-015)
 - Only Dynamic Type text styles. Day cells wrap or scroll horizontally at large sizes. Nothing is truncated.

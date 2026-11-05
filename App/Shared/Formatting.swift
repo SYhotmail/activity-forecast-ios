@@ -1,4 +1,4 @@
-import SwiftUI
+import Foundation
 import ForecastKit
 
 /// Display-only helpers shared by the views. No decisions are made here, only formatting.
@@ -30,12 +30,45 @@ enum Formatting {
     /// Shown in place of any value the forecast did not provide (FR-013).
     static let missing = "—"
 
-    /// A value in a fixed metric unit (FR-016), e.g. "12 mm", or "—" when missing.
-    static func metric<U: Dimension>(_ value: Double?, _ unit: U) -> String {
+    // Forecast values arrive and are scored in metric. These convert them for display to the
+    // units of the user's locale and settings (FR-016): "20 °C" in Germany, "68°F" in the US.
+
+    /// Air temperature from °C, e.g. "20 °C" / "68°F".
+    static func temperature(_ celsius: Double?, locale: Locale = .autoupdatingCurrent) -> String {
+        measurement(celsius, UnitTemperature.celsius, usage: .weather, locale: locale)
+    }
+
+    /// Rain or precipitation from mm, e.g. "12 mm" / "0.47 in".
+    static func rainfall(_ millimetres: Double?, locale: Locale = .autoupdatingCurrent) -> String {
+        measurement(millimetres, UnitLength.millimeters, usage: .rainfall, fractionDigits: 2, locale: locale)
+    }
+
+    /// Snowfall or snow depth from cm, e.g. "20 cm" / "7.87 in".
+    static func snow(_ centimetres: Double?, locale: Locale = .autoupdatingCurrent) -> String {
+        measurement(centimetres, UnitLength.centimeters, usage: .snowfall, fractionDigits: 2, locale: locale)
+    }
+
+    /// Wind or gust speed from km/h, e.g. "65 km/h" / "40.4 mph".
+    static func windSpeed(_ kilometresPerHour: Double?, locale: Locale = .autoupdatingCurrent) -> String {
+        measurement(kilometresPerHour, UnitSpeed.kilometersPerHour, usage: .wind, locale: locale)
+    }
+
+    /// A duration in hours, e.g. "6 hr".
+    static func hours(_ hours: Double?, locale: Locale = .autoupdatingCurrent) -> String {
+        measurement(hours, UnitDuration.hours, usage: .asProvided, locale: locale)
+    }
+
+    /// Lengths allow two decimals so light rain in inches (1 mm = 0.04 in) never reads as 0;
+    /// temperature and speed allow one. "—" when missing (FR-013).
+    private static func measurement<U: Dimension>(
+        _ value: Double?, _ unit: U, usage: MeasurementFormatUnitUsage<U>,
+        fractionDigits: Int = 1, locale: Locale
+    ) -> String {
         guard let value else { return missing }
         return Measurement(value: value, unit: unit).formatted(
-            .measurement(width: .abbreviated, usage: .asProvided,
-                         numberFormatStyle: .number.precision(.fractionLength(0...1))))
+            .measurement(width: .abbreviated, usage: usage,
+                         numberFormatStyle: .number.precision(.fractionLength(0...fractionDigits)))
+            .locale(locale))
     }
 
     /// "90%", or "—" when missing.
@@ -58,29 +91,4 @@ enum Formatting {
     }
 
     static let surfingFootnote = "Based on weather only — wave conditions not included."
-}
-
-extension Activity {
-    /// SF Symbol shown next to the activity name (specs/002-app-icons research.md D4).
-    /// Presentation only, so it lives in the App target and `ForecastKit` stays UI-free.
-    var symbolName: String {
-        switch self {
-        case .skiing: "figure.skiing.downhill"
-        case .surfing: "figure.surfing"
-        case .outdoorSightseeing: "figure.hiking"
-        case .indoorSightseeing: "building.columns"
-        }
-    }
-}
-
-extension SuitabilityLabel {
-    /// Rating colour. Always shown next to the label text, never on its own (FR-015).
-    var color: Color {
-        switch self {
-        case .poor: .red
-        case .fair: .orange
-        case .good: .yellow
-        case .excellent: .green
-        }
-    }
 }

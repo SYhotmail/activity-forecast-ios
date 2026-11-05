@@ -47,5 +47,5 @@ public struct DailyWeather: Sendable, Hashable {
     }
 
     /// WMO 95–99: thunderstorm (with or without hail).
-    public var isThunderstorm: Bool { (95...99).contains(weatherCode ?? -1) }
+    public var isThunderstorm: Bool { weatherCode.flatMap { (95...99).contains($0) } == true }
 }

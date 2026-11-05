@@ -19,15 +19,4 @@ public struct Place: Sendable, Hashable, Identifiable {
         self.longitude = longitude
         self.timeZone = timeZone
     }
-
-    /// "Region, Country" with missing or empty parts dropped; `nil` when neither is known.
-    public var subtitle: String? {
-        let parts = [region, country].compactMap { $0 }.filter { !$0.isEmpty }
-        return parts.isEmpty ? nil : parts.joined(separator: ", ")
-    }
-
-    /// "Name, Region, Country" used to tell same-named places apart (FR-002).
-    public var displayName: String {
-        [name, subtitle].compactMap { $0 }.joined(separator: ", ")
-    }
 }
