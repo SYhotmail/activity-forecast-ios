@@ -27,13 +27,17 @@ final class SearchViewModel {
         self.language = language
     }
 
+    var trimmedQuery: String {
+        Self.trimmed(query)
+    }
+
     /// Searches for the current query, or returns to `.idle` when it is too short.
     ///
     /// Asking again for the query whose results are already shown makes no request: the
     /// sidebar's `.task(id: query)` reruns when a fold or resize rebuilds it (specs/003 FR-007,
     /// research.md R3).
     func search() async {
-        let trimmed = Self.trimmed(query)
+        let trimmed = trimmedQuery
         guard trimmed.count >= Self.minimumQueryLength else {
             state = .idle
             lastQuery = nil
@@ -52,7 +56,7 @@ final class SearchViewModel {
         } catch {
             outcome = .failed(.unexpected)
         }
-        guard !Task.isCancelled, Self.trimmed(query) == trimmed else { return }
+        guard !Task.isCancelled, trimmedQuery == trimmed else { return }
         state = outcome
         lastQuery = trimmed
     }

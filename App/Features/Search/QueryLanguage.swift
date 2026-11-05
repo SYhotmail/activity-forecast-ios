@@ -51,7 +51,10 @@ struct QueryLanguage {
     }
 
     private static func languageCode(_ identifier: String) -> String? {
-        let code = identifier.split(separator: "-").first.map { $0.lowercased() } ?? ""
+        let code = identifier.split(separator: "-").first.map { $0.lowercased() }
+        guard let code else {
+            return nil
+        }
         return (2...3).contains(code.count) && code.allSatisfy(\.isLetter) ? code : nil
     }
 
