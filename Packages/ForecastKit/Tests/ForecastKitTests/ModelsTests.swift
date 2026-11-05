@@ -31,6 +31,13 @@ struct ModelsTests {
         #expect(LocalDate(instant, in: newYork) == LocalDate(year: 2026, month: 11, day: 4))
     }
 
+    @Test("date is GMT midnight whatever zone the day came from, so GMT formatting shows that day")
+    func dateIsGMTMidnight() throws {
+        let paris = try #require(TimeZone(identifier: "Europe/Paris"))
+        let day = LocalDate(Date(timeIntervalSince1970: 1793833200), in: paris) // 5 Nov in Paris
+        #expect(day.date == Date(timeIntervalSince1970: 1793836800))            // 2026-11-05T00:00Z
+    }
+
     @Test("activities keep the fixed tie-break order")
     func activityOrder() {
         #expect(Activity.allCases == [.skiing, .surfing, .outdoorSightseeing, .indoorSightseeing])

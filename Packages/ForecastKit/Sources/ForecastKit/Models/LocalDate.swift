@@ -7,14 +7,14 @@ public struct LocalDate: Sendable, Hashable, Comparable {
     public let month: Int
     public let day: Int
 
-    private static var calendar: Calendar {
+    private static func calendar(timeZone: TimeZone) -> Calendar {
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .gmt
+        calendar.timeZone = timeZone
         return calendar
     }
 
     public init?(year: Int, month: Int, day: Int) {
-        let calendar = Self.calendar
+        let calendar = Self.calendar(timeZone: .gmt)
         let components = DateComponents(year: year, month: month, day: day)
         guard components.isValidDate(in: calendar) else { return nil }
         self.year = year
@@ -25,8 +25,7 @@ public struct LocalDate: Sendable, Hashable, Comparable {
     /// The calendar day that `instant` falls on in `timeZone` (the place's zone, never the device's).
     /// Uses the zone's rules for that instant, so days after a DST change stay correct.
     init(_ instant: Date, in timeZone: TimeZone) {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone
+        let calendar = Self.calendar(timeZone: timeZone)
         let components = calendar.dateComponents([.year, .month, .day], from: instant)
         // A Gregorian calendar always yields these three components for any instant.
         year = components.year!
@@ -36,7 +35,7 @@ public struct LocalDate: Sendable, Hashable, Comparable {
 
     /// Midnight GMT of this day: format it with a GMT calendar or time zone to display the same day.
     public var date: Date {
-        let calendar = Self.calendar
+        let calendar = Self.calendar(timeZone: .gmt)
         return calendar.date(from: DateComponents(year: year, month: month, day: day))!
     }
 
