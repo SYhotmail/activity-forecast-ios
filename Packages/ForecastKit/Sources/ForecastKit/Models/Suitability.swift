@@ -1,3 +1,5 @@
+import Foundation
+
 /// Human label for a 0–100 suitability score (FR-005).
 public enum SuitabilityLabel: String, Sendable, Hashable, CaseIterable {
     case poor, fair, good, excellent
@@ -19,27 +21,32 @@ public enum SuitabilityLabel: String, Sendable, Hashable, CaseIterable {
 public struct Reason: Sendable, Hashable {
     public enum Kind: Sendable, Hashable { case cap, negative, positive }
 
-    /// What the reason is about, with the measured value (metric units) where there is one.
+    /// What the reason is about, with the measured value, in the unit it was received in, where
+    /// there is one (specs/006 FR-006).
     public enum Detail: Sendable, Hashable {
+        public typealias Temperature = Measurement<UnitTemperature>
+        public typealias Length = Measurement<UnitLength>
+        public typealias Speed = Measurement<UnitSpeed>
+        public typealias Duration = Measurement<UnitDuration>
+
         // Caps
         case noSnowOnGround, thunderstorms, snowfallExpected
         // Indoor sightseeing, from the outdoor score
         case poorWeatherOutside, greatWeatherOutside
         // Snow
-        case freshSnow(centimetres: Double), snowBase(centimetres: Double), thinSnowCover(centimetres: Double)
+        case freshSnow(Length), snowBase(Length), thinSnowCover(Length)
         // Temperature
-        case cold(celsius: Double), tooWarm(celsius: Double), warm(celsius: Double)
-        case tooCold(celsius: Double), tooHot(celsius: Double), comfortable(celsius: Double), hot(celsius: Double)
+        case cold(Temperature), tooWarm(Temperature), warm(Temperature)
+        case tooCold(Temperature), tooHot(Temperature), comfortable(Temperature), hot(Temperature)
         // Wind
-        case lightGusts(kilometresPerHour: Double), strongGusts(kilometresPerHour: Double)
-        case goodBreeze(kilometresPerHour: Double), tooLittleWind(kilometresPerHour: Double)
-        case tooWindy(kilometresPerHour: Double)
-        case lightWind(kilometresPerHour: Double), strongWind(kilometresPerHour: Double)
+        case lightGusts(Speed), strongGusts(Speed)
+        case goodBreeze(Speed), tooLittleWind(Speed), tooWindy(Speed)
+        case lightWind(Speed), strongWind(Speed)
         // Rain
-        case dry, littleRain(millimetres: Double), rain(millimetres: Double), heavyRain(millimetres: Double)
+        case dry, littleRain(Length), rain(Length), heavyRain(Length)
         case rainLikely(percent: Double)
         // Sun
-        case sunny(hours: Double), littleSunshine(hours: Double)
+        case sunny(Duration), littleSunshine(Duration)
     }
 
     public let kind: Kind

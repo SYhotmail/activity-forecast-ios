@@ -1,3 +1,4 @@
+import Foundation
 import ForecastKit
 
 /// Plain-language reason text (FR-008), values in the user's units (FR-016).
@@ -26,7 +27,7 @@ extension Reason.Detail {
         case let .tooWindy(value): "Too windy \(Formatting.windSpeed(value))"
         case let .lightWind(value): "Light wind \(Formatting.windSpeed(value))"
         case let .strongWind(value): "Strong wind \(Formatting.windSpeed(value))"
-        case .dry: "Dry \(Formatting.rainfall(0))"
+        case .dry: "Dry \(Formatting.rainfall(.millimetres(0)))"
         case let .littleRain(value): "Little rain \(Formatting.rainfall(value))"
         case let .rain(value): "Rain \(Formatting.rainfall(value))"
         case let .heavyRain(value): "Heavy rain \(Formatting.rainfall(value))"

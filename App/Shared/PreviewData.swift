@@ -45,16 +45,17 @@ nonisolated enum PreviewData {
         forecast: { _ in throw UserFacingError.offline }
     )
 
-    // Mirrors DailyWeather's fields so each preview day reads as one labelled row.
+    // Mirrors DailyWeather's fields so each preview day reads as one labelled row (°C, mm, km/h, hours).
     // swiftlint:disable function_parameter_count
     private static func day(_ day: Int, code: Int, tmax: Double, tmin: Double,
                             precipitation: Double, probability: Double,
                             wind: Double, gusts: Double, sunshine: Double?) -> DailyWeather {
         DailyWeather(date: LocalDate(year: 2026, month: 11, day: day)!, weatherCode: code,
-                     temperatureMax: tmax, temperatureMin: tmin,
-                     precipitation: precipitation, rain: precipitation,
-                     snowfall: 0, snowDepth: 0, precipitationProbability: probability,
-                     windSpeedMax: wind, windGustsMax: gusts, sunshine: sunshine)
+                     temperatureMax: .celsius(tmax), temperatureMin: .celsius(tmin),
+                     precipitation: .millimetres(precipitation), rain: .millimetres(precipitation),
+                     snowfall: .centimetres(0), snowDepth: .centimetres(0), precipitationProbability: probability,
+                     windSpeedMax: .kilometresPerHour(wind), windGustsMax: .kilometresPerHour(gusts),
+                     sunshine: sunshine.map { .hours($0) })
     }
     // swiftlint:enable function_parameter_count
 }

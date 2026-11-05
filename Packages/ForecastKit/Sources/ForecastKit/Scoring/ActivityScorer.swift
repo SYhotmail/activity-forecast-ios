@@ -1,4 +1,10 @@
+import Foundation
+
 /// Scores one activity on one day (FR-004, FR-009, FR-010, FR-013), per research.md R9.
+///
+/// Thresholds are written in °C, mm, cm, km/h and hours. Inputs may arrive in any unit: each is
+/// converted to its threshold's unit before use, so a day scores the same in any unit system,
+/// while reasons keep the value as received (specs/006 FR-005, FR-006).
 ///
 /// Each outdoor activity is a weighted sum of named factors, each normalised to 0…1 by a
 /// `Ramp`. The sum is rounded, clamped to 0…100 and then capped for disqualifying conditions.
@@ -60,11 +66,17 @@ public enum ActivityScorer {
 
     // MARK: - Ramps (research.md R9)
 
+    /// Max temperature, °C.
     private static let skiingCold = Ramp([(x: 0, y: 1), (x: 5, y: 0)])
+    /// Gusts, km/h.
     private static let skiingGusts = Ramp([(x: 30, y: 1), (x: 70, y: 0)])
+    /// Wind, km/h.
     private static let surfingWind = Ramp([(x: 0, y: 0.3), (x: 15, y: 1), (x: 35, y: 1), (x: 50, y: 0)])
+    /// Max temperature, °C.
     private static let surfingWarmth = Ramp([(x: 5, y: 0), (x: 18, y: 1), (x: 30, y: 1), (x: 38, y: 0.5)])
+    /// Max temperature, °C.
     private static let outdoorComfort = Ramp([(x: 0, y: 0), (x: 15, y: 1), (x: 25, y: 1), (x: 38, y: 0)])
+    /// Wind, km/h.
     private static let outdoorCalm = Ramp([(x: 20, y: 1), (x: 50, y: 0)])
 
     /// 1 at 0 mm, falling linearly to 0 at 10 mm or more.
@@ -137,12 +149,12 @@ public enum ActivityScorer {
         }
     }
 
-    private static func rainReason(_ millimetres: Double) -> Reason.Detail {
-        millimetres >= 10 ? .heavyRain(millimetres: millimetres) : .rain(millimetres: millimetres)
+    private static func rainReason(_ amount: Reason.Detail.Length) -> Reason.Detail {
+        amount.value(in: .millimeters) >= 10 ? .heavyRain(amount) : .rain(amount)
     }
 
-    private static func dryReason(_ millimetres: Double) -> Reason.Detail {
-        millimetres <= 0 ? .dry : .littleRain(millimetres: millimetres)
+    private static func dryReason(_ amount: Reason.Detail.Length) -> Reason.Detail {
+        amount.value(in: .millimeters) <= 0 ? .dry : .littleRain(amount)
     }
 
     static func skiing(_ w: DailyWeather) -> Breakdown? {
@@ -150,19 +162,21 @@ public enum ActivityScorer {
               let tmax = w.temperatureMax,
               let gusts = w.windGustsMax, let rain = w.rain
         else { return nil }
+        let snowfallCm = snowfall.value(in: .centimeters)
+        let depthCm = depth.value(in: .centimeters)
         let factors = [
-            Factor(name: .snow, weight: 50, value: min(1, max(0, snowfall / 10 + depth / 100)),
-                   positive: snowfall > 0 ? .freshSnow(centimetres: snowfall) : .snowBase(centimetres: depth),
-                   negative: .thinSnowCover(centimetres: depth)),
-            Factor(name: .cold, weight: 25, value: skiingCold(tmax),
-                   positive: .cold(celsius: tmax), negative: .tooWarm(celsius: tmax)),
-            Factor(name: .gusts, weight: 15, value: skiingGusts(gusts),
-                   positive: .lightGusts(kilometresPerHour: gusts), negative: .strongGusts(kilometresPerHour: gusts)),
-            Factor(name: .noRain, weight: 10, value: dryness(rain),
+            Factor(name: .snow, weight: 50, value: min(1, max(0, snowfallCm / 10 + depthCm / 100)),
+                   positive: snowfallCm > 0 ? .freshSnow(snowfall) : .snowBase(depth),
+                   negative: .thinSnowCover(depth)),
+            Factor(name: .cold, weight: 25, value: skiingCold(tmax.value(in: .celsius)),
+                   positive: .cold(tmax), negative: .tooWarm(tmax)),
+            Factor(name: .gusts, weight: 15, value: skiingGusts(gusts.value(in: .kilometersPerHour)),
+                   positive: .lightGusts(gusts), negative: .strongGusts(gusts)),
+            Factor(name: .noRain, weight: 10, value: dryness(rain.value(in: .millimeters)),
                    positive: dryReason(rain), negative: rainReason(rain))
         ]
         // No snow at all means no skiing, however cold it is (live check: Chamonix, 0 cm, tmin −3.9 °C).
-        let noSnow = snowfall <= 0 && depth <= 0
+        let noSnow = snowfallCm <= 0 && depthCm <= 0
         let cap = noSnow ? Cap(maximum: 10, reason: .noSnowOnGround) : nil
         return Breakdown(factors: factors, cap: cap)
     }
@@ -171,14 +185,16 @@ public enum ActivityScorer {
         guard let wind = w.windSpeedMax, let tmax = w.temperatureMax,
               let precipitation = w.precipitation, w.weatherCode != nil
         else { return nil }
+        let windKmh = wind.value(in: .kilometersPerHour)
+        let tmaxC = tmax.value(in: .celsius)
         let factors = [
-            Factor(name: .wind, weight: 40, value: surfingWind(wind),
-                   positive: .goodBreeze(kilometresPerHour: wind),
-                   negative: wind < 15 ? .tooLittleWind(kilometresPerHour: wind) : .tooWindy(kilometresPerHour: wind)),
-            Factor(name: .warmth, weight: 30, value: surfingWarmth(tmax),
-                   positive: .warm(celsius: tmax),
-                   negative: tmax < 18 ? .tooCold(celsius: tmax) : .tooHot(celsius: tmax)),
-            Factor(name: .dry, weight: 30, value: dryness(precipitation),
+            Factor(name: .wind, weight: 40, value: surfingWind(windKmh),
+                   positive: .goodBreeze(wind),
+                   negative: windKmh < 15 ? .tooLittleWind(wind) : .tooWindy(wind)),
+            Factor(name: .warmth, weight: 30, value: surfingWarmth(tmaxC),
+                   positive: .warm(tmax),
+                   negative: tmaxC < 18 ? .tooCold(tmax) : .tooHot(tmax)),
+            Factor(name: .dry, weight: 30, value: dryness(precipitation.value(in: .millimeters)),
                    positive: dryReason(precipitation), negative: rainReason(precipitation))
         ]
         let cap = w.isThunderstorm ? Cap(maximum: 10, reason: .thunderstorms) : nil
@@ -190,28 +206,36 @@ public enum ActivityScorer {
               let probability = w.precipitationProbability, let wind = w.windSpeedMax,
               let sunshine = w.sunshine, let snowfall = w.snowfall, w.weatherCode != nil
         else { return nil }
-        let wetness = max(min(max(precipitation, 0) / 10, 1), min(max(probability, 0), 100) / 100 * 0.5)
+        let tmaxC = tmax.value(in: .celsius)
+        let precipitationMm = precipitation.value(in: .millimeters)
+        let sunshineHours = sunshine.value(in: .hours)
+        let wetness = max(min(max(precipitationMm, 0) / 10, 1), min(max(probability, 0), 100) / 100 * 0.5)
         let factors = [
-            Factor(name: .comfort, weight: 35, value: outdoorComfort(tmax),
-                   positive: .comfortable(celsius: tmax),
-                   negative: tmax < 15 ? .cold(celsius: tmax) : .hot(celsius: tmax)),
+            Factor(name: .comfort, weight: 35, value: outdoorComfort(tmaxC),
+                   positive: .comfortable(tmax),
+                   negative: tmaxC < 15 ? .cold(tmax) : .hot(tmax)),
             // Describe whichever of amount or probability set the wetness.
             Factor(name: .dry, weight: 35, value: 1 - wetness,
                    positive: dryReason(precipitation),
-                   negative: precipitation / 10 >= probability / 200
+                   negative: precipitationMm / 10 >= probability / 200
                        ? rainReason(precipitation) : .rainLikely(percent: probability)),
-            Factor(name: .calm, weight: 15, value: outdoorCalm(wind),
-                   positive: .lightWind(kilometresPerHour: wind), negative: .strongWind(kilometresPerHour: wind)),
-            Factor(name: .sun, weight: 15, value: min(max(sunshine, 0) / 8, 1),
-                   positive: .sunny(hours: sunshine), negative: .littleSunshine(hours: sunshine))
+            Factor(name: .calm, weight: 15, value: outdoorCalm(wind.value(in: .kilometersPerHour)),
+                   positive: .lightWind(wind), negative: .strongWind(wind)),
+            Factor(name: .sun, weight: 15, value: min(max(sunshineHours, 0) / 8, 1),
+                   positive: .sunny(sunshine), negative: .littleSunshine(sunshine))
         ]
         let cap: Cap? = if w.isThunderstorm {
             Cap(maximum: 20, reason: .thunderstorms)
-        } else if snowfall >= 2 {
+        } else if snowfall.value(in: .centimeters) >= 2 {
             Cap(maximum: 20, reason: .snowfallExpected)
         } else {
             nil
         }
         return Breakdown(factors: factors, cap: cap)
     }
+}
+
+private extension Measurement where UnitType: Dimension {
+    /// The numeric value in `unit`, for comparing with a threshold written in that unit.
+    func value(in unit: UnitType) -> Double { converted(to: unit).value }
 }

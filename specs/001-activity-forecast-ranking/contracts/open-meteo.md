@@ -23,7 +23,9 @@ Response 200:
 
 ## Forecast — 7 days
 
-`GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,snowfall_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,sunshine_duration&hourly=snow_depth&timezone=auto&timeformat=unixtime&forecast_days=7`
+`GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,snowfall_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,sunshine_duration&hourly=snow_depth&timezone=auto&timeformat=unixtime&temperature_unit={celsius|fahrenheit}&wind_speed_unit={kmh|ms|mph|kn}&precipitation_unit={mm|inch}`
+
+Defaults are left out: `forecast_days` (7) and the unit parameters. `timezone=auto` and `timeformat=unixtime` are sent because their defaults are GMT and ISO 8601 (verified live 2026-11-05). The unit parameters come from `ForecastUnits` and are sent only when they differ from the defaults `celsius`, `kmh`, `mm` (specs/006 FR-001).
 
 Response 200 (abridged):
 ```json
@@ -47,8 +49,9 @@ Response 200 (abridged):
 ```
 - The daily arrays are parallel and indexed by `time`. Any element can be `null`, so each one is decoded as `Double?` or `Int?`.
 - `time` is Unix seconds in GMT (`timeformat=unixtime`); `timezone=auto` still decides where each day starts, so a daily value is the place's local midnight. Convert it to a calendar day with the place's `TimeZone(identifier: timezone)`, which follows DST. `utc_offset_seconds` is only a fallback for an unknown identifier: it is the offset at request time, so adding it misdates days after a spring DST change. *(refactoring-sdk; originally local `yyyy-MM-dd` strings.)*
-- `snow_depth` is hourly, in **metres**: group by the place's calendar day of `hourly.time` (same conversion), take the max and multiply by 100 to get cm.
-- `sunshine_duration` is in seconds: divide by 3600 to get hours.
+- Every measured series is decoded as a `Measurement` in the unit `daily_units` / `hourly_units` names for it, never in the unit requested (specs/006 FR-004). Known symbols: `°C`, `°F`; `mm`, `cm`, `inch` (precipitation, snowfall); `m`, `ft` (snow depth); `km/h`, `mp/h`, `m/s`, `kn`; `s` (sunshine). A present series with a missing or unknown unit → `UserFacingError.unexpected`.
+- `snow_depth` is hourly, in metres (feet with `precipitation_unit=inch`): group by the place's calendar day of `hourly.time` (same conversion) and take the max, keeping the unit.
+- `sunshine_duration` is always in seconds; the app shows it in hours.
 
 ## Error mapping (FR-011)
 
