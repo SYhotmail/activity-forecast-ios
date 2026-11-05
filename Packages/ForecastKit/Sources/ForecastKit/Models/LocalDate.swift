@@ -6,7 +6,7 @@ public struct LocalDate: Sendable, Hashable, Comparable {
     public let year: Int
     public let month: Int
     public let day: Int
-    
+
     private static var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .gmt
