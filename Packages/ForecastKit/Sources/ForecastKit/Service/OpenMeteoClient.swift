@@ -10,7 +10,8 @@ public struct OpenMeteoClient: WeatherService {
     private let forecastLimiter: RateLimiter
 
     /// Open-Meteo's free-tier minutely limit, applied to each API separately (specs/008 FR-001,
-    /// research R1). The hourly and daily limits are left to the service's 429.
+    /// research R1). The hourly and daily limits are left to the service's 429, after which the
+    /// API cools down until the reset (FR-007).
     static let rateLimit = (requests: 600, per: Duration.seconds(60))
 
     /// - Parameter units: what the forecast is requested in. Values are decoded in the units the
@@ -129,8 +130,12 @@ public struct OpenMeteoClient: WeatherService {
     // MARK: - Transport and error mapping
 
     /// Sends `request` once `limiter` has a slot. On HTTP 400, sends `fallback` instead when given.
+    /// During a cooldown after a 429 nothing is sent (specs/008 FR-008).
     private func fetch<Response: Decodable>(_ request: URLRequest, limiter: RateLimiter,
                                             onBadRequest fallback: URLRequest? = nil) async throws -> Response {
+        if let end = await limiter.cooldownEnd(at: .now) {
+            throw UserFacingError.rateLimited(until: end)
+        }
         let data: Data
         let response: URLResponse
         do {
@@ -143,7 +148,12 @@ public struct OpenMeteoClient: WeatherService {
         if http.statusCode == 400, let fallback {
             return try await fetch(fallback, limiter: limiter)
         }
-        guard (200..<300).contains(http.statusCode) else { throw Self.map(status: http.statusCode) }
+        if http.statusCode == 429 {
+            let end = Self.retryDate(from: http, now: .now)
+            await limiter.coolDown(until: end)
+            throw UserFacingError.rateLimited(until: end)
+        }
+        guard (200..<300).contains(http.statusCode) else { throw UserFacingError.serviceUnavailable }
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         do {
@@ -153,9 +163,21 @@ public struct OpenMeteoClient: WeatherService {
         }
     }
 
-    /// HTTP failures → `UserFacingError`: 429 is the service's rate limit (specs/008 FR-003).
-    static func map(status: Int) -> UserFacingError {
-        status == 429 ? .rateLimited : .serviceUnavailable
+    /// Cooldown when a 429 states no reset: the shortest of the service's windows (specs/008 R3).
+    static let defaultCooldown: TimeInterval = 60
+
+    /// When requests may start again after a 429 (specs/008 FR-007): `Retry-After` in seconds,
+    /// else `X-RateLimit-Reset` (Unix seconds) when it is later than `now`, else `defaultCooldown`.
+    static func retryDate(from response: HTTPURLResponse, now: Date) -> Date {
+        if let seconds = response.value(forHTTPHeaderField: "Retry-After").flatMap(TimeInterval.init),
+           seconds >= 0 {
+            return now.addingTimeInterval(seconds)
+        }
+        if let reset = response.value(forHTTPHeaderField: "X-RateLimit-Reset").flatMap(TimeInterval.init),
+           Date(timeIntervalSince1970: reset) > now {
+            return Date(timeIntervalSince1970: reset)
+        }
+        return now.addingTimeInterval(defaultCooldown)
     }
 
     /// Transport errors → `UserFacingError`, except cancellation which stays `CancellationError`.
