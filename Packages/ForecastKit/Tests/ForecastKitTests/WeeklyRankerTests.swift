@@ -206,14 +206,37 @@ struct WeeklyRankerTests {
     func bestDayThreshold(depth: Double, expectedScore: Int, marked: Bool) throws {
         let week = [thinSnowDay(0, depth: 0), thinSnowDay(1, depth: depth), thinSnowDay(2, depth: 0)]
         let skiing = try ranking(WeeklyRanker.rank(week, for: Self.place), of: .skiing)
-        #expect(skiing.days.map(\.score) == [10, expectedScore, 10])
+        #expect(skiing.days.map(\.score) == [0, expectedScore, 0])
         #expect(skiing.bestDay == (marked ? Self.date(1) : nil))
     }
 
-    @Test("a week of capped skiing days has no best day")
+    @Test("a week of capped skiing days scores 0 and has no best day (specs/009)")
     func noSuitableDay() throws {
         let skiing = try ranking(WeeklyRanker.rank(Self.sunnyDry, for: Self.place), of: .skiing)
-        #expect(skiing.days.allSatisfy { ($0.score ?? 0) <= 10 })
+        #expect(skiing.days.allSatisfy { $0.score == 0 })
+        #expect(skiing.weeklyScore == 0)
+        #expect(skiing.bestDay == nil)
+    }
+
+    // swiftlint:disable line_length
+    /// Live Minsk, 2026-11-05: six snowless days and a dusting (0.21 cm falling, 1 cm lying).
+    /// Skiing was 13 for the week (six capped days at 10 and the dusting at ≈32).
+    static let minsk = [
+        day(0, code: 3, tmax: 7.3, tmin: 3, precipitation: 0.1, snowfall: 0, depth: 0, probability: 10, wind: 20, gusts: 38.9, sun: 2),
+        day(1, code: 3, tmax: 6.7, tmin: 3, precipitation: 0.2, snowfall: 0, depth: 0, probability: 10, wind: 22, gusts: 45.7, sun: 2),
+        day(2, code: 2, tmax: 4.3, tmin: 0, precipitation: 0, snowfall: 0, depth: 0, probability: 0, wind: 15, gusts: 32.4, sun: 4),
+        day(3, code: 2, tmax: 5.0, tmin: 0, precipitation: 0, snowfall: 0, depth: 0, probability: 0, wind: 14, gusts: 29.0, sun: 4),
+        day(4, code: 2, tmax: 4.6, tmin: 0, precipitation: 0, snowfall: 0, depth: 0, probability: 0, wind: 12, gusts: 25.2, sun: 4),
+        day(5, code: 3, tmax: 3.6, tmin: 0, precipitation: 0.2, snowfall: 0, depth: 0, probability: 10, wind: 14, gusts: 30.2, sun: 2),
+        day(6, code: 71, tmax: 3.5, tmin: -1, precipitation: 1.8, rain: 1.6, snowfall: 0.21, depth: 1,
+            probability: 60, wind: 14, gusts: 28.1, sun: 1)
+    ]
+    // swiftlint:enable line_length
+
+    @Test("a snowless week with a dusting scores 0 for skiing, with no best day (specs/009)")
+    func minskWeek() throws {
+        let skiing = try ranking(WeeklyRanker.rank(Self.minsk, for: Self.place), of: .skiing)
+        #expect(skiing.weeklyScore == 0)
         #expect(skiing.bestDay == nil)
     }
 

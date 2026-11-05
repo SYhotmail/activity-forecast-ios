@@ -58,7 +58,7 @@ Facts about the Open-Meteo APIs were checked against the live endpoints on 2026-
 
 | Activity | Factors (weight) | Caps |
 |---|---|---|
-| Skiing | snow = min(1, snowfall_cm/10 + depth_cm/100) (50); cold: tmax ≤0 °C → 1, ≥5 °C → 0 (25); wind: gusts ≤30 → 1, ≥70 km/h → 0 (15); no rain: 1 − min(rain_mm/10, 1) (10) | no snowfall and no snow depth → max 10 (any temperature; see the verification note) |
+| Skiing | snow = min(1, snowfall_cm/10 + depth_cm/100) (50); cold: tmax ≤0 °C → 1, ≥5 °C → 0 (25); wind: gusts ≤30 → 1, ≥70 km/h → 0 (15); no rain: 1 − min(rain_mm/10, 1) (10) | not skiable (depth < 10 cm and snowfall < 2 cm) → 0, any temperature (specs/009; was: no snow at all → max 10, see the verification note) |
 | Surfing | wind: 0 km/h → 0.3, 15–35 → 1, ≥50 → 0 (40); warmth: tmax ≤5 → 0, 18–30 → 1, ≥38 → 0.5 (30); dry: 1 − min(precip_mm/10, 1) (30) | thunderstorm (WMO 95–99) → max 10 |
 | Outdoor sightseeing | comfort: tmax ≤0 or ≥38 → 0, 15–25 → 1 (35); dry: 1 − max(min(precip_mm/10, 1), precip_prob/100 × 0.5) (35); calm: wind ≤20 → 1, ≥50 → 0 (15); sun: min(sunshine_h/8, 1) (15) | thunderstorm or snowfall ≥ 2 cm → max 20 |
 | Indoor sightseeing | 30 + 0.6 × (100 − outdoor score) | always within 30…90, so never below Fair |

@@ -75,6 +75,10 @@ extension ActivityScorerTests {
         }
         #expect(reasons(.skiing, thaw).first == Reason(kind: .cap, detail: .noSnowOnGround))
         #expect(reasons(.skiing, thaw).count <= 2)
+
+        // Some snow, but too little to ski: the cap names the depth (specs/009 FR-003).
+        let dusting = with(thaw) { $0.snowfall = .centimetres(0.21); $0.snowDepth = .centimetres(1) }
+        #expect(reasons(.skiing, dusting).first == Reason(kind: .cap, detail: .tooLittleSnow(.centimetres(1))))
     }
 
     @Test("a middling day with no factor past either threshold still gets one reason (FR-008)")

@@ -108,6 +108,8 @@ struct DisplayTextTests {
     func fixedPhrases() {
         #expect(Reason.Detail.thunderstorms.text == "Thunderstorms expected")
         #expect(Reason.Detail.noSnowOnGround.text == "No snow on the ground")
+        #expect(Reason.Detail.tooLittleSnow(.centimetres(1)).text
+                == "Too little snow to ski \(Formatting.snow(.centimetres(1)))")
         #expect(Reason.Detail.snowfallExpected.text == "Snowfall expected")
         #expect(Reason.Detail.poorWeatherOutside.text == "Poor weather outside — good day for museums")
         #expect(Reason.Detail.greatWeatherOutside.text == "Great weather outside — better spent outdoors")
