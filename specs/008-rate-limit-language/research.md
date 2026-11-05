@@ -13,3 +13,9 @@
 **Verified live 2026-11-05**: the geocoding API accepts any `language` value with 200 (`xx`, `klingon`, `a b`, `be` in Cyrillic) and then matches like English, so "Мінск" with `xx` finds nothing. Parameters of the wrong type give 400 with `{"error":true,"reason":"..."}`.
 
 **Decision**: validate at the client, the trust boundary for what reaches the API: lower-case the code, take the subtag before `-`/`_`, send it only when it is in `Locale.LanguageCode.isoLanguageCodes` (620 codes, iOS 16+) and not `en`. Verified live: "Минск" with `xx` or `qq` gives the same result as `en` (Minskoye), so dropping an unknown code changes no result, only keeps it off the wire. Retry once without `language` on a 400 when one was sent, so a code the service starts rejecting degrades to an English search instead of an error. A retry on empty results was rejected: with an unknown code the service already matches like English, so it would repeat the same search.
+
+## R3 — After the service's 429
+
+**Decision**: cool the API down until the reset and fail fast; the error carries the reset date, which the app shows as relative time. Reset from `Retry-After` (seconds), else `X-RateLimit-Reset` (Unix seconds; the forecast API sends it with `X-RateLimit-Window: 60`, verified live), else 60 s (geocoding sends no rate-limit headers).
+
+**Rationale**: retrying straight away would likely get another 429 and spend more of the budget. Waiting through the cooldown (spinner) was rejected: an hourly or daily limit would keep the spinner for an hour or a day. The cooldown is kept in memory per API, like the sliding window (no persistence, `intent.md`).

@@ -22,7 +22,8 @@ Bursts of searches or forecast loads are spread out instead of being rejected; i
 
 1. **Given** the per-API limit has been used in the current window, **When** another request starts, **Then** it waits for a free slot and is still cancellable.
 2. **Given** the search limit is used up, **When** a forecast is requested, **Then** it is not delayed (each API has its own limit).
-3. **Given** the service answers 429, **When** a search or forecast fails, **Then** the error is `rateLimited`, shown with its own message and a retry.
+3. **Given** the service answers 429, **When** a search or forecast fails, **Then** the error is `rateLimited`, shown with its own message, the time to wait and a retry.
+4. **Given** a 429 from an API, **When** that API is called again before the reset time, **Then** `rateLimited` is thrown without sending a request; after the reset, requests go out again.
 
 ### User Story 2 - A bad language code never breaks search (Priority: P1)
 
@@ -36,6 +37,8 @@ Bursts of searches or forecast loads are spread out instead of being rejected; i
 
 - A well-formed but unknown code (`xx`) would be accepted by the service (200) and matched like English, so it is not sent at all (research R2).
 - A cancelled wait for a rate-limit slot still counts toward the window (the limit is never exceeded).
+- A 429 without reset headers (geocoding sends none) cools down for 60 s, the shortest service window.
+- A 429 from one API does not cool down the other.
 
 ## Requirements *(mandatory)*
 
@@ -45,6 +48,9 @@ Bursts of searches or forecast loads are spread out instead of being rejected; i
 - **FR-004**: The app MUST show a distinct message for `rateLimited`, with retry (specs/001 FR-011).
 - **FR-005**: The client MUST send `language` only as a lower-case ISO 639 code Foundation knows (`Locale.LanguageCode.isoLanguageCodes`), taking the primary subtag of a region form; anything else, and `en`, MUST be left out.
 - **FR-006**: A search rejected with HTTP 400 while sending `language` MUST be retried once without it.
+- **FR-007**: HTTP 429 MUST start a cooldown for that API until `Retry-After` (seconds), else `X-RateLimit-Reset` (Unix seconds), else 60 s from now.
+- **FR-008**: During a cooldown, calls to that API MUST throw `rateLimited` at once, without a request.
+- **FR-009**: `rateLimited` MUST carry the cooldown's end, and the app MUST show the time left ("Try again in 42 seconds").
 
 ## Success Criteria *(mandatory)*
 
