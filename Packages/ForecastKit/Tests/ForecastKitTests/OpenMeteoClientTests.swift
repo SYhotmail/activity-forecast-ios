@@ -223,7 +223,9 @@ struct OpenMeteoClientTests {
 
     @Test("A forecast with zero days is unexpected")
     func forecastZeroDays() async throws {
-        Self.serve(json: #"{"timezone":"GMT","utc_offset_seconds":0,"daily":{"time":[]},"hourly":{"time":[],"snow_depth":[]}}"#)
+        Self.serve(json: """
+        {"timezone":"GMT","utc_offset_seconds":0,"daily":{"time":[]},"hourly":{"time":[],"snow_depth":[]}}
+        """)
 
         await #expect(throws: UserFacingError.unexpected) {
             try await client.forecast(for: chamonix)

@@ -43,6 +43,7 @@ public struct OpenMeteoClient: WeatherService {
             ("daily", dailyVariables),
             ("hourly", "snow_depth"),
             ("timezone", "auto"),
+            ("timeformat", "unixtime"),
             ("forecast_days", "7")
         ])
     }

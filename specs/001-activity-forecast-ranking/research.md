@@ -43,8 +43,8 @@ Facts about the Open-Meteo APIs were checked against the live endpoints on 2026-
 - **Decision**: one forecast request per place:
   - `daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,snowfall_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,sunshine_duration`
   - `hourly=snow_depth`, reduced to a daily maximum and converted from m to cm
-  - `timezone=auto`, `forecast_days=7`
-- **Rationale**: these are exactly the inputs the scoring rules in FR-010 need. `timezone=auto` returns dates already in the place's local time zone, which satisfies FR-009 with no client-side time-zone maths. Snow depth only exists as an hourly variable, and skiing needs "existing snow cover".
+  - `timezone=auto`, `timeformat=unixtime`, `forecast_days=7`
+- **Rationale**: these are exactly the inputs the scoring rules in FR-010 need. `timezone=auto` returns dates already in the place's local time zone, which satisfies FR-009. *(Update, refactoring-sdk: times now arrive as Unix seconds (`timeformat=unixtime`); the client maps them to calendar days with the place's `TimeZone`, which stays correct across DST — see contracts/open-meteo.md.)* Snow depth only exists as an hourly variable, and skiing needs "existing snow cover".
 - **Alternatives considered**: the Marine API for wave height, excluded because the brief limits sources to Geocoding + Forecast (see intent.md). Doing it would be a one-endpoint extension noted in the README. Hourly scoring, more precise but harder to explain than one rating per day.
 
 ## R8. Geocoding parameters

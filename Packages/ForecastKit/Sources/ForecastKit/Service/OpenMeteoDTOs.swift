@@ -30,12 +30,17 @@ struct GeocodingResultDTO: Decodable {
 // MARK: - Forecast
 
 struct ForecastResponseDTO: Decodable {
+    /// IANA identifier of the place (`timezone=auto`), e.g. `Europe/Paris`.
+    let timezone: String
+    /// The place's offset at request time. Only a fallback: it is wrong for days after a DST change.
+    let utcOffsetSeconds: Int
     let daily: DailyDTO
     let hourly: HourlyDTO?
 
     /// Parallel arrays indexed by `time`. Any element may be `null` and a whole series may be absent.
     struct DailyDTO: Decodable {
-        let time: [String]
+        /// Unix seconds of each local midnight (`timeformat=unixtime`).
+        let time: [Int]
         let weatherCode: [Int?]?
         let temperature2mMax: [Double?]?
         let temperature2mMin: [Double?]?
@@ -66,18 +71,20 @@ struct ForecastResponseDTO: Decodable {
     }
 
     struct HourlyDTO: Decodable {
-        /// Local `yyyy-MM-ddTHH:mm`.
-        let time: [String]
+        /// Unix seconds of each hour (`timeformat=unixtime`).
+        let time: [Int]
         /// Metres.
         let snowDepth: [Double?]?
     }
 
-    /// Maps to domain days. Days whose date cannot be parsed are dropped.
-    /// - Throws: `UserFacingError.unexpected` when no day remains.
+    /// Maps to domain days, dated in the place's time zone (FR-003).
+    /// - Throws: `UserFacingError.unexpected` when there is no day or no usable time zone.
     func dailyWeather() throws(UserFacingError) -> [DailyWeather] {
-        let snowDepthByDate = dailyMaxSnowDepthInCentimetres()
-        let days = daily.time.enumerated().compactMap { index, time -> DailyWeather? in
-            guard let date = LocalDate(iso8601: time) else { return nil }
+        guard let zone = TimeZone(identifier: timezone) ?? TimeZone(secondsFromGMT: utcOffsetSeconds)
+        else { throw .unexpected }
+        let snowDepthByDate = dailyMaxSnowDepthInCentimetres(in: zone)
+        let days = daily.time.enumerated().map { index, time in
+            let date = Self.localDate(time, in: zone)
             return DailyWeather(
                 date: date,
                 weatherCode: daily.weatherCode[safe: index],
@@ -86,7 +93,7 @@ struct ForecastResponseDTO: Decodable {
                 precipitation: daily.precipitationSum[safe: index],
                 rain: daily.rainSum[safe: index],
                 snowfall: daily.snowfallSum[safe: index],
-                snowDepth: snowDepthByDate[time],
+                snowDepth: snowDepthByDate[date],
                 precipitationProbability: daily.precipitationProbabilityMax[safe: index],
                 windSpeedMax: daily.windSpeed10mMax[safe: index],
                 windGustsMax: daily.windGusts10mMax[safe: index],
@@ -97,17 +104,21 @@ struct ForecastResponseDTO: Decodable {
         return days
     }
 
-    /// Hourly snow depth grouped by the date prefix of `hourly.time`, max per day, m → cm.
+    /// Hourly snow depth grouped by the place's calendar day, max per day, m → cm.
     /// Days whose hourly values are all `null` have no entry.
-    private func dailyMaxSnowDepthInCentimetres() -> [String: Double] {
+    private func dailyMaxSnowDepthInCentimetres(in zone: TimeZone) -> [LocalDate: Double] {
         guard let hourly, let depths = hourly.snowDepth else { return [:] }
-        var result: [String: Double] = [:]
+        var result: [LocalDate: Double] = [:]
         for (time, depth) in zip(hourly.time, depths) {
             guard let depth else { continue }
-            let date = String(time.prefix(10))
+            let date = Self.localDate(time, in: zone)
             result[date] = max(result[date] ?? -.infinity, depth * 100)
         }
         return result
+    }
+
+    private static func localDate(_ unixSeconds: Int, in zone: TimeZone) -> LocalDate {
+        LocalDate(Date(timeIntervalSince1970: TimeInterval(unixSeconds)), in: zone)
     }
 }
 
