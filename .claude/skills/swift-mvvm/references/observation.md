@@ -1,8 +1,8 @@
 # Observation Model: `@Observable` vs `ObservableObject` (Shared)
 
-Cross-cutting guidance for SwiftUI state observation. It applies to every playbook that exposes observable presentation state (MVVM ViewModels, MVI stores, Reactive models, MVP/VIPER SwiftUI adapters, TCA views).
+Cross-cutting guidance for SwiftUI state observation. It applies to MVVM ViewModels and any other observable presentation state.
 
-The minimum deployment target determines which observation mechanism to use. This affects SwiftUI wiring in every architecture:
+The minimum deployment target determines which observation mechanism to use. This affects all SwiftUI wiring:
 
 | Factor | `@Observable` (iOS 17+) | `ObservableObject` (iOS 14–16) |
 |--------|--------------------------|-------------------------------|
@@ -12,7 +12,6 @@ The minimum deployment target determines which observation mechanism to use. Thi
 | Binding access | `@Bindable` | `@ObservedObject` / `$property` |
 | Combine interop | Manual (wrap with `Publisher`) | Native (`$property` is a publisher) |
 | UIKit integration | Observe with `withObservationTracking` or use KVO bridge | Subscribe to `objectWillChange` or `@Published` publishers |
-| TCA | Uses `@ObservableState` macro (built on Observation) | Older `ViewStore`-based API |
 
 **When to use `@Observable`:**
 - iOS 17+ deployment target
