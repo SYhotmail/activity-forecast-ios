@@ -2,27 +2,44 @@ import Foundation
 
 /// `WeatherService` backed by the Open-Meteo Geocoding and Forecast APIs (contracts/open-meteo.md).
 /// No API key is needed. Failures are thrown as `UserFacingError`; cancellation as `CancellationError`.
+/// Copies share the rate limiters, so the app's one client keeps one budget per API.
 public struct OpenMeteoClient: WeatherService {
     private let session: URLSession
     private let units: ForecastUnits
+    private let geocodingLimiter: RateLimiter
+    private let forecastLimiter: RateLimiter
+
+    /// Open-Meteo's free-tier minutely limit, applied to each API separately (specs/008 FR-001,
+    /// research R1). The hourly and daily limits are left to the service's 429.
+    static let rateLimit = (requests: 600, per: Duration.seconds(60))
 
     /// - Parameter units: what the forecast is requested in. Values are decoded in the units the
     ///   response states, whatever was asked (specs/006 FR-001, FR-004).
     public init(session: URLSession = .shared, units: ForecastUnits = .metric) {
-        self.session = session
-        self.units = units
+        self.init(session: session, units: units, rateLimit: Self.rateLimit)
     }
 
+    init(session: URLSession, units: ForecastUnits = .metric, rateLimit: (requests: Int, per: Duration)) {
+        self.session = session
+        self.units = units
+        geocodingLimiter = RateLimiter(limit: rateLimit.requests, per: rateLimit.per)
+        forecastLimiter = RateLimiter(limit: rateLimit.requests, per: rateLimit.per)
+    }
+
+    /// A search the service rejects with 400 while sending a language is retried once without
+    /// it, so a code it does not accept degrades to an English search (specs/008 FR-006).
     public func searchPlaces(matching query: String, language: String?) async throws -> [Place] {
-        let request = Self.searchRequest(
-            name: query.trimmingCharacters(in: .whitespacesAndNewlines), language: language)
-        let response: GeocodingResponseDTO = try await fetch(request)
+        let name = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let request = Self.searchRequest(name: name, language: language)
+        let withoutLanguage = Self.languageCode(language) == nil ? nil : Self.searchRequest(name: name, language: nil)
+        let response: GeocodingResponseDTO = try await fetch(
+            request, limiter: geocodingLimiter, onBadRequest: withoutLanguage)
         return response.places
     }
 
     public func forecast(for place: Place) async throws -> [DailyWeather] {
         let request = Self.forecastRequest(latitude: place.latitude, longitude: place.longitude, units: units)
-        let response: ForecastResponseDTO = try await fetch(request)
+        let response: ForecastResponseDTO = try await fetch(request, limiter: forecastLimiter)
         return try response.dailyWeather()
     }
 
@@ -35,13 +52,28 @@ public struct OpenMeteoClient: WeatherService {
     ].joined(separator: ",")
 
     /// `language` decides which names the query is matched against, not only the language of
-    /// the results: "Мінск" finds Minsk with `be` and nothing with `en` (specs/007). It is left
-    /// out when absent or `en`, the API default.
+    /// the results: "Мінск" finds Minsk with `be` and nothing with `en` (specs/007). Only a valid
+    /// code other than `en`, the API default, is sent (`languageCode(_:)`).
     static func searchRequest(name: String, language: String?) -> URLRequest {
-        let languageParameter = language.flatMap { $0 == "en" ? nil : ("language", $0) }
+        let languageParameter = languageCode(language).map { ("language", $0) }
         return request(host: "geocoding-api.open-meteo.com", path: "/v1/search", query: [
             ("name", name), ("count", "10"), ("format", "json")
         ] + [languageParameter].compactMap { $0 })
+    }
+
+    /// The ISO 639 code to send for `language`, or `nil` to leave the parameter out (specs/008
+    /// FR-005): the lower-cased primary subtag (`be-BY`, `BE`, `be_BY` → `be`) when it is 2–3 ASCII
+    /// letters and not `en`. The service accepts any value and matches unknown ones like English,
+    /// so a malformed value is dropped here rather than sent (research R2).
+    static func languageCode(_ language: String?) -> String? {
+        guard let primary = language?
+            .split(omittingEmptySubsequences: false, whereSeparator: { $0 == "-" || $0 == "_" })
+            .first?.lowercased(),
+              (2...3).contains(primary.count),
+              primary.allSatisfy({ $0.isASCII && $0.isLetter }),
+              primary != "en"
+        else { return nil }
+        return primary
     }
 
     static func forecastRequest(latitude: Double, longitude: Double, units: ForecastUnits) -> URLRequest {
@@ -95,16 +127,22 @@ public struct OpenMeteoClient: WeatherService {
 
     // MARK: - Transport and error mapping
 
-    private func fetch<Response: Decodable>(_ request: URLRequest) async throws -> Response {
+    /// Sends `request` once `limiter` has a slot. On HTTP 400, sends `fallback` instead when given.
+    private func fetch<Response: Decodable>(_ request: URLRequest, limiter: RateLimiter,
+                                            onBadRequest fallback: URLRequest? = nil) async throws -> Response {
         let data: Data
         let response: URLResponse
         do {
+            try await limiter.acquire()
             (data, response) = try await session.data(for: request)
         } catch {
             throw Self.map(error)
         }
         guard let http = response as? HTTPURLResponse else { throw UserFacingError.unexpected }
-        guard (200..<300).contains(http.statusCode) else { throw UserFacingError.serviceUnavailable }
+        if http.statusCode == 400, let fallback {
+            return try await fetch(fallback, limiter: limiter)
+        }
+        guard (200..<300).contains(http.statusCode) else { throw Self.map(status: http.statusCode) }
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         do {
@@ -112,6 +150,11 @@ public struct OpenMeteoClient: WeatherService {
         } catch {
             throw UserFacingError.unexpected
         }
+    }
+
+    /// HTTP failures → `UserFacingError`: 429 is the service's rate limit (specs/008 FR-003).
+    static func map(status: Int) -> UserFacingError {
+        status == 429 ? .rateLimited : .serviceUnavailable
     }
 
     /// Transport errors → `UserFacingError`, except cancellation which stays `CancellationError`.

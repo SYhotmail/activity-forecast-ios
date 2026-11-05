@@ -3,4 +3,6 @@ public enum UserFacingError: Error, Sendable, Hashable {
     case offline
     case serviceUnavailable
     case unexpected
+    /// The service refused the request for too many requests (HTTP 429, specs/008 FR-003).
+    case rateLimited
 }

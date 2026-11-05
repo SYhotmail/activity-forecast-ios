@@ -122,7 +122,7 @@ struct SearchViewModelTests {
 
 extension SearchViewModelTests {
     @Test("A UserFacingError from the service is shown as that error",
-          arguments: [UserFacingError.offline, .serviceUnavailable, .unexpected])
+          arguments: [UserFacingError.offline, .serviceUnavailable, .unexpected, .rateLimited])
     func userFacingError(error: UserFacingError) async {
         let model = SearchViewModel(service: StubWeatherService(search: { _, _ in throw error }))
         model.query = "Paris"
