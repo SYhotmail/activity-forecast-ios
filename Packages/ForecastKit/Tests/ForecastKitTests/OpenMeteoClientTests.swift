@@ -25,9 +25,9 @@ struct OpenMeteoClientTests {
         StubURLProtocol.stub { _ in .response(status: 200, body: body) }
     }
 
-    static func serve(json: String, status: Int = 200) {
+    static func serve(json: String, status: Int = 200, headers: [String: String] = [:]) {
         let body = Data(json.utf8)
-        StubURLProtocol.stub { _ in .response(status: status, body: body) }
+        StubURLProtocol.stub { _ in .response(status: status, body: body, headers: headers) }
     }
 
     static func queryItems(of request: URLRequest?) throws -> [String: String] {

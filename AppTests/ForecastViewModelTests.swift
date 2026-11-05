@@ -72,7 +72,8 @@ struct ForecastViewModelTests {
 
 extension ForecastViewModelTests {
     @Test("A UserFacingError from the service is shown as that error",
-          arguments: [UserFacingError.offline, .serviceUnavailable, .unexpected, .rateLimited])
+          arguments: [UserFacingError.offline, .serviceUnavailable, .unexpected,
+                      .rateLimited(until: Date(timeIntervalSince1970: 0))])
     func userFacingError(error: UserFacingError) async {
         let model = ForecastViewModel(place: Self.paris, service: StubWeatherService(forecast: { _ in throw error }))
         await model.load()

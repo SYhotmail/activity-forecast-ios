@@ -33,7 +33,10 @@ struct DisplayTextTests {
         #expect(UserFacingError.offline.message.contains("offline"))
         #expect(UserFacingError.serviceUnavailable.message.contains("weather service"))
         #expect(UserFacingError.unexpected.message.contains("Something went wrong"))
-        #expect(UserFacingError.rateLimited.message.contains("Too many requests"))
+        let until = Date.now.addingTimeInterval(125)
+        let rateLimited = UserFacingError.rateLimited(until: until).message
+        #expect(rateLimited.contains("Too many requests"))
+        #expect(rateLimited.contains(until.formatted(.relative(presentation: .named))), "shows the time left (FR-009)")
     }
 
     @Test("reasons read as a phrase plus the value in the user's units (FR-008, FR-016)")

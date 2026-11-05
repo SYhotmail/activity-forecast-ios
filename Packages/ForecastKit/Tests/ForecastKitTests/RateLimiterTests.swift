@@ -35,6 +35,19 @@ struct RateLimiterTests {
         #expect(await limiter.reserve(at: start + .seconds(11)) == start + .seconds(11))
     }
 
+    @Test("A cooldown lasts until its end and is not shortened by a shorter one (FR-007, FR-008)")
+    func cooldown() async {
+        let limiter = RateLimiter(limit: 1, per: .seconds(60))
+        let now = Date(timeIntervalSince1970: 1_000)
+        #expect(await limiter.cooldownEnd(at: now) == nil)
+
+        await limiter.coolDown(until: now.addingTimeInterval(60))
+        await limiter.coolDown(until: now.addingTimeInterval(10))
+
+        #expect(await limiter.cooldownEnd(at: now.addingTimeInterval(30)) == now.addingTimeInterval(60))
+        #expect(await limiter.cooldownEnd(at: now.addingTimeInterval(60)) == nil)
+    }
+
     @Test("Waiting for a slot ends with CancellationError when cancelled")
     func cancelledWait() async throws {
         let limiter = RateLimiter(limit: 1, per: .seconds(60))

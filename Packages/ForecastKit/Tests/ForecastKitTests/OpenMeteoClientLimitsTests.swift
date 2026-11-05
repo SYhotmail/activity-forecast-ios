@@ -55,16 +55,69 @@ extension OpenMeteoClientTests {
         #expect(StubURLProtocol.requests.count == 1)
     }
 
-    @Test("HTTP 429 maps to rateLimited (specs/008 FR-003)")
-    func tooManyRequests() async throws {
-        Self.serve(json: #"{"error":true,"reason":"Minutely API request limit exceeded."}"#, status: 429)
+    // MARK: - The service's 429 (specs/008 FR-003, FR-007–FR-009)
 
-        await #expect(throws: UserFacingError.rateLimited) {
-            try await client.searchPlaces(matching: "Paris", language: "fr")
-        }
-        await #expect(throws: UserFacingError.rateLimited) {
-            try await client.forecast(for: chamonix)
-        }
+    static let tooManyRequests = #"{"error":true,"reason":"Minutely API request limit exceeded."}"#
+
+    /// The cooldown end of the `rateLimited` error `call` throws; `nil` for any other outcome.
+    static func rateLimitedEnd<T>(_ call: () async throws -> T) async -> Date? {
+        do {
+            _ = try await call()
+        } catch UserFacingError.rateLimited(let until) {
+            return until
+        } catch {}
+        return nil
+    }
+
+    @Test("HTTP 429 maps to rateLimited until X-RateLimit-Reset, for both APIs")
+    func tooManyRequestsUntilReset() async throws {
+        let reset = Date.now.addingTimeInterval(120).timeIntervalSince1970.rounded(.down)
+        Self.serve(json: Self.tooManyRequests, status: 429, headers: ["X-RateLimit-Reset": String(Int(reset))])
+
+        let searchEnd = await Self.rateLimitedEnd { try await client.searchPlaces(matching: "Paris", language: nil) }
+        let forecastEnd = await Self.rateLimitedEnd { try await client.forecast(for: chamonix) }
+
+        #expect(searchEnd == Date(timeIntervalSince1970: reset))
+        #expect(forecastEnd == Date(timeIntervalSince1970: reset))
+    }
+
+    @Test("Retry-After seconds win over X-RateLimit-Reset; without either, or with a past reset, 60 s",
+          arguments: [(["Retry-After": "30", "X-RateLimit-Reset": "9999999999"], 30.0),
+                      ([:], 60.0),
+                      (["X-RateLimit-Reset": "1"], 60.0)] as [([String: String], TimeInterval)])
+    func tooManyRequestsWait(headers: [String: String], seconds: TimeInterval) async throws {
+        Self.serve(json: Self.tooManyRequests, status: 429, headers: headers)
+
+        let before = Date.now
+        let end = try #require(await Self.rateLimitedEnd {
+            try await client.searchPlaces(matching: "Paris", language: nil)
+        })
+        let after = Date.now
+
+        #expect(end >= before.addingTimeInterval(seconds) && end <= after.addingTimeInterval(seconds))
+    }
+
+    @Test("After a 429, that API fails fast until the reset, without sending a request")
+    func cooldownFailsFast() async throws {
+        Self.serve(json: Self.tooManyRequests, status: 429, headers: ["Retry-After": "30"])
+        let first = await Self.rateLimitedEnd { try await client.searchPlaces(matching: "Paris", language: nil) }
+
+        let second = await Self.rateLimitedEnd { try await client.searchPlaces(matching: "Lyon", language: nil) }
+
+        #expect(first != nil)
+        #expect(second == first)
+        #expect(StubURLProtocol.requests.count == 1)
+    }
+
+    @Test("A search 429 does not cool down the forecast")
+    func cooldownPerAPI() async throws {
+        Self.serve(json: Self.tooManyRequests, status: 429, headers: ["Retry-After": "30"])
+        _ = await Self.rateLimitedEnd { try await client.searchPlaces(matching: "Paris", language: nil) }
+
+        try Self.serve("forecast-chamonix")
+        let days = try await client.forecast(for: chamonix)
+
+        #expect(!days.isEmpty)
     }
 
     // MARK: - Rate limiting (specs/008 FR-001, FR-002)
