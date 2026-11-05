@@ -44,8 +44,6 @@ public struct OpenMeteoClient: WeatherService {
         ] + [languageParameter].compactMap { $0 })
     }
 
-    //TODO: rate limit,
-
     static func forecastRequest(latitude: Double, longitude: Double, units: ForecastUnits) -> URLRequest {
         request(host: "api.open-meteo.com", path: "/v1/forecast", query: [
             ("latitude", String(latitude)),
