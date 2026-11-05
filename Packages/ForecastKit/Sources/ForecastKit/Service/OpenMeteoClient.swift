@@ -1,11 +1,14 @@
 import Foundation
+import OSLog
 
 /// `WeatherService` backed by the Open-Meteo Geocoding and Forecast APIs (contracts/open-meteo.md).
 /// No API key is needed. Failures are thrown as `UserFacingError`; cancellation as `CancellationError`.
 /// Copies share the rate limiters, so the app's one client keeps one budget per API.
+/// Every request is logged as a `curl` command, then its status (specs/010).
 public struct OpenMeteoClient: WeatherService {
     private let session: URLSession
     private let units: ForecastUnits
+    private let logger: Logger
     private let geocodingLimiter: RateLimiter
     private let forecastLimiter: RateLimiter
 
@@ -14,15 +17,20 @@ public struct OpenMeteoClient: WeatherService {
     /// API cools down until the reset (FR-007).
     static let rateLimit = (requests: 600, per: Duration.seconds(60))
 
-    /// - Parameter units: what the forecast is requested in. Values are decoded in the units the
-    ///   response states, whatever was asked (specs/006 FR-001, FR-004).
-    public init(session: URLSession = .shared, units: ForecastUnits = .metric) {
-        self.init(session: session, units: units, rateLimit: Self.rateLimit)
+    /// - Parameters:
+    ///   - units: what the forecast is requested in. Values are decoded in the units the
+    ///     response states, whatever was asked (specs/006 FR-001, FR-004).
+    ///   - logger: where requests and responses are logged; the creator chooses it, tests pass
+    ///     `Logger(OSLog.disabled)` (specs/010 FR-001, FR-002).
+    public init(session: URLSession = .shared, units: ForecastUnits = .metric, logger: Logger) {
+        self.init(session: session, units: units, rateLimit: Self.rateLimit, logger: logger)
     }
 
-    init(session: URLSession, units: ForecastUnits = .metric, rateLimit: (requests: Int, per: Duration)) {
+    init(session: URLSession, units: ForecastUnits = .metric, rateLimit: (requests: Int, per: Duration),
+         logger: Logger) {
         self.session = session
         self.units = units
+        self.logger = logger
         geocodingLimiter = RateLimiter(limit: rateLimit.requests, per: rateLimit.per)
         forecastLimiter = RateLimiter(limit: rateLimit.requests, per: rateLimit.per)
     }
@@ -133,24 +141,22 @@ public struct OpenMeteoClient: WeatherService {
     /// During a cooldown after a 429 nothing is sent (specs/008 FR-008).
     private func fetch<Response: Decodable>(_ request: URLRequest, limiter: RateLimiter,
                                             onBadRequest fallback: URLRequest? = nil) async throws -> Response {
+        let path = request.url?.path ?? ""
         if let end = await limiter.cooldownEnd(at: .now) {
+            logger.notice(
+                "\(path, privacy: .public) not sent: cooling down until \(end.ISO8601Format(), privacy: .public)")
             throw UserFacingError.rateLimited(until: end)
         }
-        let data: Data
-        let response: URLResponse
-        do {
-            try await limiter.acquire()
-            (data, response) = try await session.data(for: request)
-        } catch {
-            throw Self.map(error)
-        }
-        guard let http = response as? HTTPURLResponse else { throw UserFacingError.unexpected }
+        let (data, http) = try await send(request, limiter: limiter)
         if http.statusCode == 400, let fallback {
+            logger.notice("\(path, privacy: .public) rejected with 400; retrying without language")
             return try await fetch(fallback, limiter: limiter)
         }
         if http.statusCode == 429 {
             let end = Self.retryDate(from: http, now: .now)
             await limiter.coolDown(until: end)
+            logger.error(
+                "\(path, privacy: .public) rate limited; cooling down until \(end.ISO8601Format(), privacy: .public)")
             throw UserFacingError.rateLimited(until: end)
         }
         guard (200..<300).contains(http.statusCode) else { throw UserFacingError.serviceUnavailable }
@@ -159,8 +165,64 @@ public struct OpenMeteoClient: WeatherService {
         do {
             return try decoder.decode(Response.self, from: data)
         } catch {
+            logger.error("\(path, privacy: .public) decoding failed: \(String(describing: error), privacy: .public)")
             throw UserFacingError.unexpected
         }
+    }
+
+    /// One round trip, logged: the `curl` command before, the status, duration, size and remaining
+    /// rate-limit budget after (specs/010 FR-003 to FR-005). The `curl` line carries the search
+    /// text, so it is private; transport errors may carry the URL, so they are private too.
+    private func send(_ request: URLRequest, limiter: RateLimiter) async throws -> (Data, HTTPURLResponse) {
+        let path = request.url?.path ?? ""
+        let data: Data
+        let response: URLResponse
+        let started = ContinuousClock.now
+        do {
+            try await limiter.acquire()
+            logger.debug("\(Self.curlCommand(for: request), privacy: .private)")
+            (data, response) = try await session.data(for: request)
+        } catch {
+            let mapped = Self.map(error)
+            if mapped is CancellationError {
+                logger.debug("\(path, privacy: .public) cancelled")
+            } else {
+                logger.error("\(path, privacy: .public) failed: \(String(describing: error), privacy: .private)")
+            }
+            throw mapped
+        }
+        guard let http = response as? HTTPURLResponse else {
+            logger.error("\(path, privacy: .public) answered without an HTTP response")
+            throw UserFacingError.unexpected
+        }
+        let elapsed = started.duration(to: .now).formatted(.units(allowed: [.milliseconds], width: .narrow))
+        let remaining = http.value(forHTTPHeaderField: "X-RateLimit-Remaining") ?? "n/a"
+        let summary = "\(http.statusCode) \(path) in \(elapsed), \(data.count) bytes, rate limit remaining \(remaining)"
+        if (200..<300).contains(http.statusCode) {
+            logger.info("\(summary, privacy: .public)")
+        } else {
+            logger.error("\(summary, privacy: .public)")
+        }
+        return (data, http)
+    }
+
+    /// A `curl` command that repeats `request` in a POSIX shell: the method when not GET, every
+    /// header in name order, and the URL, each single-quoted (specs/010 FR-003).
+    static func curlCommand(for request: URLRequest) -> String {
+        var parts = ["curl"]
+        if let method = request.httpMethod, method != "GET" {
+            parts += ["-X", method]
+        }
+        for (name, value) in (request.allHTTPHeaderFields ?? [:]).sorted(by: { $0.key < $1.key }) {
+            parts += ["-H", shellQuoted("\(name): \(value)")]
+        }
+        parts.append(shellQuoted(request.url?.absoluteString ?? ""))
+        return parts.joined(separator: " ")
+    }
+
+    /// `text` in single quotes, each `'` written as `'\''` (close, escaped quote, reopen).
+    private static func shellQuoted(_ text: String) -> String {
+        "'" + text.replacingOccurrences(of: "'", with: #"'\''"#) + "'"
     }
 
     /// Cooldown when a 429 states no reset: the shortest of the service's windows (specs/008 R3).

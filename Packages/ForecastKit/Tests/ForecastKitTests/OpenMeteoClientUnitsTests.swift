@@ -25,7 +25,8 @@ extension OpenMeteoClientTests {
           ])
     func forecastRequestUnits(expected: ExpectedUnitQuery) async throws {
         try Self.serve("forecast-chamonix-pair-imperial")
-        let client = OpenMeteoClient(session: StubURLProtocol.makeSession(), units: expected.units)
+        let client = OpenMeteoClient(session: StubURLProtocol.makeSession(), units: expected.units,
+                                     logger: .disabled)
 
         _ = try await client.forecast(for: chamonix)
 

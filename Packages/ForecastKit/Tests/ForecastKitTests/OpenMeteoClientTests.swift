@@ -6,7 +6,7 @@ import Testing
 /// Serialized because `StubURLProtocol` holds a process-wide handler.
 @Suite("OpenMeteoClient", .serialized)
 struct OpenMeteoClientTests {
-    let client = OpenMeteoClient(session: StubURLProtocol.makeSession())
+    let client = OpenMeteoClient(session: StubURLProtocol.makeSession(), logger: .disabled)
 
     let chamonix = Place(id: 3025496, name: "Chamonix", region: "Auvergne-Rhône-Alpes",
                                  country: "France", latitude: 45.92, longitude: 6.87,
