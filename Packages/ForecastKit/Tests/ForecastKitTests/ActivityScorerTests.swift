@@ -59,11 +59,12 @@ struct ActivityScorerTests {
     // MARK: - Skiing
 
     @Test("skiing snow factor: min(1, snowfall/10 + depth/100), weight 50", arguments: [
-        (0.0, 0.0, 0), (0.21, 1.0, 0), (1.9, 9.9, 0), (2.0, 0.0, 60), (0.0, 10.0, 55),
+        (0.0, 0.0, 0), (0.21, 1.0, 10), (1.9, 9.9, 10), (0.0, 5.0, 10), (1.0, 0.0, 10), (2.0, 0.0, 60), (0.0, 10.0, 55),
         (5.0, 0.0, 75), (0.0, 50.0, 75), (10.0, 0.0, 100), (0.0, 100.0, 100), (30.0, 200.0, 100)
     ])
     func skiingSnow(snowfall: Double, depth: Double, expected: Int) {
-        // Below 10 cm depth and 2 cm snowfall the day is not skiable: capped at 0 (specs/009).
+        // Below 10 cm depth and 2 cm snowfall the day is not skiable: 0 with no snow at all,
+        // capped at 10 with some (specs/009 FR-002, bug skiing-falling-snow-zero).
         // 0.21 cm falling on 1 cm lying is the live Minsk dusting (2026-11-05) that scored ≈32.
         let weather = with(Self.perfectSkiing) {
             $0.snowfall = .centimetres(snowfall); $0.snowDepth = .centimetres(depth)
@@ -92,7 +93,7 @@ struct ActivityScorerTests {
         #expect(score(.skiing, with(Self.perfectSkiing) { $0.rain = .millimetres(rain) }) == expected)
     }
 
-    @Test("skiing cap: not skiable (depth < 10 cm and snowfall < 2 cm) → 0, whatever the weather (specs/009)")
+    @Test("skiing cap: not skiable (depth < 10 cm and snowfall < 2 cm) → 0 without snow, ≤ 10 with some (specs/009)")
     func skiingCap() {
         // Raw: snow 0 + cold 0.6×25 + wind 15 + rain 10 = 40.
         let mild = with(Self.perfectSkiing) {
@@ -123,6 +124,11 @@ struct ActivityScorerTests {
             $0.rain = .millimetres(20); $0.windGustsMax = .kilometresPerHour(100)
         }
         #expect(score(.skiing, awful) == 0)
+
+        // Some snow, but too little to ski: at most 10 (Poor), never a best day; lower raw scores stay.
+        #expect(score(.skiing, with(mild) { $0.snowfall = .centimetres(0.21); $0.snowDepth = .centimetres(1) }) == 10)
+        // Raw: snow 50 × (0.021 + 0.01) = 1.55, cold 0, gusts 0, rain 0 → 2.
+        #expect(score(.skiing, with(awful) { $0.snowfall = .centimetres(0.21); $0.snowDepth = .centimetres(1) }) == 2)
     }
 
     // MARK: - Surfing

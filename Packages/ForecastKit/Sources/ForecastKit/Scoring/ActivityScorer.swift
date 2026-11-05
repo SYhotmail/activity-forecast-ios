@@ -177,9 +177,12 @@ public enum ActivityScorer {
         ]
         // Without skiable snow there is no skiing, however good the rest of the weather
         // (live checks: Chamonix 0 cm at −3.9 °C; Minsk, a 1 cm dusting, specs/009).
+        // No snow at all scores 0; some snow, too little to ski, at most 10 (specs/009 FR-002).
         guard isSkiable(snowfallCm: snowfallCm, depthCm: depthCm) else {
-            let reason: Reason.Detail = snowfallCm <= 0 && depthCm <= 0 ? .noSnowOnGround : .tooLittleSnow(depth)
-            return Breakdown(factors: factors, cap: Cap(maximum: 0, reason: reason))
+            let cap = snowfallCm <= 0 && depthCm <= 0
+                ? Cap(maximum: 0, reason: .noSnowOnGround)
+                : Cap(maximum: 10, reason: .tooLittleSnow(depth))
+            return Breakdown(factors: factors, cap: cap)
         }
         return Breakdown(factors: factors, cap: nil)
     }
