@@ -501,13 +501,10 @@ Use Coordinator when:
 - routing must be testable without instantiating full screens
 - `push`/`present` calls scattered across view controllers make flows hard to follow
 
-Coordinator is a navigation layer, not a full architecture: pair it with MVVM by injecting navigation closures into ViewModels, or with MVP by having the Presenter call a Router protocol backed by a Coordinator.
+Coordinator is a navigation layer, not a full architecture: pair it with MVVM by injecting navigation closures into ViewModels.
 
 Switch or pair when:
 - navigation is simple and single-screen: use value-type navigation in `references/mvvm.md`
-- flow plus role-separation complexity grows in UIKit modules: pair with `references/viper.md`
-
-For cross-architecture disqualifiers and migration triggers, see `references/selection-guide.md`.
 
 ## PR Review Checklist
 
