@@ -6,7 +6,7 @@ These are the only external interfaces. Shapes were verified against the live en
 
 `GET https://geocoding-api.open-meteo.com/v1/search?name={query}&count=10&format=json[&language={code}]`
 
-`language` decides which names the query matches, not only the result language (Мінск finds nothing with `en`). It comes from `QueryLanguage` and is left out when it is `en`, the default (specs/007).
+`language` decides which names the query matches, not only the result language (Мінск finds nothing with `en`). It comes from `QueryLanguage` and is left out when it is `en`, the default (specs/007). The client sends only the lower-case primary subtag when it is 2–3 ASCII letters (`be-BY` → `be`), else leaves it out: the service accepts any value with 200 and matches unknown ones like English. A search rejected with 400 while sending `language` is retried once without it (specs/008 FR-005, FR-006).
 
 `{query}` is percent-encoded and trimmed, and has at least 2 characters.
 
@@ -55,11 +55,16 @@ Response 200 (abridged):
 - `snow_depth` is hourly, in metres (feet with `precipitation_unit=inch`): group by the place's calendar day of `hourly.time` (same conversion) and take the max, keeping the unit.
 - `sunshine_duration` is always in seconds; the app shows it in hours.
 
+## Rate limits (specs/008)
+
+Free tier: 600 requests a minute, 5,000 an hour, 10,000 a day; the forecast API states the minutely limit in `X-RateLimit-Limit`/`-Remaining`/`-Window` headers, the geocoding API sends none. The client limits each API on device to 600 per 60 s (sliding window; a request over it waits, cancellably). Over-limit requests the service still refuses get HTTP 429.
+
 ## Error mapping (FR-011)
 
 | Condition | UserFacingError |
 |---|---|
 | `URLError.notConnectedToInternet`, `.networkConnectionLost`, `.timedOut` | `.offline` |
-| HTTP 4xx/5xx (Open-Meteo returns `{"error":true,"reason":"..."}`) | `.serviceUnavailable` |
+| HTTP 429 (rate limit) | `.rateLimited` (specs/008) |
+| Other HTTP 4xx/5xx (Open-Meteo returns `{"error":true,"reason":"..."}`) | `.serviceUnavailable` |
 | Decoding failure, or forecast with zero days | `.unexpected` |
 | `CancellationError` / `URLError.cancelled` | not an error. Ignored (superseded request) |
