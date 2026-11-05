@@ -6,9 +6,9 @@
 
 **Rationale**: `.searchable` hides its `UITextField`, so `textInputMode.primaryLanguage` needs a UIKit search field, re-testing the split-view/iPad/fold layout of specs/003. The keyboard is also not the text's language for pasted text, dictation or the emoji keyboard.
 
-## R2 — Latin script uses the preferred language
+## R2 — Latin script uses English
 
-**Verified live**: Latin-script names match whatever `language` is sent ("Minsk" with `pl`, "Paris" with `zh` or `be`); only the result names change. Language detection on short Latin strings is unreliable ("Wien", "Paris"), so the user's own language is the better choice: results read in a language they know.
+**Verified live**: Latin-script names match whatever `language` is sent ("Minsk" with `pl`, "Paris" with `zh` or `be`); only the result names change. Language detection on short Latin strings is unreliable ("Wien", "Paris"), so Latin queries are searched in English, the API default (simplified on review: the first draft used the user's preferred language, which only changed the result names).
 
 ## R3 — Limits
 

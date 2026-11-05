@@ -2,19 +2,16 @@ import Foundation
 import NaturalLanguage
 import UIKit
 
-/// Picks the geocoding language for a search query (specs/007). Open-Meteo matches a query only
-/// against names in that language and English, so "Мінск" must be searched in Belarusian.
+/// Picks the geocoding language for a search query (specs/007): English, the service default
+/// (`nil`), unless the query is written in another script. Open-Meteo matches a query only
+/// against names in the requested language and English, so "Мінск" must be searched in
+/// Belarusian, while Latin names match in any language.
 ///
-/// - Queries made only of Latin letters match in any language, so they use the user's first
-///   preferred language: it only sets the language of the results (FR-003, research R2).
-/// - Other queries need the exact language (Минск finds nothing in `be`, Київ nothing in `ru`), so
-///   the script decides (FR-004, research R3): the language `NLLanguageRecognizer` finds if it is
-///   one of the user's; else the user's first language written in that script (NaturalLanguage
-///   has no Belarusian, and short Cyrillic names often read as Kazakh or Bulgarian); else the
-///   script's most likely language from CLDR (Cyrillic → Russian). With no language recognised at
-///   all, the first preferred one.
-///
-/// English is the service default, so it is returned as `nil`.
+/// For a non-Latin query, in order (FR-004, research R3):
+/// 1. the language `NLLanguageRecognizer` finds, if it is one of the user's (Київ → `uk`);
+/// 2. else the user's first language written in that script (Мінск → `be`: NaturalLanguage has
+///    no Belarusian and often reads short Cyrillic names as Kazakh or Bulgarian);
+/// 3. else the script's most likely language from CLDR (Cyrillic → `ru`, Greek → `el`).
 struct QueryLanguage {
     /// Lower-case language codes the user reads or types, most preferred first.
     let candidates: () -> [String]
@@ -31,10 +28,14 @@ struct QueryLanguage {
         QueryLanguage { codes }
     }
 
-    /// The language code to search `query` in, or `nil` for the service default (English).
+    /// The language code to search `query` in, or `nil` for English.
     func code(for query: String) -> String? {
+        guard !Self.isLatin(query), let recognised = Self.recognised(query),
+              let script = Self.script(of: recognised) else { return nil }
         let candidates = candidates()
-        let code = Self.isLatin(query) ? candidates.first : Self.nonLatin(query, candidates: candidates)
+        let code = candidates.first { $0 == Self.languageCode(recognised) }
+            ?? candidates.first { Self.script(of: $0) == script }
+            ?? Self.languageCode(Locale.Language(identifier: "und-\(script)").maximalIdentifier)
         return code == "en" ? nil : code
     }
 
@@ -54,29 +55,15 @@ struct QueryLanguage {
         return (2...3).contains(code.count) && code.allSatisfy(\.isLetter) ? code : nil
     }
 
-    private static func nonLatin(_ query: String, candidates: [String]) -> String? {
-        guard let recognised = recognised(query, hints: candidates) else { return candidates.first }
-        if candidates.contains(languageCode(recognised) ?? "") { return languageCode(recognised) }
-        let script = script(of: recognised)
-        if let sameScript = candidates.first(where: { self.script(of: $0) == script }) { return sameScript }
-        return script.flatMap { languageCode(Locale.Language(identifier: "und-\($0)").maximalIdentifier) }
-    }
-
     /// ISO 15924 script of a language, e.g. `Cyrl` for `be`, `Hans` for `zh-Hans`.
     private static func script(of language: String) -> String? {
         Locale.Language(identifier: Locale.Language(identifier: language).maximalIdentifier).script?.identifier
     }
 
-    /// The recognised language identifier, e.g. `uk` or `zh-Hans`.
-    private static func recognised(_ query: String, hints: [String]) -> String? {
-        let recognizer = NLLanguageRecognizer()
-        if !hints.isEmpty {
-            recognizer.languageHints = Dictionary(
-                hints.map { (NLLanguage(rawValue: $0), 1.0 / Double(hints.count)) },
-                uniquingKeysWith: max)
-        }
-        recognizer.processString(query)
-        guard let language = recognizer.dominantLanguage, language != .undetermined else { return nil }
+    /// The recognised language identifier, e.g. `uk` or `zh-Hans`; `nil` when there is none.
+    private static func recognised(_ query: String) -> String? {
+        guard let language = NLLanguageRecognizer.dominantLanguage(for: query), language != .undetermined
+        else { return nil }
         return language.rawValue
     }
 
