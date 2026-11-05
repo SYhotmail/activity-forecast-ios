@@ -8,4 +8,4 @@
 
 ## R2 — Privacy
 
-The URL carries the user's search text and the chosen place's coordinates, so the `curl` line is `.private`: Xcode's console shows it while debugging, and logs collected from a device redact it. Status, path, timings, sizes and rate-limit budget carry nothing about the user and are `.public`. Nothing is sent anywhere, so the privacy manifest (specs/PR #60) is unchanged.
+The URL carries the user's search text and the chosen place's coordinates, so the `curl` line is `.private`: Xcode's console shows it while debugging, and logs collected from a device redact it. Status, path, timings, sizes and rate-limit budget carry nothing about the user and are `.public`. Nothing is sent anywhere, so the privacy manifest (`App/PrivacyInfo.xcprivacy`) is unchanged.

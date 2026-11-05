@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-05
 
-**Status**: Draft
+**Status**: Implemented
 
 **Input**: User description: "Add logging to the app: OSLog (for testing use a disabled one). For the web API print curl commands and some response status codes, so I can track changes."
 
@@ -25,11 +25,11 @@ A developer running the app sees, for each Open-Meteo request, a `curl` command 
 
 - **FR-001**: Logging MUST use OSLog `Logger`; the client MUST receive it from its creator, and the composition root MUST pass the app's logger (subsystem = bundle identifier, category `network`).
 - **FR-002**: Tests MUST pass a disabled logger (`Logger(OSLog.disabled)`).
-- **FR-003**: The `curl` command MUST reproduce the request: method when not GET, every header, and the URL, single-quoted for a POSIX shell.
-- **FR-004**: The `curl` command MUST be logged as private (it carries the search text); status, path, durations and sizes as public.
-- **FR-005**: Levels: `curl` debug; 2xx info; non-2xx, transport and decoding failures error; cancellation debug.
+- **FR-003**: The `curl` command MUST reproduce the request: method when not GET, every header set on the request (URLSession adds its own at send time), and the URL, single-quoted for a POSIX shell.
+- **FR-004**: The `curl` command MUST be logged as private (it carries the search text); status, path, durations and sizes as public; transport errors private (they may carry the URL).
+- **FR-005**: Levels: `curl` debug; cancellation debug; 2xx info; a call refused during a cooldown and a 400 retried without language notice; non-2xx (including 429 and the cooldown it starts), transport failures, a non-HTTP response and decoding failures error.
 
 ## Success Criteria *(mandatory)*
 
-- **SC-001**: Client tests run with a disabled logger. The `curl` command is debug output only and is checked by reading the console, not by tests.
+- **SC-001**: Client tests run with a disabled logger. The `curl` command is debug output only and is checked by reading the console, not by tests (exempt per constitution 2.3.0 Principle IV; see [quickstart.md](./quickstart.md)).
 - **SC-002**: All quality gates pass.

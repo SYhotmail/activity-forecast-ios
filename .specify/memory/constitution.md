@@ -59,12 +59,15 @@ code.
   across resizes) MUST follow the same red → green → refactor cycle, with Swift Testing tests in
   the app unit-test target, run on an iOS simulator.
 - Commit history MUST show the pair: `test: … (red)` followed by `feat:`/`fix: … (green)`.
-- SwiftUI view bodies, assets and the composition root are exempt. They are verified by
-  previews, the build and the feature's manual quickstart checks.
+- SwiftUI view bodies, assets, the composition root and diagnostic logging (what is logged, at
+  which level and in which format, such as the client's `curl` lines) are exempt. They are
+  verified by previews, the build and the feature's manual quickstart checks. Logging MUST NOT
+  change behaviour: a disabled logger leaves every tested result unchanged.
 
 Rationale: the scoring model is a heuristic, and the view models carry the app's behavioural
 rules (stale results, no refetch on resize). Tests written first are what keep both honest as
-they change.
+they change. Log text is read by a developer, not by code; pinning its format in tests makes
+every wording change a test change without catching a user-visible bug.
 
 ### V. Focused Scope and Layered Simplicity
 
@@ -147,4 +150,10 @@ production surface carries nothing a shipping app shouldn't call.
 - Q: Must previews be wrapped in `#if DEBUG`? → A: No (2.2.0). Fixtures are `internal` to the app,
   and Release whole-module optimisation removes them; verified with `nm` (0 symbols).
 
-**Version**: 2.2.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-04
+### Session 2026-11-05
+
+- Q: Must log formatting (e.g. the network `curl` lines, specs/010) be test-first? → A: No
+  (2.3.0). It is verified by reading the console per the feature's quickstart; tests run with a
+  disabled logger.
+
+**Version**: 2.3.0 | **Ratified**: 2026-11-04 | **Last Amended**: 2026-11-05
