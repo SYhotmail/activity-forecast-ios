@@ -33,6 +33,7 @@ struct DisplayTextTests {
         #expect(UserFacingError.offline.message.contains("offline"))
         #expect(UserFacingError.serviceUnavailable.message.contains("weather service"))
         #expect(UserFacingError.unexpected.message.contains("Something went wrong"))
+        #expect(UserFacingError.rateLimited.message.contains("Too many requests"))
     }
 
     @Test("reasons read as a phrase plus the value in the user's units (FR-008, FR-016)")
