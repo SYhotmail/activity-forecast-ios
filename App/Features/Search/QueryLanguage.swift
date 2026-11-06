@@ -3,11 +3,12 @@ import NaturalLanguage
 import UIKit
 
 /// Picks the geocoding language for a search query (specs/007): English, the service default
-/// (`nil`), unless the query is written in another script. Open-Meteo matches a query only
+/// (`nil`), unless the query has non-ASCII characters (FR-003). Open-Meteo matches a query only
 /// against names in the requested language and English, so "Мінск" must be searched in
-/// Belarusian, while Latin names match in any language.
+/// Belarusian, while Latin names match in any language (only the result names change, so an
+/// accented name like "Kraków" follows the user's Latin-script language, research R2).
 ///
-/// For a non-Latin query, in order (FR-004, research R3):
+/// For any other query, in order (FR-004, research R3):
 /// 1. the language `NLLanguageRecognizer` finds, if it is one of the user's (Київ → `uk`);
 /// 2. else the user's first language written in that script (Мінск → `be`: NaturalLanguage has
 ///    no Belarusian and often reads short Cyrillic names as Kazakh or Bulgarian);
@@ -32,7 +33,7 @@ struct QueryLanguage {
 
     /// The language code to search `query` in, or `nil` for English.
     func code(for query: String) -> String? {
-        guard !Self.isLatin(query), let recognised = Self.recognised(query),
+        guard !Self.isASCII(query), let recognised = Self.recognised(query),
               let script = Self.script(of: recognised) else { return nil }
         let candidates = candidates()
         let code = candidates.first { $0 == Self.languageCode(recognised) }
@@ -72,14 +73,9 @@ struct QueryLanguage {
         return language.rawValue
     }
 
-    /// True when every letter is Latin (Basic Latin to Latin Extended, with combining accents).
-    private static func isLatin(_ text: String) -> Bool {
-        text.unicodeScalars.allSatisfy { scalar in
-            guard scalar.properties.isAlphabetic else { return true }
-            switch scalar.value {
-            case 0x0041...0x024F, 0x0300...0x036F, 0x1E00...0x1EFF, 0x2C60...0x2C7F, 0xA720...0xA7FF: return true
-            default: return false
-            }
-        }
+    /// True when every scalar is ASCII. Such queries are searched in English (FR-003); accented
+    /// Latin names are not, so "Kraków" follows a Polish user's language.
+    private static func isASCII(_ text: String) -> Bool {
+        text.unicodeScalars.allSatisfy { $0.isASCII }
     }
 }
