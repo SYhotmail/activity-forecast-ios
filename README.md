@@ -90,8 +90,8 @@ Weekly score = mean of the days that have data ("No data" days are excluded, nev
 - **Surfing is weather-only.** The Forecast API has no wave or swell data and the brief limits sources to the two APIs, so the app labels surfing accordingly. Adding the Open-Meteo Marine API would be the next step.
 - **Model elevation.** Forecasts are for the grid cell (e.g. ~1,030 m for Chamonix), not ski-resort altitude, so mountain snow can be understated.
 - The scores are a transparent heuristic, not a validated model. The rainy-city margin (Indoor 65 vs Surfing 55) is the closest call and is pinned by a test.
-- **Search needs Latin script.** Open-Meteo geocoding returns nothing for non-Latin queries (e.g. `東京`, `Москва`), so the app shows "No places found"; `Tokyo` works. Accented names such as `Zürich` are fine.
-- Online only. No accounts, favourites, history or caching. Metric units, English.
+- **Search works in any script, but non-Latin names need the right language.** Open-Meteo matches a query only in the requested `language` and English, so the app picks the language from the query ([specs/007](specs/007-search-language/spec.md)): Latin-script queries (`Tokyo`, `Zürich`) are searched in English; others use the detected language if it is one of the user's (preferred languages and keyboards), else the user's language in that script, else the script's most likely language (Cyrillic → Russian, Han → Chinese). So `Москва`, `Київ`, `北京` work, and `Мінск` works with a Belarusian keyboard. Limits: one language per search (no second-language retry), and kanji-only Japanese such as `東京` may only match as Chinese. Results come back named in that language.
+- Online only. No accounts, favourites, history or caching. English UI; units follow the device locale ([specs/006](specs/006-unit-aware-forecast/spec.md)).
 - 7 days = today + 6, in the selected place's local time zone.
 
 ## Trade-offs
