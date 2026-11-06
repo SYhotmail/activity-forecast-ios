@@ -3,6 +3,13 @@ import Foundation
 // Wire formats of the two Open-Meteo endpoints (contracts/open-meteo.md).
 // Only the fields we use are decoded; unknown fields are ignored.
 
+// MARK: - Errors
+
+/// Body of a rejected request, e.g. `{"error":true,"reason":"Invalid language"}`. Only logged.
+struct ErrorResponseDTO: Decodable {
+    let reason: String
+}
+
 // MARK: - Geocoding
 
 struct GeocodingResponseDTO: Decodable {

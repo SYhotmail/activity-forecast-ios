@@ -65,6 +65,6 @@ Free tier: 600 requests a minute, 5,000 an hour, 10,000 a day; the forecast API 
 |---|---|
 | `URLError.notConnectedToInternet`, `.networkConnectionLost`, `.timedOut` | `.offline` |
 | HTTP 429 (rate limit), or a call during the cooldown after one | `.rateLimited(until:)`, the reset; the app shows the time left (specs/008) |
-| Other HTTP 4xx/5xx (Open-Meteo returns `{"error":true,"reason":"..."}`) | `.serviceUnavailable` |
+| Other HTTP 4xx/5xx (Open-Meteo returns `{"error":true,"reason":"..."}`; the `reason` is logged, not shown, specs/010) | `.serviceUnavailable` |
 | Decoding failure, or forecast with zero days | `.unexpected` |
 | `CancellationError` / `URLError.cancelled` | not an error. Ignored (superseded request) |
