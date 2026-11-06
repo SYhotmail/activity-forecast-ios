@@ -49,7 +49,7 @@ extension OpenMeteoClientTests {
     func searchBadRequestWithoutLanguage() async throws {
         Self.serve(json: #"{"error":true,"reason":"Boom"}"#, status: 400)
 
-        await #expect(throws: UserFacingError.serviceUnavailable) {
+        await #expect(throws: UserFacingError.unexpected) {
             try await client.searchPlaces(matching: "Paris", language: nil)
         }
         #expect(StubURLProtocol.requests.count == 1)
