@@ -27,7 +27,7 @@ A developer running the app sees, for each Open-Meteo request, a `curl` command 
 - **FR-001**: Logging MUST use OSLog `Logger`; the client MUST receive it from its creator, and the composition root MUST pass the app's logger (subsystem = bundle identifier, category `network`).
 - **FR-002**: Tests MUST pass a disabled logger (`Logger(OSLog.disabled)`).
 - **FR-003**: The `curl` command MUST reproduce the request: method when not GET, every header set on the request (URLSession adds its own at send time), and the URL, single-quoted for a POSIX shell.
-- **FR-004**: The `curl` command MUST be logged as private (it carries the search text); status, path, durations and sizes as public; transport errors private (they may carry the URL).
+- **FR-004**: The `curl` command MUST be logged as private (it carries the search text); status, path, durations and sizes as public; transport errors private (they may carry the URL); the service's error `reason` from a non-2xx body (`{"error":true,"reason":"..."}`) appended to that response's line, private (it may echo request values).
 - **FR-005**: Levels: `curl` debug; cancellation debug; 2xx info; a call refused during a cooldown and a 400 retried without language notice; non-2xx (including 429 and the cooldown it starts), transport failures, a non-HTTP response and decoding failures error.
 - **FR-006**: `BrowseViewModel` MUST receive a `Logger` from its creator (no default) and log at info when the browse screen appears and disappears; the composition root passes category `browse`, previews and tests a disabled logger.
 

@@ -20,7 +20,7 @@ Log text, level and format are diagnostic logging, exempt from tests (constituti
 3. Select a place: the same two lines for `/v1/forecast`.
 4. Type, pause about 0.5 s so the search request goes out, then type again while it is in flight: a debug `/v1/search cancelled` line and no error. On a fast network the request may finish first and nothing is logged; that is fine. Keystrokes inside the 300 ms debounce send no request, so they log nothing.
 5. Turn the Mac's network off and retry: an error line `/v1/forecast failed: …`, and the app shows the offline error.
-6. Privacy (FR-004): in logs collected without a debugger attached (e.g. `log show --predicate 'category == "network"'`), the `curl` line and transport errors read `<private>`; status, path, duration, size and rate-limit budget stay visible.
+6. Privacy (FR-004): in logs collected without a debugger attached (e.g. `log show --predicate 'category == "network"'`), the `curl` line, transport errors and the error `reason` of a non-2xx response read `<private>`; status, path, duration, size and rate-limit budget stay visible.
 
 ## Browse lifecycle (FR-006)
 Filter by category `browse` (Info shown). Launching the app logs `BrowseVM will appear`. Sending it to the background doesn't log anything, because SwiftUI doesn't call `onDisappear` for the root scene. Any `will disappear` line you see should match a matching `will appear`.

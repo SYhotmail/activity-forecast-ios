@@ -172,7 +172,8 @@ public struct OpenMeteoClient: WeatherService {
 
     /// One round trip, logged: the `curl` command before, the status, duration, size and remaining
     /// rate-limit budget after (specs/010 FR-003 to FR-005). The `curl` line carries the search
-    /// text, so it is private; transport errors may carry the URL, so they are private too.
+    /// text, so it is private; transport errors may carry the URL, so they are private too. A
+    /// non-2xx line ends with the service's error `reason` from the body, private as well.
     private func send(_ request: URLRequest, limiter: RateLimiter) async throws -> (Data, HTTPURLResponse) {
         let path = request.url?.path ?? ""
         let data: Data
@@ -195,13 +196,17 @@ public struct OpenMeteoClient: WeatherService {
             logger.error("\(path, privacy: .public) answered without an HTTP response")
             throw UserFacingError.unexpected
         }
+
         let elapsed = started.duration(to: .now).formatted(.units(allowed: [.milliseconds], width: .narrow))
         let remaining = http.value(forHTTPHeaderField: "X-RateLimit-Remaining") ?? "n/a"
         let summary = "\(http.statusCode) \(path) in \(elapsed), \(data.count) bytes, rate limit remaining \(remaining)"
+
         if (200..<300).contains(http.statusCode) {
             logger.info("\(summary, privacy: .public)")
         } else {
-            logger.error("\(summary, privacy: .public)")
+            // The service's reason can echo request values (the search text), so it is private.
+            let reason = (try? JSONDecoder().decode(ErrorResponseDTO.self, from: data))?.reason ?? "no reason given"
+            logger.error("\(summary, privacy: .public): \(reason, privacy: .private)")
         }
         return (data, http)
     }
