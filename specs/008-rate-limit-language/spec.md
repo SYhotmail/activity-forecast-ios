@@ -44,7 +44,7 @@ Bursts of searches or forecast loads are spread out instead of being rejected; i
 
 - **FR-001**: Geocoding and forecast requests MUST each pass through their own sliding-window rate limiter of 600 requests per 60 seconds.
 - **FR-002**: A request over the limit MUST wait for a slot; the wait MUST end with `CancellationError` when the task is cancelled.
-- **FR-003**: HTTP 429 MUST map to `UserFacingError.rateLimited`; other 4xx/5xx stay `serviceUnavailable`.
+- **FR-003**: HTTP 429 MUST map to `UserFacingError.rateLimited`; other 4xx to `unexpected` (every request is built by the app, so it is a bug, not an outage; revised 2026-11-06, a search 400 is still retried without language first per FR-006); 5xx stay `serviceUnavailable`.
 - **FR-004**: The app MUST show a distinct message for `rateLimited`, with retry (specs/001 FR-011).
 - **FR-005**: The client MUST send `language` only as a lower-case ISO 639 code Foundation knows (`Locale.LanguageCode.isoLanguageCodes`), taking the primary subtag of a region form; anything else, and `en`, MUST be left out.
 - **FR-006**: A search rejected with HTTP 400 while sending `language` MUST be retried once without it.

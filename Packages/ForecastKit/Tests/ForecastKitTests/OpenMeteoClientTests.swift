@@ -247,14 +247,27 @@ struct OpenMeteoClientTests {
 
     // MARK: - Error mapping (FR-011)
 
-    @Test("HTTP errors map to serviceUnavailable", arguments: [400, 404, 500, 503])
-    func httpError(status: Int) async throws {
+    @Test("Server errors map to serviceUnavailable", arguments: [500, 503])
+    func serverError(status: Int) async throws {
         Self.serve(json: #"{"error":true,"reason":"Boom"}"#, status: status)
 
         await #expect(throws: UserFacingError.serviceUnavailable) {
             try await client.searchPlaces(matching: "Paris", language: nil)
         }
         await #expect(throws: UserFacingError.serviceUnavailable) {
+            try await client.forecast(for: chamonix)
+        }
+    }
+
+    @Test("Client errors other than 429 map to unexpected: the app built a bad request (specs/008 FR-003)",
+          arguments: [400, 404])
+    func clientError(status: Int) async throws {
+        Self.serve(json: #"{"error":true,"reason":"Boom"}"#, status: status)
+
+        await #expect(throws: UserFacingError.unexpected) {
+            try await client.searchPlaces(matching: "Paris", language: nil)
+        }
+        await #expect(throws: UserFacingError.unexpected) {
             try await client.forecast(for: chamonix)
         }
     }

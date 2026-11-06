@@ -8,3 +8,4 @@
 - [X] T006 [red] Cooldown after 429 (`RateLimiterTests`, `OpenMeteoClientLimitsTests` with response headers); `rateLimited(until:)` message with time left (`DisplayTextTests`).
 - [X] T007 [green] `RateLimiter.coolDown(until:)`/`cooldownEnd(at:)`, client reset parsing and fail-fast, `UserFacingError.rateLimited(until:)`, app message.
 - [X] T008 Docs: specs/001 contract, CLAUDE.md; all gates.
+- [X] T009 Other 4xx → `.unexpected`, 5xx stay `.serviceUnavailable` (red, then green, `OpenMeteoClientTests`, `OpenMeteoClientLimitsTests`); `.unexpected` message no longer names the forecast; specs/001 contract, CLAUDE.md.

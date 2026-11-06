@@ -159,6 +159,8 @@ public struct OpenMeteoClient: WeatherService {
                 "\(path, privacy: .public) rate limited; cooling down until \(end.ISO8601Format(), privacy: .public)")
             throw UserFacingError.rateLimited(until: end)
         }
+        // Every request is built by the app, so another 4xx is a bug, not an outage (specs/008 FR-003).
+        if (400..<500).contains(http.statusCode) { throw UserFacingError.unexpected }
         guard (200..<300).contains(http.statusCode) else { throw UserFacingError.serviceUnavailable }
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
