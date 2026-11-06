@@ -2,7 +2,7 @@ import Testing
 @testable import ActivityForecast
 
 /// The geocoding language picked for a query (specs/007 FR-003…FR-005): English unless the
-/// query is in another script. Candidates are fixed
+/// query has non-ASCII characters. Candidates are fixed
 /// here; in the app they are the user's preferred languages, then their keyboards.
 @MainActor
 @Suite("QueryLanguage: geocoding language from the query")
@@ -26,15 +26,24 @@ struct QueryLanguageTests {
         #expect(QueryLanguage.fixed(["en"]).code(for: query) == expected)
     }
 
-    @Test("a Latin query is searched in English, the API default, whatever the user's languages",
+    @Test("a plain ASCII query is searched in English, the API default, whatever the user's languages",
           arguments: [
               ("Paris", ["de", "en"]),
               ("Wien", ["de"]),
-              ("München", ["en"]),
               ("Paris", [])
           ] as [(String, [String])])
-    func latinQuery(query: String, candidates: [String]) {
+    func asciiQuery(query: String, candidates: [String]) {
         #expect(QueryLanguage.fixed(candidates).code(for: query) == nil)
+    }
+
+    @Test("an accented Latin query uses the user's first Latin-script language",
+          arguments: [
+              ("Kraków", ["pl", "en"], "pl"),
+              ("Zürich", ["de", "en"], "de"),
+              ("München", ["en"], nil)
+          ] as [(String, [String], String?)])
+    func accentedLatinQuery(query: String, candidates: [String], expected: String?) {
+        #expect(QueryLanguage.fixed(candidates).code(for: query) == expected)
     }
 
     @Test("a query with no recognisable script is searched in English")

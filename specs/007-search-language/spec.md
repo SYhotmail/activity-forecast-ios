@@ -27,7 +27,11 @@ So a user typing in a non-Latin script found nothing or the wrong city.
 ### Session 2026-11-05
 
 - Q: Read the active keyboard, or detect from the query? → A: Detect from the query (`NLLanguageRecognizer`, on device), hinted by the enabled keyboards and preferred languages. Reading the keyboard needs a UIKit search field in place of `.searchable` (specs/003 layout risk), and pasted text or dictation would not match it anyway (research R1).
-- Q: What language for Latin-script queries? → A: English, the API default (simplified on review; first draft used the user's preferred language). Latin names match in any language, so this only means results are shown in English (R2).
+- Q: What language for Latin-script queries? → A: English, the API default (simplified on review; first draft used the user's preferred language). Latin names match in any language, so this only means results are shown in English (R2). Narrowed to plain ASCII on 2026-11-06, see below.
+
+### Session 2026-11-06
+
+- Q: Should accented Latin names (Kraków, Zürich) also be searched in English? → A: No. Only plain ASCII queries are; accented ones go through FR-004 and so follow the user's first Latin-script language (Kraków for a Polish user → `pl`, results named in Polish). The check is a plain `isASCII`, not a table of Latin Unicode ranges (R2).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -53,7 +57,7 @@ A user types a city name in Cyrillic or Chinese characters and the place is foun
 
 - **FR-001**: `WeatherService.searchPlaces` MUST take an optional language code (lower-case ISO 639); `nil` means the API default.
 - **FR-002**: The geocoding request MUST send `language` only when the code is present and not `en` (the default).
-- **FR-003**: Queries made only of Latin letters, or with no recognisable language, MUST be searched in English (no `language` parameter).
+- **FR-003**: Queries made only of ASCII characters, or with no recognisable language, MUST be searched in English (no `language` parameter). Other Latin-script queries (accented names) go through FR-004, so they follow the user's first Latin-script language.
 - **FR-004**: Other queries MUST use, in order: the language `NLLanguageRecognizer` finds when it is one of the user's languages; else the user's first language written in the query's script; else the script's most likely language (CLDR likely subtags, e.g. Cyrillic → `ru`).
 - **FR-005**: Candidates MUST be language codes only, preferred languages first, deduplicated.
 - **FR-006**: The search view model MUST pass the detected code with each search; debounce, cancellation and stale-result rules (specs/001 FR-012) are unchanged.
